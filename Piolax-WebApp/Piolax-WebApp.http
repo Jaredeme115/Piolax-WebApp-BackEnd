@@ -1,0 +1,6 @@
+@Piolax_WebApp_HostAddress = http://localhost:5265
+
+GET {{Piolax_WebApp_HostAddress}}/weatherforecast/
+Accept: application/json
+
+###
