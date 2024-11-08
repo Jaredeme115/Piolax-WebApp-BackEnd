@@ -6,7 +6,7 @@ using System.Text;
 
 namespace Piolax_WebApp.Services.Impl
 {
-    public class TokenService: ITokenService
+    public class TokenService : ITokenService
     {
         private readonly SymmetricSecurityKey _key;
 
@@ -15,16 +15,17 @@ namespace Piolax_WebApp.Services.Impl
             var tokenKey = config["TokenKey"];
             if (string.IsNullOrEmpty(tokenKey))
             {
-                throw new InvalidOperationException("TokenKey no está configurado en appsettings.json o es nulo.");
+                throw new ArgumentNullException(nameof(tokenKey), "TokenKey cannot be null or empty.");
             }
             _key = new SymmetricSecurityKey(Encoding.UTF8.GetBytes(tokenKey));
         }
+
         public string CrearToken(Empleado empleado)
         {
             var claims = new List<Claim>
-            {
-                new Claim(JwtRegisteredClaimNames.NameId, empleado.numNomina.ToString())
-            };
+                {
+                    new Claim(JwtRegisteredClaimNames.NameId, empleado.numNomina.ToString())
+                };
             var creds = new SigningCredentials(_key, SecurityAlgorithms.HmacSha512Signature);
             var tokenDescriptor = new SecurityTokenDescriptor
             {

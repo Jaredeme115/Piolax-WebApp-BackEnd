@@ -7,6 +7,7 @@ using Piolax_WebApp.Services;
 using Piolax_WebApp.Services.Impl;
 using Piolax_WebApp.Repositories;
 using Piolax_WebApp.Repositories.Impl;
+using System.Collections.Specialized;
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -19,20 +20,12 @@ builder.Services.AddDbContext<AppDbContext>(options =>
     )
 );
 
-// Add services to the container.
-
-builder.Services.AddScoped<IEmpleadoRepository, EmpleadoRepository>();
+builder.Services.AddControllers();
 
 builder.Services.AddScoped<IEmpleadoService, EmpleadoService>();
+builder.Services.AddScoped<IEmpleadoRepository, EmpleadoRepository>();
 
-builder.Services.AddScoped<ITokenService, TokenService>();
-
-builder.Services.AddControllers();
-// Learn more about configuring Swagger/OpenAPI at https://aka.ms/aspnetcore/swashbuckle
 builder.Services.AddEndpointsApiExplorer();
-
-
-// Configure the HTTPS request pipeline.
 builder.Services.AddSwaggerGen(options =>
 {
     options.AddSecurityDefinition("Bearer", new OpenApiSecurityScheme
@@ -64,25 +57,30 @@ builder.Services.AddSwaggerGen(options =>
 });
 
 string corsConfiguration = "_corsConfiguration";
-string url = "http://localhost:7208";
-
 
 builder.Services.AddCors(options =>
     options.AddPolicy(name: corsConfiguration,
-        cors => cors.WithOrigins(url)
+        cors => cors.WithOrigins("https://localhost:7208")
         .AllowAnyHeader()
         .AllowAnyMethod()
+        .AllowCredentials()
     )
 );
 
+var tokenKey = builder.Configuration["TokenKey"];
+if (string.IsNullOrEmpty(tokenKey))
+{
+    throw new InvalidOperationException("TokenKey no está configurado en appsettings.json");
+}
 
+builder.Services.AddScoped<ITokenService, TokenService>();
 builder.Services.AddAuthentication(JwtBearerDefaults.AuthenticationScheme)
                 .AddJwtBearer(option =>
                 {
                     option.TokenValidationParameters = new TokenValidationParameters
                     {
                         ValidateIssuerSigningKey = true,
-                        IssuerSigningKey = new SymmetricSecurityKey(Encoding.UTF8.GetBytes("TokenKey")),
+                        IssuerSigningKey = new SymmetricSecurityKey(Encoding.UTF8.GetBytes(tokenKey)),
                         ValidateIssuer = false,
                         ValidateAudience = false
                     };
@@ -90,8 +88,6 @@ builder.Services.AddAuthentication(JwtBearerDefaults.AuthenticationScheme)
 
 var app = builder.Build();
 
-
-// Configure the HTTP request pipeline.
 if (app.Environment.IsDevelopment())
 {
     app.UseSwagger();

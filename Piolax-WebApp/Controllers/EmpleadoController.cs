@@ -11,23 +11,23 @@ namespace Piolax_WebApp.Controllers
         private readonly IEmpleadoService _service = service;
         private readonly ITokenService _tokenService = token;
 
+
         [Authorize]
-        [HttpGet]
-        [Route("Consultar")]
-        public ActionResult<Empleado> Consultar(string numNomina)
+        [HttpGet("Consultar")]
+        public ActionResult<Empleado?> Consultar(string numNomina)
         {
             return _service.Consultar(numNomina).Result;
         }
 
         [Authorize]
-        [HttpGet]
-        [Route("ConsultarTodos")]
+        [HttpGet("ConsultarTodos")]
         public async Task<ActionResult<IEnumerable<Empleado>>> ConsultarTodos()
         {
             return Ok(await _service.ConsultarTodos());
         }
 
-        [HttpPost("registro")]
+        [Authorize]
+        [HttpPost("Registro")]
         public async Task<ActionResult<Empleado>> Registro(RegistroDTO registro)
         {
             if (await _service.EmpleadoExiste(registro.numNomina))
@@ -39,7 +39,8 @@ namespace Piolax_WebApp.Controllers
             return Ok(await _service.Registro(registro));
         }
 
-        [HttpPost("login")]
+        [Authorize]
+        [HttpPost("Login")]
         public async Task<ActionResult<EmpleadoDTO>> Login(LoginDTO login)
         {
             if (!await _service.EmpleadoExiste(login.numNomina))

@@ -2,8 +2,8 @@
 
 namespace Piolax_WebApp.Controllers
 {
-    [Route("api/[controller]")]
     [ApiController]
+    [Route("api/[controller]")]
     public class BaseApiController: ControllerBase
     {
     }

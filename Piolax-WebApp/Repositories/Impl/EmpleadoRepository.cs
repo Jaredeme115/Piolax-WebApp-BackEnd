@@ -14,7 +14,7 @@ namespace Piolax_WebApp.Repositories.Impl
             return empleado;
         }
 
-        public async Task<Empleado> Consultar(string numNomina)
+        public async Task<Empleado?> Consultar(string numNomina)
         {
             return await _context.Empleado.Where(p => p.numNomina == numNomina).FirstOrDefaultAsync();
         }
