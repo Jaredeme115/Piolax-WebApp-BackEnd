@@ -39,7 +39,7 @@ namespace Piolax_WebApp.Controllers
             return Ok(await _service.Registro(registro));
         }
 
-        [Authorize]
+    
         [HttpPost("Login")]
         public async Task<ActionResult<EmpleadoDTO>> Login(LoginDTO login)
         {
