@@ -34,10 +34,9 @@ namespace Piolax_WebApp.Models
         [Required]
         public byte[] passwordSalt { get; set; }
 
-        [Required]
-        [ForeignKey("idStatusEmpleado")]
+        // Relación con la tabla StatusEmpleado
         public int idStatusEmpleado { get; set; }
-
+        public StatusEmpleado StatusEmpleado { get; set; } // Propiedad de navegación
 
     }
 }

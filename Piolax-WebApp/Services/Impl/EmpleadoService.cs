@@ -5,6 +5,8 @@ using Piolax_WebApp.Repositories;
 using Piolax_WebApp.DTOs;
 using Piolax_WebApp.Services;
 using Piolax_WebApp.Services.Impl;
+using Microsoft.EntityFrameworkCore;
+using Microsoft.AspNetCore.Mvc;
 
 namespace Piolax_WebApp.Services.Impl
 {
@@ -29,11 +31,52 @@ namespace Piolax_WebApp.Services.Impl
                 email = registro.email,
                 telefono = registro.telefono,
                 fechaIngreso = registro.fechaIngreso,
+                idStatusEmpleado = registro.idStatusEmpleado,
                 passwordHasH = hmac.ComputeHash(Encoding.UTF8.GetBytes(registro.password)),
-                passwordSalt = hmac.Key
+                passwordSalt = hmac.Key,
+               
             };
 
             return await _repository.Agregar(empleado);
+        }
+
+        public async Task<Empleado?> Modificar(string numNomina, RegistroDTO registroDTO)
+        {
+            var empleadoExistente = await _repository.Consultar(numNomina);
+
+            if (empleadoExistente == null)
+                return null; // Devuelve null si el empleado no existe
+
+            // Actualizamos los datos del empleado
+            empleadoExistente.numNomina = registroDTO.numNomina;
+            empleadoExistente.nombre = registroDTO.nombre;
+            empleadoExistente.apellidoPaterno = registroDTO.apellidoPaterno;
+            empleadoExistente.apellidoMaterno = registroDTO.apellidoMaterno;
+            empleadoExistente.telefono = registroDTO.telefono;
+            empleadoExistente.email = registroDTO.email;
+            empleadoExistente.fechaIngreso = registroDTO.fechaIngreso;
+            empleadoExistente.idStatusEmpleado = registroDTO.idStatusEmpleado;
+
+
+            // Si el password ha cambiado, recalculamos el hash y el salt
+            if (!string.IsNullOrWhiteSpace(registroDTO.password))
+            {
+                using var hmac = new HMACSHA512();
+                empleadoExistente.passwordHasH = hmac.ComputeHash(Encoding.UTF8.GetBytes(registroDTO.password));
+                empleadoExistente.passwordSalt = hmac.Key;
+            }
+
+            return await _repository.Modificar(empleadoExistente);
+        }
+
+        public async Task<Empleado?> Eliminar(string numNomina)
+        {
+            var empleadoExistente = await _repository.Consultar(numNomina);
+
+            if (empleadoExistente == null)
+                return null; // Devuelve null si el empleado no existe
+
+            return await _repository.Eliminar(numNomina);
         }
 
         public async Task<bool> EmpleadoExiste(string numNomina)
@@ -67,5 +110,11 @@ namespace Piolax_WebApp.Services.Impl
         {
             return _repository.Consultar(numNomina);
         }
+
+        public Task<IEnumerable<Empleado>> ConsultarPorStatus(int idStatusEmpleado)
+        {
+            return _repository.ConsultarPorStatus(idStatusEmpleado);
+        }
+
     }
 }

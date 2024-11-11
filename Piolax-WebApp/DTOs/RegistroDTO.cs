@@ -24,8 +24,13 @@ namespace Piolax_WebApp.DTOs
         [Required(ErrorMessage = "La fecha de ingreso es requerida")]
         public DateOnly fechaIngreso { get; set; }
 
+
         [Required(ErrorMessage = "El password es requerido")]
         public string password { get; set; }
+
+        [Required(ErrorMessage = "El status es requerido")]
+
+        public int idStatusEmpleado { get; set; }
 
 
 

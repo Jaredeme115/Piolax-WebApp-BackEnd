@@ -36,10 +36,41 @@ namespace Piolax_WebApp.Controllers
 
             }
 
+            // Asignar el valor 1 al idStatusEmpleado si no se proporciona
+            if (registro.idStatusEmpleado == 0)
+            {
+                registro.idStatusEmpleado = 1;
+            }
+
             return Ok(await _service.Registro(registro));
         }
 
-    
+        [Authorize]
+        [HttpPut("{numNomina}")]
+        public async Task<ActionResult<Empleado>> Modificar(string numNomina, RegistroDTO registro)
+        {
+            if (!await _service.EmpleadoExiste(registro.numNomina))
+            {
+                return NotFound("El empleado no existe");
+            }
+
+            var empleadoModificado = await _service.Modificar(numNomina, registro);
+            return Ok(empleadoModificado);
+        }
+
+        [Authorize]
+        [HttpDelete("{numNomina}")]
+        public async Task<ActionResult<Empleado>> Eliminar(string numNomina)
+        {
+            if (!await _service.EmpleadoExiste(numNomina))
+            {
+                return NotFound("El empleado no existe");
+            }
+
+            return Ok(await _service.Eliminar(numNomina));
+        }
+
+
         [HttpPost("Login")]
         public async Task<ActionResult<EmpleadoDTO>> Login(LoginDTO login)
         {
@@ -58,6 +89,19 @@ namespace Piolax_WebApp.Controllers
             };
 
             return Ok(empleadoDTO);
+        }
+
+        [Authorize]
+        [HttpGet("ConsultarPorStatus/{idStatusEmpleado}")]
+        public async Task<ActionResult<IEnumerable<Empleado>>> ConsultarPorStatus(int idStatusEmpleado)
+        {
+            var empleados = await _service.ConsultarPorStatus(idStatusEmpleado);
+            if (empleados == null || !empleados.Any())
+            {
+                return NotFound("No se encontraron empleados con el status especificado.");
+            }
+
+            return Ok(empleados);
         }
     }
 }

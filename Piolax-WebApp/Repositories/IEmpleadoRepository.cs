@@ -9,5 +9,9 @@ namespace Piolax_WebApp.Repositories
         Task<bool> EmpleadoExiste(string numNomina);
         Empleado EmpleadoExisteLogin(string numNomina);
         Task<Empleado> Agregar(Empleado empleado);
+        Task<Empleado> Modificar(Empleado empleado);
+        Task<Empleado> Eliminar(string numNomina);
+        Task<IEnumerable<Empleado>> ConsultarPorStatus(int idStatusEmpleado);
+
     }
 }

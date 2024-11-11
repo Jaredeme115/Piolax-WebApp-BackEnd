@@ -24,6 +24,12 @@ builder.Services.AddControllers();
 
 builder.Services.AddScoped<IEmpleadoService, EmpleadoService>();
 builder.Services.AddScoped<IEmpleadoRepository, EmpleadoRepository>();
+builder.Services.AddScoped<IAreasService, AreasService>();
+builder.Services.AddScoped<IAreasRepository, AreasRepository>();
+builder.Services.AddScoped<IRolesService, RolesService>();
+builder.Services.AddScoped<IRolesRepository, RolesRepository>();
+builder.Services.AddScoped<IStatusEmpleadoService, StatusEmpleadoService>();
+builder.Services.AddScoped<IStatusEmpleadoRepository, StatusEmpleadoRepository>();
 
 builder.Services.AddEndpointsApiExplorer();
 builder.Services.AddSwaggerGen(options =>

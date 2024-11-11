@@ -8,7 +8,11 @@ namespace Piolax_WebApp.Services
         Task<Empleado> Consultar(string numNomina);
         Task<IEnumerable<Empleado>> ConsultarTodos();
         Task<Empleado> Registro(RegistroDTO registro);
+        Task<Empleado> Modificar(string numNomina, RegistroDTO registro);
+        Task<Empleado> Eliminar(string numNomina);
         Task<bool> EmpleadoExiste(string numNomina);
+        Task<IEnumerable<Empleado>> ConsultarPorStatus(int idStatusEmpleado);
         ResultadoLogin EmpleadoExisteLogin(LoginDTO login);
+       
     }
 }
