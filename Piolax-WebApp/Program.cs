@@ -30,6 +30,7 @@ builder.Services.AddScoped<IRolesService, RolesService>();
 builder.Services.AddScoped<IRolesRepository, RolesRepository>();
 builder.Services.AddScoped<IStatusEmpleadoService, StatusEmpleadoService>();
 builder.Services.AddScoped<IStatusEmpleadoRepository, StatusEmpleadoRepository>();
+builder.Services.AddScoped<IUsuario_Area_RolRepository, Usuario_Area_RolRepository>();
 
 builder.Services.AddEndpointsApiExplorer();
 builder.Services.AddSwaggerGen(options =>

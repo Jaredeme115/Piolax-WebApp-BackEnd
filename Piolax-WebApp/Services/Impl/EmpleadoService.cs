@@ -10,9 +10,10 @@ using Microsoft.AspNetCore.Mvc;
 
 namespace Piolax_WebApp.Services.Impl
 {
-    public class EmpleadoService(IEmpleadoRepository repository) : IEmpleadoService
+    public class EmpleadoService(IEmpleadoRepository repository, IUsuario_Area_RolRepository usuario_Area_RolRepository) : IEmpleadoService
     {
         private readonly IEmpleadoRepository _repository = repository;
+        private readonly IUsuario_Area_RolRepository _usuario_Area_RolRepository = usuario_Area_RolRepository;
 
         public Task<IEnumerable<Empleado>> ConsultarTodos()
         {
@@ -37,7 +38,22 @@ namespace Piolax_WebApp.Services.Impl
                
             };
 
-            return await _repository.Agregar(empleado);
+            var empleadoRegistrado = await _repository.Agregar(empleado);
+
+            // Agregar la relación de área y rol
+            if (registro.idArea != null && registro.idRol != null)
+            {
+                var empleadoAreaRol = new usuario_area_rol
+                {
+                    idEmpleado = empleadoRegistrado.idEmpleado,
+                    idArea = registro.idArea,
+                    idRol = registro.idRol
+                };
+
+                await usuario_Area_RolRepository.AsignarEmpleadoAreaRol(empleadoAreaRol);
+            }
+
+            return empleadoRegistrado;
         }
 
         public async Task<Empleado?> Modificar(string numNomina, RegistroDTO registroDTO)

@@ -32,6 +32,14 @@ namespace Piolax_WebApp.DTOs
 
         public int idStatusEmpleado { get; set; }
 
+        //Asignación de área y rol
+
+        [Required(ErrorMessage = "El área es requerida")]
+        public int idArea { get; set; }
+
+        [Required(ErrorMessage = "El rol es requerido")]
+        public int idRol { get; set; }
+
 
 
     }
