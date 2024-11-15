@@ -9,5 +9,7 @@ namespace Piolax_WebApp.Models
 
         [Required]
         public string nombreArea { get; set; }
+
+        public ICollection<Maquinas> Maquinas { get; set; } // Lista de maquinas asociados a esta area
     }
 }

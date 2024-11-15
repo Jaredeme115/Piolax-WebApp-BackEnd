@@ -38,5 +38,8 @@ namespace Piolax_WebApp.Models
         public int idStatusEmpleado { get; set; }
         public StatusEmpleado StatusEmpleado { get; set; } // Propiedad de navegación
 
+        public ICollection<Solicitudes> Solicitudes { get; set; } // Lista de solicitudes asociados a este empleado
+
+
     }
 }

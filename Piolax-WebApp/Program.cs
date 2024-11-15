@@ -30,7 +30,16 @@ builder.Services.AddScoped<IRolesService, RolesService>();
 builder.Services.AddScoped<IRolesRepository, RolesRepository>();
 builder.Services.AddScoped<IStatusEmpleadoService, StatusEmpleadoService>();
 builder.Services.AddScoped<IStatusEmpleadoRepository, StatusEmpleadoRepository>();
+builder.Services.AddScoped<IMaquinasService, MaquinasService>();
+builder.Services.AddScoped<IMaquinasRepository, MaquinasRepository>();
+builder.Services.AddScoped<ITurnosService, TurnosService>();
+builder.Services.AddScoped<ITurnosRepository, TurnosRepository>();
+builder.Services.AddScoped<IStatusOrdenService, StatusOrdenService>();
+builder.Services.AddScoped<IStatusOrdenRepository, StatusOrdenRepository>();
+builder.Services.AddScoped<IStatusAprobacionSolicitanteService, StatusAprobacionSolicitanteService>();
+builder.Services.AddScoped<IStatusAprobacionSolicitanteRepository, StatusAprobacionSolicitanteRepository>();
 builder.Services.AddScoped<IUsuario_Area_RolRepository, Usuario_Area_RolRepository>();
+
 
 builder.Services.AddEndpointsApiExplorer();
 builder.Services.AddSwaggerGen(options =>
