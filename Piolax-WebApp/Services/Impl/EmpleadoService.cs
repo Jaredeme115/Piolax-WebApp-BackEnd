@@ -10,51 +10,37 @@ using Microsoft.AspNetCore.Mvc;
 
 namespace Piolax_WebApp.Services.Impl
 {
-    public class EmpleadoService(IEmpleadoRepository repository, IUsuario_Area_RolRepository usuario_Area_RolRepository) : IEmpleadoService
+    public class EmpleadoService(IEmpleadoRepository repository) : IEmpleadoService
     {
         private readonly IEmpleadoRepository _repository = repository;
-        private readonly IUsuario_Area_RolRepository _usuario_Area_RolRepository = usuario_Area_RolRepository;
+       
 
         public Task<IEnumerable<Empleado>> ConsultarTodos()
         {
             return _repository.ConsultarTodos();
         }
 
-        public async Task<Empleado> Registro(RegistroDTO registro)
+        public async Task<Empleado> Registro(RegistroDTO registroDTO)
         {
             using var hmac = new HMACSHA512();
             var empleado = new Empleado
             {
-                numNomina = registro.numNomina,
-                nombre = registro.nombre,
-                apellidoPaterno = registro.apellidoPaterno,
-                apellidoMaterno = registro.apellidoMaterno,
-                email = registro.email,
-                telefono = registro.telefono,
-                fechaIngreso = registro.fechaIngreso,
-                idStatusEmpleado = registro.idStatusEmpleado,
-                passwordHasH = hmac.ComputeHash(Encoding.UTF8.GetBytes(registro.password)),
-                passwordSalt = hmac.Key,
-               
+                numNomina = registroDTO.numNomina,
+                nombre = registroDTO.nombre,
+                apellidoPaterno = registroDTO.apellidoPaterno,
+                apellidoMaterno = registroDTO.apellidoMaterno,
+                telefono = registroDTO.telefono,
+                email = registroDTO.email,
+                fechaIngreso = registroDTO.fechaIngreso,
+                idStatusEmpleado = registroDTO.idStatusEmpleado,
+                passwordHasH = hmac.ComputeHash(Encoding.UTF8.GetBytes(registroDTO.password)),
+                passwordSalt = hmac.Key
             };
 
-            var empleadoRegistrado = await _repository.Agregar(empleado);
-
-            // Agregar la relación de área y rol
-            if (registro.idArea != null && registro.idRol != null)
-            {
-                var empleadoAreaRol = new usuario_area_rol
-                {
-                    idEmpleado = empleadoRegistrado.idEmpleado,
-                    idArea = registro.idArea,
-                    idRol = registro.idRol
-                };
-
-                await usuario_Area_RolRepository.AsignarEmpleadoAreaRol(empleadoAreaRol);
-            }
-
-            return empleadoRegistrado;
+            return await _repository.Agregar(empleado);
         }
+
+
 
         public async Task<Empleado?> Modificar(string numNomina, RegistroDTO registroDTO)
         {

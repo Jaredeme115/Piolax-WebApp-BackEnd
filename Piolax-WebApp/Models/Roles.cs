@@ -9,5 +9,7 @@ namespace Piolax_WebApp.Models
 
         [Required]
         public string nombreRol { get; set; }
+
+        public ICollection<EmpleadoAreaRol> EmpleadoAreaRol { get; set; } // Lista de empleadoAreaRol asociados a este rol
     }
 }

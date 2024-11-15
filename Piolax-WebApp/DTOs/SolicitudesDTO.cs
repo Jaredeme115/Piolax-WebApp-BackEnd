@@ -26,14 +26,6 @@ namespace Piolax_WebApp.DTOs
         [Required]
         public int idStatusAprobacionSolicitante { get; set; }
 
-        [Required]
-        public int idArea { get; set; }
-
-        [Required]
-        public int idRol { get; set; }
-
-
-
 
     }
 }

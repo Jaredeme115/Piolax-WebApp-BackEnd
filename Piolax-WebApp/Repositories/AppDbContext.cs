@@ -12,11 +12,12 @@ namespace Piolax_WebApp.Repositories
         public DbSet<Roles> Roles { get; set; } = default!;
         public DbSet<StatusEmpleado> StatusEmpleado { get; set; } = default!;
         public DbSet<Maquinas> Maquinas { get; set; } = default!;
-        public DbSet<usuario_area_rol> usuario_area_rol { get; set; } = default!;
         public DbSet<Turnos> Turnos { get; set; } = default!;
         public DbSet<StatusOrden> StatusOrden { get; set; } = default!;
         public DbSet<StatusAprobacionSolicitante> StatusAprobacionSolicitante { get; set; } = default!;
         public DbSet<Solicitudes> Solicitudes { get; set; } = default!;
+
+        public DbSet<EmpleadoAreaRol> EmpleadoAreaRol { get; set; } = default!;
 
         protected override void OnModelCreating(ModelBuilder modelBuilder)
         {
@@ -31,23 +32,23 @@ namespace Piolax_WebApp.Repositories
                 .WithMany(a => a.Maquinas)
                 .HasForeignKey(m => m.idArea);
 
-            modelBuilder.Entity<usuario_area_rol>()
-                .HasOne(e => e.Empleado)
-                .WithMany()
-                .HasForeignKey(e => e.idEmpleado)
-                .OnDelete(DeleteBehavior.Cascade);
+            modelBuilder.Entity<EmpleadoAreaRol>()
+            .HasKey(uar => new { uar.idEmpleado, uar.idArea, uar.idRol });
 
-            modelBuilder.Entity<usuario_area_rol>()
-                .HasOne(e => e.Area)
-                .WithMany()
-                .HasForeignKey(e => e.idArea)
-                .OnDelete(DeleteBehavior.Cascade);
+            modelBuilder.Entity<EmpleadoAreaRol>()
+                .HasOne(uar => uar.Empleado)
+                .WithMany(e => e.EmpleadoAreaRol)
+                .HasForeignKey(uar => uar.idEmpleado);
 
-            modelBuilder.Entity<usuario_area_rol>()
-                .HasOne(e => e.Rol)
-                .WithMany()
-                .HasForeignKey(e => e.idRol)
-                .OnDelete(DeleteBehavior.Cascade);
+            modelBuilder.Entity<EmpleadoAreaRol>()
+                .HasOne(uar => uar.Area)
+                .WithMany(a => a.EmpleadoAreaRol)
+                .HasForeignKey(uar => uar.idArea);
+
+            modelBuilder.Entity<EmpleadoAreaRol>()
+                .HasOne(uar => uar.Rol)
+                .WithMany(r => r.EmpleadoAreaRol)
+                .HasForeignKey(uar => uar.idRol);
 
             // Configurar relaciones de Solicitudes (opcional)
             modelBuilder.Entity<Solicitudes>()

@@ -6,10 +6,12 @@ using Piolax_WebApp.Services;
 
 namespace Piolax_WebApp.Controllers
 {
-    public class EmpleadoController(IEmpleadoService service, ITokenService token) : BaseApiController
+    public class EmpleadoController(IEmpleadoService service, ITokenService token, IEmpleadoAreaRolService empleadoAreaRolService) : BaseApiController
     {
         private readonly IEmpleadoService _service = service;
         private readonly ITokenService _tokenService = token;
+        private readonly IEmpleadoAreaRolService _empleadoAreaRolService = empleadoAreaRolService;
+
 
 
         [Authorize]
@@ -42,7 +44,16 @@ namespace Piolax_WebApp.Controllers
                 registro.idStatusEmpleado = 1;
             }
 
-            return Ok(await _service.Registro(registro));
+            // Registrar el empleado junto con área y rol
+            try
+            {
+                await _empleadoAreaRolService.RegistrarEmpleadoConAreaYRol(registro);
+                return Ok("Empleado registrado exitosamente con área y rol asignados.");
+            }
+            catch (Exception ex)
+            {
+                return BadRequest($"Error al registrar empleado: {ex.Message}");
+            }
         }
 
         [Authorize]

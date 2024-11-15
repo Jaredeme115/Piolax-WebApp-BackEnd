@@ -38,7 +38,10 @@ builder.Services.AddScoped<IStatusOrdenService, StatusOrdenService>();
 builder.Services.AddScoped<IStatusOrdenRepository, StatusOrdenRepository>();
 builder.Services.AddScoped<IStatusAprobacionSolicitanteService, StatusAprobacionSolicitanteService>();
 builder.Services.AddScoped<IStatusAprobacionSolicitanteRepository, StatusAprobacionSolicitanteRepository>();
-builder.Services.AddScoped<IUsuario_Area_RolRepository, Usuario_Area_RolRepository>();
+builder.Services.AddScoped<ISolicitudService, SolicitudService>();
+builder.Services.AddScoped<ISolicitudesRepository, SolicitudRepository>();
+builder.Services.AddScoped<IEmpleadoAreaRolService, EmpleadoAreaRolService>();
+builder.Services.AddScoped<IEmpleadoAreaRolRepository, EmpleadoAreaRolRepository>();
 
 
 builder.Services.AddEndpointsApiExplorer();

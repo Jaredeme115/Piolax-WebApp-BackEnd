@@ -20,7 +20,6 @@ namespace Piolax_WebApp.Services.Impl
 
         public async Task<Solicitudes> Registro(SolicitudesDTO solicitud)
         {
-
             var solicitudes = new Solicitudes
             {
                 descripcion = solicitud.descripcion,
@@ -30,11 +29,12 @@ namespace Piolax_WebApp.Services.Impl
                 idTurno = solicitud.idTurno,
                 idStatusOrden = solicitud.idStatusOrden,
                 idStatusAprobacionSolicitante = solicitud.idStatusAprobacionSolicitante
-
             };
 
             return await _repository.Registro(solicitudes);
         }
+
+
 
         public async Task<Solicitudes> Modificar(int idSolicitud, SolicitudesDTO solicitud)
         {
