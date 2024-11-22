@@ -42,6 +42,8 @@ builder.Services.AddScoped<ISolicitudService, SolicitudService>();
 builder.Services.AddScoped<ISolicitudesRepository, SolicitudRepository>();
 builder.Services.AddScoped<IEmpleadoAreaRolService, EmpleadoAreaRolService>();
 builder.Services.AddScoped<IEmpleadoAreaRolRepository, EmpleadoAreaRolRepository>();
+builder.Services.AddScoped<IRefreshTokenRepository, RefreshTokenRepository>();
+builder.Services.AddScoped<IRefreshTokensService, RefreshTokensService>();
 
 
 builder.Services.AddEndpointsApiExplorer();
@@ -79,7 +81,7 @@ string corsConfiguration = "_corsConfiguration";
 
 builder.Services.AddCors(options =>
     options.AddPolicy(name: corsConfiguration,
-        cors => cors.WithOrigins("https://localhost:7208")
+        cors => cors.WithOrigins("http://localhost:4200")
         .AllowAnyHeader()
         .AllowAnyMethod()
     )
@@ -100,7 +102,8 @@ builder.Services.AddAuthentication(JwtBearerDefaults.AuthenticationScheme)
                         ValidateIssuerSigningKey = true,
                         IssuerSigningKey = new SymmetricSecurityKey(Encoding.UTF8.GetBytes(tokenKey)),
                         ValidateIssuer = false,
-                        ValidateAudience = false
+                        ValidateAudience = false,
+                        ClockSkew = TimeSpan.Zero // Elimina la tolerancia de tiempo
                     };
                 });
 

@@ -3,6 +3,7 @@ using Microsoft.AspNetCore.Mvc;
 using Piolax_WebApp.DTOs;
 using Piolax_WebApp.Models;
 using Piolax_WebApp.Services;
+using Piolax_WebApp.Services.Impl;
 
 namespace Piolax_WebApp.Controllers
 {
@@ -10,55 +11,54 @@ namespace Piolax_WebApp.Controllers
     {
         private readonly ISolicitudService _service = service;
 
-        [Authorize]
-        [HttpGet("Consultar")]
-        public ActionResult<Solicitudes?> Consultar(int idSolicitud)
+       
+        [HttpPost("Registrar")]
+        public async Task<IActionResult> RegistrarSolicitud(SolicitudesDTO solicitudesDTO)
         {
-            return _service.Consultar(idSolicitud).Result;
-        }
-
-        [Authorize]
-        [HttpGet("Consultar Todos")]
-        public async Task<ActionResult<IEnumerable<Solicitudes>>> ConsultarTodos()
-        {
-            return Ok(await _service.ConsultarTodos());
-        }
-
-        [Authorize]
-        [HttpPost("Registro")]
-        public async Task<ActionResult<Solicitudes>> Registro(SolicitudesDTO solicitud)
-        {
-
-            // Asignar automáticamente los valores de idStatusOrden e idStatusAprobacionSolicitante
-            solicitud.idStatusOrden = 3;
-            solicitud.idStatusAprobacionSolicitante = 3;
-
-            return Ok(await _service.Registro(solicitud));
-        }
-
-        [Authorize]
-        [HttpPut("Modificar")]
-        public async Task<ActionResult<Solicitudes>> Modificar(int idSolicitud, SolicitudesDTO solicitud)
-        {
-            if (!await _service.SolicitudExiste(idSolicitud))
+            try
             {
-                return NotFound("La solicitud no existe");
+                var solicitudDetalle = await _service.RegistrarSolicitud(solicitudesDTO);
+                return Ok(solicitudDetalle);
+            }
+            catch (Exception ex)
+            {
+                return BadRequest($"Error al registrar la solicitud: {ex.Message}");
+            }
+        }
+
+        
+        [HttpGet("{idSolicitud}/Detalle")]
+        public async Task<IActionResult> ObtenerDetalleSolicitud(int idSolicitud)
+        {
+            var solicitudDetalle = await _service.ObtenerSolicitudConDetalles(idSolicitud);
+            if (solicitudDetalle == null)
+            {
+                return NotFound($"No se encontró la solicitud con ID: {idSolicitud}");
             }
 
-            var solicitudModificada = await _service.Modificar(idSolicitud, solicitud);
-            return Ok(solicitudModificada);
+            return Ok(solicitudDetalle);
         }
 
-        [Authorize]
-        [HttpDelete("Eliminar")]
-        public async Task<ActionResult<Solicitudes>> Eliminar(int idSolicitud)
+
+        [HttpGet("todas")]
+        public async Task<ActionResult<IEnumerable<SolicitudesDetalleDTO>>> ObtenerSolicitudes()
         {
-            if (!await _service.SolicitudExiste(idSolicitud))
+            var solicitudes = await _service.ObtenerSolicitudes();
+            var solicitudesFormateadas = solicitudes.Select(s => new
             {
-                return NotFound("La solicitud no existe");
-            }
-
-            return Ok(await _service.Eliminar(idSolicitud));
+                s.idSolicitud,
+                s.descripcion,
+                fechaSolicitud = s.fechaSolicitud.ToString("dd/MM/yyyy HH:mm:ss"), // Formatear la fecha
+                s.nombreCompletoEmpleado,
+                s.idMaquina,
+                s.idTurno,
+                s.idStatusOrden,
+                s.idStatusAprobacionSolicitante,
+                s.Areas,
+                s.Roles
+            });
+            return Ok(solicitudesFormateadas);
         }
+
     }
-}
+ }

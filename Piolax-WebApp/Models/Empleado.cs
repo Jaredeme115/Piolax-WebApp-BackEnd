@@ -42,6 +42,8 @@ namespace Piolax_WebApp.Models
 
         public ICollection<Solicitudes> Solicitudes { get; set; } // Lista de solicitudes asociados a este empleado
 
+        public ICollection<RefreshTokens> RefreshTokens { get; set; } // Lista de refreshTokens asociados a este empleado
+
 
     }
 }

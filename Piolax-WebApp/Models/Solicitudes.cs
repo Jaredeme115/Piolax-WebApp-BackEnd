@@ -34,5 +34,10 @@ namespace Piolax_WebApp.Models
         public int idStatusAprobacionSolicitante { get; set; }
         public StatusAprobacionSolicitante StatusAprobacionSolicitante { get; set; }
 
+        [Required]
+        public int idAreaSeleccionada { get; set; }
+        [Required]
+        public int idRolSeleccionado { get; set; }
+
     }
 }

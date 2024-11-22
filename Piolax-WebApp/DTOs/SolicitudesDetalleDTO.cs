@@ -1,18 +1,17 @@
-﻿using Piolax_WebApp.Models;
-using System.ComponentModel.DataAnnotations;
+﻿using System.ComponentModel.DataAnnotations;
 
 namespace Piolax_WebApp.DTOs
 {
-    public class SolicitudesDTO
+    public class SolicitudesDetalleDTO
     {
         [Required]
+        public int idSolicitud { get; set; }
+        [Required]
         public string descripcion { get; set; }
-
         [Required]
         public DateTime fechaSolicitud { get; set; }
-
         [Required]
-        public string numNomina { get; set; }
+        public string nombreCompletoEmpleado { get; set; }
 
         [Required]
         public int idMaquina { get; set; }
@@ -22,16 +21,11 @@ namespace Piolax_WebApp.DTOs
 
         [Required]
         public int idStatusOrden { get; set; }
-        
+
         [Required]
         public int idStatusAprobacionSolicitante { get; set; }
 
-        [Required]
-        public int idAreaSeleccionada { get; set; }
-
-        [Required]
-        public int idRolSeleccionado { get; set; }
-
-
+        public List<string> Areas { get; set; }
+        public List<string> Roles { get; set; }
     }
 }

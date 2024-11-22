@@ -7,46 +7,38 @@ namespace Piolax_WebApp.Repositories.Impl
     {
         private readonly AppDbContext _context = context;
 
-        public async Task<Solicitudes> Consultar(int idSolicitud)
+        public async Task<Solicitudes> RegistrarSolicitud(Solicitudes solicitudes)
         {
-            return await _context.Solicitudes.Where(p => p.idSolicitud == idSolicitud).FirstOrDefaultAsync();
-        }
-
-        public async Task<IEnumerable<Solicitudes>> ConsultarTodos()
-        {
-            var solicitudes = await _context.Solicitudes.ToListAsync();
-            return solicitudes;
-        }
-
-        public async Task<Solicitudes> Registro(Solicitudes solicitudes)
-        {
-            await _context.Solicitudes.AddAsync(solicitudes);
+            _context.Solicitudes.Add(solicitudes);
             await _context.SaveChangesAsync();
             return solicitudes;
         }
 
-        public async Task<Solicitudes> Modificar(int idSolicitud, Solicitudes solicitudes)
+        public async Task<Solicitudes> ObtenerSolicitudConDetalles(int idSolicitud)
         {
-            _context.Update(solicitudes);
-            await _context.SaveChangesAsync();
-            return solicitudes;
+            return await _context.Solicitudes
+                .Include(s => s.Empleado)
+                .ThenInclude(e => e.EmpleadoAreaRol)
+                .ThenInclude(ar => ar.Area)
+                .Include(s => s.Empleado)
+                .ThenInclude(e => e.EmpleadoAreaRol)
+                .ThenInclude(ar => ar.Rol)
+                .FirstOrDefaultAsync(s => s.idSolicitud == idSolicitud);
+               
         }
 
-        public async Task<Solicitudes> Eliminar(int idSolicitud)
+        public async Task<IEnumerable<Solicitudes>> ObtenerSolicitudes()
         {
-            var solicitud = await _context.Solicitudes.Where(p => p.idSolicitud == idSolicitud).FirstOrDefaultAsync();
-            if (solicitud != null)
-            {
-                _context.Remove(solicitud);
-                await _context.SaveChangesAsync();
-            }
-            return solicitud;
+            return await _context.Solicitudes
+                .Include(s => s.Empleado)
+                .ThenInclude(e => e.EmpleadoAreaRol)
+                .ThenInclude(ar => ar.Area)
+                .Include(s => s.Empleado)
+                .ThenInclude(e => e.EmpleadoAreaRol)
+                .ThenInclude(ar => ar.Rol)
+                .ToListAsync();
         }
 
-        public Task<bool> SolicitudExiste(int idSolicitud)
-        {
-            return _context.Solicitudes.AnyAsync(p => p.idSolicitud == idSolicitud);
-        }
 
     }
 }

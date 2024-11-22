@@ -40,7 +40,7 @@ namespace Piolax_WebApp.DTOs
         [Required(ErrorMessage = "El rol es requerido")]
         public int idRol { get; set; }
 
-
+        
 
     }
 }

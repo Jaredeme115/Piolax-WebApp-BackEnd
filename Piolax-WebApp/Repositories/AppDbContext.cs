@@ -17,6 +17,8 @@ namespace Piolax_WebApp.Repositories
         public DbSet<StatusAprobacionSolicitante> StatusAprobacionSolicitante { get; set; } = default!;
         public DbSet<Solicitudes> Solicitudes { get; set; } = default!;
 
+        public DbSet<RefreshTokens> RefreshTokens { get; set; } = default!;
+
         public DbSet<EmpleadoAreaRol> EmpleadoAreaRol { get; set; } = default!;
 
         protected override void OnModelCreating(ModelBuilder modelBuilder)
@@ -76,7 +78,15 @@ namespace Piolax_WebApp.Repositories
                 .WithMany(sas => sas.Solicitudes) // Relacion StatusAprobacionSolicitante-Solicitudes 1:N
                 .HasForeignKey(s => s.idStatusAprobacionSolicitante);
 
+            // Configurar la relación entre RefreshTokens y Empleado
+
+            modelBuilder.Entity<RefreshTokens>()
+               .HasOne(rt => rt.Empleado)
+               .WithMany(e => e.RefreshTokens)
+               .HasForeignKey(rt => rt.idEmpleado);
+
             base.OnModelCreating(modelBuilder);
+
         }
 
     }
