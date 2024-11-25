@@ -87,6 +87,8 @@ builder.Services.AddCors(options =>
     )
 );
 
+//Configuración de JWT
+
 var tokenKey = builder.Configuration["TokenKey"];
 if (string.IsNullOrEmpty(tokenKey))
 {
@@ -105,7 +107,7 @@ builder.Services.AddAuthentication(JwtBearerDefaults.AuthenticationScheme)
                         ValidateAudience = false,
                         ClockSkew = TimeSpan.Zero // Elimina la tolerancia de tiempo
                     };
-                });
+});
 
 var app = builder.Build();
 

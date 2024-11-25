@@ -6,6 +6,6 @@ namespace Piolax_WebApp.Repositories
     {
         Task<RefreshTokens> AddAsync(RefreshTokens refreshTokens);
         Task<RefreshTokens> GetByTokenAsync(string token);
-        Task RevokeAsync(string token);
+        Task<bool> RevokeAsync(string token);
     }
 }

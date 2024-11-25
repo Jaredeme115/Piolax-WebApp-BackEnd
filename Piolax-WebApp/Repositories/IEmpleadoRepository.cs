@@ -12,6 +12,7 @@ namespace Piolax_WebApp.Repositories
         Task<Empleado> Modificar(Empleado empleado);
         Task<Empleado> Eliminar(string numNomina);
         Task<IEnumerable<Empleado>> ConsultarPorStatus(int idStatusEmpleado);
+        Task<Empleado> ConsultarPorId(int idEmpleado);
 
     }
 }

@@ -118,5 +118,10 @@ namespace Piolax_WebApp.Services.Impl
             return _repository.ConsultarPorStatus(idStatusEmpleado);
         }
 
+        public async Task<Empleado?> ConsultarPorId(int idEmpleado)
+        {
+            return await _repository.ConsultarPorId(idEmpleado);
+        }
+
     }
 }

@@ -203,30 +203,28 @@ namespace Piolax_WebApp.Controllers
         [HttpPost("RefreshToken")]
         public async Task<IActionResult> RefreshToken([FromBody] RefreshTokenDTO refreshTokenDTO)
         {
+            // Verificar si el refresh token existe y no está expirado
             var refreshToken = await _refreshTokensService.GetRefreshToken(refreshTokenDTO.refreshToken);
-            if (refreshToken == null || refreshToken.expiresAt <= DateTime.UtcNow)
+            if (refreshToken == null || refreshToken.expiresAt <= DateTime.Now)
             {
                 return Unauthorized("Refresh token inválido o expirado");
             }
 
-            var principal = _tokenService.ObtenerClaimsPrincipal(refreshTokenDTO.refreshToken);
-            if (principal == null)
-            {
-                return Unauthorized("Refresh token inválido");
-            }
-
-            var numNomina = principal.FindFirstValue(JwtRegisteredClaimNames.Sub);
-            var empleado = await _service.Consultar(numNomina);
+            // Obtener al empleado asociado al refresh token
+            var empleado = await _service.ConsultarPorId(refreshToken.idEmpleado);
             if (empleado == null)
             {
                 return Unauthorized("Empleado no encontrado");
             }
 
+            // Generar un nuevo token JWT y un nuevo refresh token
             var newToken = _tokenService.CrearToken(empleado);
             var newRefreshToken = await _refreshTokensService.GenerateRefreshToken(empleado.idEmpleado);
 
+            // Marcar el refresh token anterior como revocado
             await _refreshTokensService.RevokeRefreshToken(refreshTokenDTO.refreshToken);
 
+            // Retornar el nuevo token y refresh token
             return Ok(new
             {
                 token = newToken,

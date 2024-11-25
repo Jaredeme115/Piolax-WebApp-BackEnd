@@ -55,5 +55,10 @@ namespace Piolax_WebApp.Repositories.Impl
             return await _context.Empleado.Where(p => p.idStatusEmpleado == idStatusEmpleado).ToListAsync();
         }
 
+        public async Task<Empleado> ConsultarPorId(int idEmpleado)
+        {
+            return await _context.Empleado.SingleOrDefaultAsync(e => e.idEmpleado == idEmpleado);
+        }
+
     }
 }

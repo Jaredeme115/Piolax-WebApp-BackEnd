@@ -14,7 +14,7 @@ namespace Piolax_WebApp.Services.Impl
         {
             var refreshToken = new RefreshTokens
             {
-                token = Convert.ToBase64String(RandomNumberGenerator.GetBytes(64)),
+                token = GenerateBase64UrlToken(64), // 64 bytes generan un token suficientemente seguro
                 idEmpleado = idEmpleado,
                 expiresAt = DateTime.Now.AddDays(7) // El refresh token expira en 7 días
             };
@@ -31,5 +31,15 @@ namespace Piolax_WebApp.Services.Impl
         {
             await _repository.RevokeAsync(token);
         }
+
+        private string GenerateBase64UrlToken(int byteLength)
+        {
+            var randomBytes = RandomNumberGenerator.GetBytes(byteLength);
+            return Convert.ToBase64String(randomBytes)
+                .Replace("+", "-") // Sustituye '+' por '-'
+                .Replace("/", "_") // Sustituye '/' por '_'
+                .Replace("=", ""); // Elimina '=' (relleno)
+        }
+
     }
 }

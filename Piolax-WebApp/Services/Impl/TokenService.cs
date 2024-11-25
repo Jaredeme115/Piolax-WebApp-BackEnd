@@ -47,36 +47,28 @@ namespace Piolax_WebApp.Services.Impl
             return new JwtSecurityTokenHandler().WriteToken(token);
         }
 
-        public ClaimsPrincipal ObtenerClaimsPrincipal(string token)
+        /*public ClaimsPrincipal ObtenerClaimsPrincipal(string token)
         {
             var tokenHandler = new JwtSecurityTokenHandler();
-            var validationParameters = new TokenValidationParameters
-            {
-                ValidateIssuerSigningKey = true,
-                IssuerSigningKey = _key,
-                ValidateIssuer = true,
-                ValidIssuer = _config["Jwt:Issuer"],
-                ValidateAudience = true,
-                ValidAudience = _config["Jwt:Audience"],
-                ClockSkew = TimeSpan.Zero
-            };
-
+            var key = Encoding.ASCII.GetBytes("YourSecretKeyHere"); // Tu clave secreta para firmar los tokens
             try
             {
-                var principal = tokenHandler.ValidateToken(token, validationParameters, out var validatedToken);
-                if (validatedToken is JwtSecurityToken jwtToken)
+                var principal = tokenHandler.ValidateToken(token, new TokenValidationParameters
                 {
-                    if (jwtToken.Header.Alg.Equals(SecurityAlgorithms.HmacSha256, StringComparison.InvariantCultureIgnoreCase))
-                    {
-                        return principal;
-                    }
-                }
-                return null;
+                    ValidateIssuerSigningKey = true,
+                    IssuerSigningKey = new SymmetricSecurityKey(key),
+                    ValidateIssuer = false,
+                    ValidateAudience = false,
+                    ClockSkew = TimeSpan.Zero
+                }, out SecurityToken validatedToken);
+
+                return principal;
             }
             catch
             {
-                return null;
+                return null; // Si falla la validación, retorna null
             }
-        }
+        }*/
+
     }
 }
