@@ -11,6 +11,8 @@ namespace Piolax_WebApp.Repositories
 
         Task AgregarAreaYRol(string numNomina, int idArea, int idRol);
 
+        Task EliminarAreaYRol(string numNomina, int idArea, int idRol);
+
         Task<IEnumerable<EmpleadoAreaRol>> ObtenerAreasRolesPorEmpleado(string numNomina);
     }
 }

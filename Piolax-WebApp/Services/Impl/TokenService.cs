@@ -1,5 +1,7 @@
-﻿using Microsoft.IdentityModel.Tokens;
+﻿using Microsoft.EntityFrameworkCore;
+using Microsoft.IdentityModel.Tokens;
 using Piolax_WebApp.Models;
+using Piolax_WebApp.Repositories;
 using System.IdentityModel.Tokens.Jwt;
 using System.Security.Claims;
 using System.Security.Cryptography;
@@ -12,7 +14,10 @@ namespace Piolax_WebApp.Services.Impl
         private readonly SymmetricSecurityKey _key;
         private readonly IConfiguration _config;
 
-        public TokenService(IConfiguration config)
+        //Agregago para pruebas con la politica de roles
+        private readonly AppDbContext _context;
+
+        public TokenService(IConfiguration config, AppDbContext context)
         {
             _config = config;
             var tokenKey = config["TokenKey"];
@@ -21,15 +26,28 @@ namespace Piolax_WebApp.Services.Impl
                 throw new ArgumentNullException(nameof(tokenKey), "TokenKey cannot be null or empty.");
             }
             _key = new SymmetricSecurityKey(Encoding.UTF8.GetBytes(tokenKey));
+            _context = context;
         }
 
         public string CrearToken(Empleado empleado)
         {
-            var claims = new[]
+            var claims = new List<Claim>
             {
                    new Claim(JwtRegisteredClaimNames.Sub, empleado.numNomina),
                    new Claim(JwtRegisteredClaimNames.Jti, Guid.NewGuid().ToString())
              };
+
+            // Obtener los roles del empleado desde la base de datos
+            var roles = _context.EmpleadoAreaRol
+                .Where(ear => ear.idEmpleado == empleado.idEmpleado)
+                .Select(ear => ear.Rol.nombreRol)
+                .ToList();
+
+            // Agregar roles a los claims
+            foreach (var rol in roles)
+            {
+                claims.Add(new Claim(ClaimTypes.Role, rol));
+            }
 
             var creds = new SigningCredentials(_key, SecurityAlgorithms.HmacSha256);
 
@@ -46,29 +64,6 @@ namespace Piolax_WebApp.Services.Impl
 
             return new JwtSecurityTokenHandler().WriteToken(token);
         }
-
-        /*public ClaimsPrincipal ObtenerClaimsPrincipal(string token)
-        {
-            var tokenHandler = new JwtSecurityTokenHandler();
-            var key = Encoding.ASCII.GetBytes("YourSecretKeyHere"); // Tu clave secreta para firmar los tokens
-            try
-            {
-                var principal = tokenHandler.ValidateToken(token, new TokenValidationParameters
-                {
-                    ValidateIssuerSigningKey = true,
-                    IssuerSigningKey = new SymmetricSecurityKey(key),
-                    ValidateIssuer = false,
-                    ValidateAudience = false,
-                    ClockSkew = TimeSpan.Zero
-                }, out SecurityToken validatedToken);
-
-                return principal;
-            }
-            catch
-            {
-                return null; // Si falla la validación, retorna null
-            }
-        }*/
 
     }
 }

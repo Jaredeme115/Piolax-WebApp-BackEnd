@@ -65,6 +65,31 @@ namespace Piolax_WebApp.Repositories.Impl
             }
         }
 
+        public async Task EliminarAreaYRol(string numNomina, int idArea, int idRol)
+        {
+            // Buscar el empleado por número de nómina
+            var empleado = await _context.Empleado
+                .FirstOrDefaultAsync(e => e.numNomina == numNomina);
+
+            if (empleado != null)
+            {
+                // Buscar el registro de EmpleadoAreaRol
+                var empleadoAreaRol = await _context.EmpleadoAreaRol
+                    .FirstOrDefaultAsync(ear => ear.idEmpleado == empleado.idEmpleado
+                        && ear.idArea == idArea
+                        && ear.idRol == idRol);
+
+                if (empleadoAreaRol != null)
+                {
+                    // Eliminar el registro
+                    _context.EmpleadoAreaRol.Remove(empleadoAreaRol);
+
+                    // Guardar los cambios en la base de datos
+                    await _context.SaveChangesAsync();
+                }
+            }
+        }
+
         public async Task<IEnumerable<EmpleadoAreaRol>> ObtenerAreasRolesPorEmpleado(string numNomina)
         {
             return await _context.EmpleadoAreaRol

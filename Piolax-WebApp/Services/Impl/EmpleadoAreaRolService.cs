@@ -86,5 +86,10 @@ namespace Piolax_WebApp.Services.Impl
             // Llama al repositorio para obtener las áreas y roles del empleado
             return await _repository.ObtenerAreasRolesPorEmpleado(numNomina);
         }
+
+        public async Task EliminarAreaRol(string numNomina, int idArea, int idRol)
+        {
+            await _repository.EliminarAreaYRol(numNomina, idArea, idRol);
+        }   
     }
 }

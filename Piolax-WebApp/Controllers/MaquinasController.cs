@@ -19,8 +19,8 @@ namespace Piolax_WebApp.Controllers
             return _service.Consultar(idMaquina).Result;
         }
 
-  
-        [HttpGet("Consultar Todos")]
+        [Authorize]
+        [HttpGet("ConsultarTodos")]
         public async Task<ActionResult<IEnumerable<Maquinas>>> ConsultarTodos()
         {
             return Ok(await _service.ConsultarTodos());

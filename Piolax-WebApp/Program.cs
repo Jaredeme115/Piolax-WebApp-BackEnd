@@ -9,6 +9,7 @@ using Piolax_WebApp.Repositories;
 using Piolax_WebApp.Repositories.Impl;
 using System.Collections.Specialized;
 
+
 var builder = WebApplication.CreateBuilder(args);
 
 var connectionString = builder.Configuration.GetConnectionString("MySQLContext");
@@ -103,10 +104,19 @@ builder.Services.AddAuthentication(JwtBearerDefaults.AuthenticationScheme)
                     {
                         ValidateIssuerSigningKey = true,
                         IssuerSigningKey = new SymmetricSecurityKey(Encoding.UTF8.GetBytes(tokenKey)),
-                        ValidateIssuer = false,
-                        ValidateAudience = false,
-                        ClockSkew = TimeSpan.Zero // Elimina la tolerancia de tiempo
+                        ValidateIssuer = true,
+                        ValidIssuer = builder.Configuration["Jwt:Issuer"], // Usar el Issuer configurado
+                        ValidateAudience = true,
+                        ValidAudience = builder.Configuration["Jwt:Audience"], // Usar el Audience configurado
+                        ClockSkew = TimeSpan.Zero
                     };
+});
+
+//Configuración de roles
+
+builder.Services.AddAuthorization(options =>
+{
+    options.AddPolicy("AdminOnly", policy => policy.RequireRole("Administrador"));
 });
 
 var app = builder.Build();

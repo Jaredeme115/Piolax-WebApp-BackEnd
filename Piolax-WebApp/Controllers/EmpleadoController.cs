@@ -18,21 +18,21 @@ namespace Piolax_WebApp.Controllers
 
 
 
-        [Authorize]
+        [Authorize (Policy = "AdminOnly")]
         [HttpGet("Consultar")]
         public ActionResult<Empleado?> Consultar(string numNomina)
         {
             return _service.Consultar(numNomina).Result;
         }
 
-        [Authorize]
+        [Authorize (Policy = "AdminOnly")]
         [HttpGet("ConsultarTodos")]
         public async Task<ActionResult<IEnumerable<Empleado>>> ConsultarTodos()
         {
             return Ok(await _service.ConsultarTodos());
         }
 
-
+        [Authorize(Policy = "AdminOnly")]
         [HttpGet("{numNomina}/DetalleConAreasRoles")]
         public async Task<IActionResult> ObtenerDetalleConAreasRoles(string numNomina)
         {
@@ -65,7 +65,7 @@ namespace Piolax_WebApp.Controllers
             return Ok(empleadoConAreasRolesDTO);
         }
 
-        [Authorize]
+        [Authorize(Policy = "AdminOnly")]
         [HttpPost("Registro")]
         public async Task<ActionResult<Empleado>> Registro(RegistroDTO registro)
         {
@@ -93,7 +93,7 @@ namespace Piolax_WebApp.Controllers
             }
         }
 
-        [Authorize]
+        [Authorize(Policy = "AdminOnly")]
         [HttpPost("AsignarAreaRol")]
         public async Task<ActionResult> AsignarAreaRol(string numNomina, int idArea, int idRol)
         {
@@ -115,7 +115,7 @@ namespace Piolax_WebApp.Controllers
             }
         }
 
-        [Authorize]
+        [Authorize(Policy = "AdminOnly")]
         [HttpPut("ModificarEmpleadoConAreaYRol/{numNomina}")]
         public async Task<ActionResult> ModificarEmpleadoAreaRol(string numNomina, RegistroDTO registro)
         {
@@ -137,20 +137,7 @@ namespace Piolax_WebApp.Controllers
             }
         }
 
-        /*[Authorize]
-        [HttpPut("{numNomina}")]
-        public async Task<ActionResult<Empleado>> Modificar(string numNomina, RegistroDTO registro)
-        {
-            if (!await _service.EmpleadoExiste(registro.numNomina))
-            {
-                return NotFound("El empleado no existe");
-            }
-
-            var empleadoModificado = await _service.Modificar(numNomina, registro);
-            return Ok(empleadoModificado);
-        }*/
-
-        [Authorize]
+        [Authorize(Policy = "AdminOnly")]
         [HttpDelete("{numNomina}")]
         public async Task<ActionResult<Empleado>> Eliminar(string numNomina)
         {
@@ -167,12 +154,12 @@ namespace Piolax_WebApp.Controllers
         public async Task<ActionResult<EmpleadoDTO>> Login([FromBody] LoginDTO login)
         {
             if (!await _service.EmpleadoExiste(login.numNomina))
-                return Unauthorized("El Empleado no existe");
+                return Unauthorized("El Empleado no existe" );
 
             var resultado = _service.EmpleadoExisteLogin(login);
 
             if (!resultado.esLoginExitoso)
-                return Unauthorized("Password no valido");
+                return Unauthorized("El Password es invalido" );
 
             var token = _tokenService.CrearToken(resultado.empleado);
             var refreshToken = await _refreshTokensService.GenerateRefreshToken(resultado.empleado.idEmpleado);
@@ -187,7 +174,7 @@ namespace Piolax_WebApp.Controllers
             return Ok(empleadoDTO);
         }
 
-        [Authorize]
+        [Authorize(Policy = "AdminOnly")]
         [HttpGet("ConsultarPorStatus/{idStatusEmpleado}")]
         public async Task<ActionResult<IEnumerable<Empleado>>> ConsultarPorStatus(int idStatusEmpleado)
         {
@@ -200,6 +187,15 @@ namespace Piolax_WebApp.Controllers
             return Ok(empleados);
         }
 
+        [Authorize(Policy = "AdminOnly")]
+        [HttpDelete("EliminarAreaYRolEmpleado")]
+
+        public async Task EliminarAreaYRol(string numNomina, int idArea, int idRol)
+        {
+            await _empleadoAreaRolService.EliminarAreaRol(numNomina, idArea, idRol);
+        }
+
+        [Authorize(Policy = "AdminOnly")]
         [HttpPost("RefreshToken")]
         public async Task<IActionResult> RefreshToken([FromBody] RefreshTokenDTO refreshTokenDTO)
         {
@@ -231,5 +227,6 @@ namespace Piolax_WebApp.Controllers
                 refreshToken = newRefreshToken.token
             });
         }
+
     }
 }
