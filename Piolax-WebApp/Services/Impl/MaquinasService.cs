@@ -58,5 +58,10 @@ namespace Piolax_WebApp.Services.Impl
             return await _repository.MaquinaExisteRegistro(nombreMaquina);
         }
 
+        public async Task<IEnumerable<Maquinas>> ConsultarPorArea(int idArea)
+        {
+            return await _repository.ConsultarPorArea(idArea);
+        }
+
     }
 }

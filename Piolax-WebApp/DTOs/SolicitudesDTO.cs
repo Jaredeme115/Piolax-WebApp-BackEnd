@@ -32,6 +32,10 @@ namespace Piolax_WebApp.DTOs
         [Required]
         public int idRolSeleccionado { get; set; }
 
+        
+        [Required]
+        public string paroMaquina { get; set; }
+
 
     }
 }

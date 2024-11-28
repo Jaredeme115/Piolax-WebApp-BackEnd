@@ -6,9 +6,11 @@ using Piolax_WebApp.Models;
 
 namespace Piolax_WebApp.Controllers
 {
-    public class RolesController(IRolesService service) : BaseApiController
+    public class RolesController(IRolesService service, IEmpleadoService empleadoService ,IEmpleadoAreaRolService empleadoAreaRolService) : BaseApiController
     {
         private readonly IRolesService _service = service;
+        private readonly IEmpleadoAreaRolService _empleadoAreaRolService = empleadoAreaRolService;
+        private readonly IEmpleadoService _empleadoService = empleadoService;
 
         [Authorize]
         [HttpGet("Consultar")]
@@ -60,6 +62,20 @@ namespace Piolax_WebApp.Controllers
 
             return Ok(await _service.Eliminar(idRol));
         }
+
+      
+        [HttpGet("ObtenerRolPorEmpleadoYArea")]
+        public async Task<ActionResult<string>> ObtenerRolPorEmpleadoYArea(string numNomina, int idArea)
+        {
+            var rol = await _empleadoAreaRolService.ObtenerRolPorEmpleadoYArea(numNomina, idArea);
+            if (rol == null)
+            {
+                return NotFound("No se encontró el rol para el empleado en el área especificada.");
+            }
+
+            return Ok(rol);
+        }
+
 
     }
 }

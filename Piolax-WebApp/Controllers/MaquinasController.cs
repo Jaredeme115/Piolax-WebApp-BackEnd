@@ -26,7 +26,13 @@ namespace Piolax_WebApp.Controllers
             return Ok(await _service.ConsultarTodos());
         }
 
-     
+        [HttpGet("ConsultarPorArea")]
+        public async Task<ActionResult<IEnumerable<Maquinas>>> ConsultarPorArea(int idArea)
+        {
+            return Ok(await _service.ConsultarPorArea(idArea));
+        }
+
+
         [HttpPost("Registro")]
         public async Task<ActionResult<Maquinas>> Registro(MaquinaDTO maquina)
         {

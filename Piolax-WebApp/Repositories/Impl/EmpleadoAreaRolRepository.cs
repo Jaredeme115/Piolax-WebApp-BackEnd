@@ -100,5 +100,14 @@ namespace Piolax_WebApp.Repositories.Impl
                 .ToListAsync();
         }
 
+        public async Task<string?> ObtenerRolPorEmpleadoYArea(string numNomina, int idArea)
+        {
+            var empleadoAreaRol = await _context.EmpleadoAreaRol
+                .Include(e => e.Rol)
+                .FirstOrDefaultAsync(e => e.Empleado.numNomina == numNomina && e.idArea == idArea);
+
+            return empleadoAreaRol?.Rol?.nombreRol;
+
+        }
     }
 }

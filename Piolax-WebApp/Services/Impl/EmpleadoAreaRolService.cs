@@ -90,6 +90,12 @@ namespace Piolax_WebApp.Services.Impl
         public async Task EliminarAreaRol(string numNomina, int idArea, int idRol)
         {
             await _repository.EliminarAreaYRol(numNomina, idArea, idRol);
-        }   
+        }
+
+        public async Task<string?> ObtenerRolPorEmpleadoYArea(string numNomina, int idArea)
+        {
+            return await _repository.ObtenerRolPorEmpleadoYArea(numNomina, idArea);
+        }
+
     }
 }

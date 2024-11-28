@@ -13,7 +13,7 @@ namespace Piolax_WebApp.Controllers
 
        
         [HttpPost("Registrar")]
-        public async Task<IActionResult> RegistrarSolicitud(SolicitudesDTO solicitudesDTO)
+        public async Task<IActionResult> RegistrarSolicitud([FromBody] SolicitudesDTO solicitudesDTO)
         {
             try
             {
@@ -55,7 +55,8 @@ namespace Piolax_WebApp.Controllers
                 s.idStatusOrden,
                 s.idStatusAprobacionSolicitante,
                 s.Areas,
-                s.Roles
+                s.Roles,
+                s.paroMaquina
             });
             return Ok(solicitudesFormateadas);
         }

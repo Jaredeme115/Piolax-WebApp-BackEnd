@@ -52,5 +52,10 @@ namespace Piolax_WebApp.Repositories.Impl
         {
             return _context.Maquinas.AnyAsync(p => p.nombreMaquina == nombreMaquina);
         }
+
+        public async Task<IEnumerable<Maquinas>> ConsultarPorArea(int idArea)
+        {
+            return await _context.Maquinas.Where(p => p.idArea == idArea).ToListAsync();
+        }
     }
 }

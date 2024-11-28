@@ -44,7 +44,8 @@ namespace Piolax_WebApp.Services.Impl
                 idStatusOrden = solicitudesDTO.idStatusOrden,
                 idStatusAprobacionSolicitante = solicitudesDTO.idStatusAprobacionSolicitante,
                 idAreaSeleccionada = solicitudesDTO.idAreaSeleccionada,
-                idRolSeleccionado = solicitudesDTO.idRolSeleccionado
+                idRolSeleccionado = solicitudesDTO.idRolSeleccionado,
+                paroMaquina = solicitudesDTO.paroMaquina
             };
 
             solicitud = await _repository.RegistrarSolicitud(solicitud);
@@ -60,7 +61,8 @@ namespace Piolax_WebApp.Services.Impl
                 idStatusOrden = solicitud.idStatusOrden,
                 idStatusAprobacionSolicitante = solicitud.idStatusAprobacionSolicitante,
                 Areas = new List<string> { areaSeleccionada.Area.nombreArea },
-                Roles = new List<string> { rolSeleccionado.Rol.nombreRol }
+                Roles = new List<string> { rolSeleccionado.Rol.nombreRol },
+                paroMaquina = solicitud.paroMaquina
             };
 
             return solicitudDetalleDTO;
@@ -91,7 +93,8 @@ namespace Piolax_WebApp.Services.Impl
                 idStatusOrden = solicitud.idStatusOrden,
                 idStatusAprobacionSolicitante = solicitud.idStatusAprobacionSolicitante,
                 Areas = new List<string> { areaSeleccionada.Area.nombreArea },
-                Roles = new List<string> { rolSeleccionado.Rol.nombreRol }
+                Roles = new List<string> { rolSeleccionado.Rol.nombreRol },
+                paroMaquina = solicitud.paroMaquina
             };
 
             return solicitudesDetalleDTO;
@@ -122,7 +125,8 @@ namespace Piolax_WebApp.Services.Impl
                     idStatusOrden = solicitud.idStatusOrden,
                     idStatusAprobacionSolicitante = solicitud.idStatusAprobacionSolicitante,
                     Areas = new List<string> { areaSeleccionada?.Area?.nombreArea ?? "N/A" },
-                    Roles = new List<string> { rolSeleccionado?.Rol?.nombreRol ?? "N/A" }
+                    Roles = new List<string> { rolSeleccionado?.Rol?.nombreRol ?? "N/A" },
+                    paroMaquina = solicitud.paroMaquina
                 };
 
                 solicitudesDetalleDTO.Add(solicitudDetalleDTO);

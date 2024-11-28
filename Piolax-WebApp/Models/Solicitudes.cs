@@ -39,5 +39,7 @@ namespace Piolax_WebApp.Models
         [Required]
         public int idRolSeleccionado { get; set; }
 
+        [Required]
+        public string paroMaquina { get; set; }
     }
 }
