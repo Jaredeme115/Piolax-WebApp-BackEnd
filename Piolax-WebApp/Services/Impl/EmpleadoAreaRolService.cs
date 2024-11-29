@@ -1,4 +1,5 @@
 ﻿using Microsoft.AspNetCore.Identity;
+using Microsoft.EntityFrameworkCore;
 using Piolax_WebApp.DTOs;
 using Piolax_WebApp.Models;
 using Piolax_WebApp.Repositories;
@@ -95,6 +96,11 @@ namespace Piolax_WebApp.Services.Impl
         public async Task<string?> ObtenerRolPorEmpleadoYArea(string numNomina, int idArea)
         {
             return await _repository.ObtenerRolPorEmpleadoYArea(numNomina, idArea);
+        }
+
+        public async Task<bool> ValidarRolPorEmpleadoYArea(string numNomina, int idArea)
+        {
+            return await _repository.ValidarRolPorEmpleadoYArea(numNomina, idArea);
         }
 
     }

@@ -17,5 +17,8 @@ namespace Piolax_WebApp.Repositories
 
         Task<string?> ObtenerRolPorEmpleadoYArea(string numNomina, int idArea);
 
+        //Metodo para validar que un empleado no tenga mas de un rol en un area
+        Task<bool> ValidarRolPorEmpleadoYArea(string numNomina, int idArea);
+
     }
 }

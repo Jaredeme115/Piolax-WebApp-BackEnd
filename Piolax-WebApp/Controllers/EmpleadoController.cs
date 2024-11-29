@@ -81,10 +81,18 @@ namespace Piolax_WebApp.Controllers
                 registro.idStatusEmpleado = 1;
             }
 
+            //verificar si el empleado ya tiene un rol asignado en el area
+
+            if (await _empleadoAreaRolService.ValidarRolPorEmpleadoYArea(registro.numNomina, registro.idArea))
+            {
+                return BadRequest("El empleado ya tiene un rol asignado en el área seleccionada");
+            }
+
             // Registrar el empleado junto con área y rol
             try
             {
                 await _empleadoAreaRolService.RegistrarEmpleadoConAreaYRol(registro);
+                
                 return Ok("Empleado registrado exitosamente con área y rol asignados.");
             }
             catch (Exception ex)

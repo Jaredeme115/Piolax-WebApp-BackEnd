@@ -17,5 +17,8 @@ namespace Piolax_WebApp.Services
 
         Task<string?> ObtenerRolPorEmpleadoYArea(string numNomina, int idArea);
 
+        //Metodo para validar si empleado tiene un rol en un area
+        Task<bool> ValidarRolPorEmpleadoYArea(string numNomina, int idArea);
+
     }
 }
