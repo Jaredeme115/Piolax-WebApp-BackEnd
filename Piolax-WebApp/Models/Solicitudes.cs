@@ -41,5 +41,7 @@ namespace Piolax_WebApp.Models
 
         [Required]
         public string paroMaquina { get; set; }
+
+
     }
 }

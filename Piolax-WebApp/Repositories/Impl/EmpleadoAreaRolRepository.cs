@@ -100,13 +100,12 @@ namespace Piolax_WebApp.Repositories.Impl
                 .ToListAsync();
         }
 
-        public async Task<string?> ObtenerRolPorEmpleadoYArea(string numNomina, int idArea)
+        public async Task<IEnumerable<Roles>> ObtenerRolPorEmpleadoYArea(string numNomina, int idArea)
         {
-            var empleadoAreaRol = await _context.EmpleadoAreaRol
-                .Include(e => e.Rol)
-                .FirstOrDefaultAsync(e => e.Empleado.numNomina == numNomina && e.idArea == idArea);
-
-            return empleadoAreaRol?.Rol?.nombreRol;
+            return await _context.EmpleadoAreaRol
+            .Where(e => e.Empleado.numNomina == numNomina && e.idArea == idArea)
+            .Select(e => e.Rol)
+            .ToListAsync();
 
         }
 
@@ -117,6 +116,16 @@ namespace Piolax_WebApp.Repositories.Impl
                 .FirstOrDefaultAsync(e => e.Empleado.numNomina == numNomina && e.idArea == idArea);
 
             return empleadoAreaRol != null;
+        }
+
+        //Metodo para obtener el area de un empleado
+        public async Task<IEnumerable<Areas>> ObtenerAreaPorEmpleado(string numNomina)
+        {
+            return await _context.EmpleadoAreaRol
+                .Include(e => e.Area)
+                .Where(e => e.Empleado.numNomina == numNomina)
+                .Select(e => e.Area)
+                .ToListAsync();
         }
     }
 }

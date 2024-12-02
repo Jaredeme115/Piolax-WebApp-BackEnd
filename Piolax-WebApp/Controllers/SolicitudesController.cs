@@ -40,7 +40,7 @@ namespace Piolax_WebApp.Controllers
         }
 
 
-        [HttpGet("todas")]
+        [HttpGet("ObtenerSolicitudes")]
         public async Task<ActionResult<IEnumerable<SolicitudesDetalleDTO>>> ObtenerSolicitudes()
         {
             var solicitudes = await _service.ObtenerSolicitudes();

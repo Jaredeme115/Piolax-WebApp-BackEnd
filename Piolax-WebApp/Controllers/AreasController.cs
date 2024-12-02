@@ -6,9 +6,10 @@ using Piolax_WebApp.Models;
 
 namespace Piolax_WebApp.Controllers
 {
-    public class AreasController(IAreasService service) : BaseApiController
+    public class AreasController(IAreasService service, IEmpleadoAreaRolService empleadoAreaRolService) : BaseApiController
     {
         private readonly IAreasService _service = service;
+        private readonly IEmpleadoAreaRolService _serviceEmpleadoAreaRol = empleadoAreaRolService;
 
         [Authorize]
         [HttpGet("Consultar")]
@@ -22,6 +23,12 @@ namespace Piolax_WebApp.Controllers
         public async Task<ActionResult<IEnumerable<Areas>>> ConsultarTodos()
         {
             return Ok(await _service.ConsultarTodos());
+        }
+
+        [HttpGet("ConsultarAreasEmpleado")]
+        public async Task<ActionResult<IEnumerable<Areas>>> ObtenerAreaPorEmpleado(string numNomina)
+        {
+            return Ok(await _serviceEmpleadoAreaRol.ObtenerAreaPorEmpleado(numNomina));
         }
 
         [Authorize]

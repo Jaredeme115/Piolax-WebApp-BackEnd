@@ -15,10 +15,14 @@ namespace Piolax_WebApp.Services
 
         Task<IEnumerable<EmpleadoAreaRol>> ObtenerAreasRolesPorEmpleado(string numNomina);
 
-        Task<string?> ObtenerRolPorEmpleadoYArea(string numNomina, int idArea);
+        //Metodo para obtener el rol de un empleado en un area
+        Task<IEnumerable<Roles>> ObtenerRolPorEmpleadoYArea(string numNomina, int idArea);
 
         //Metodo para validar si empleado tiene un rol en un area
         Task<bool> ValidarRolPorEmpleadoYArea(string numNomina, int idArea);
+
+        //Metodo para obtener el area de un empleado
+        Task<IEnumerable<Areas>> ObtenerAreaPorEmpleado(string numNomina);
 
     }
 }
