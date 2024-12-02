@@ -1,5 +1,6 @@
 ﻿using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
+using Microsoft.Win32;
 using Piolax_WebApp.DTOs;
 using Piolax_WebApp.Models;
 using Piolax_WebApp.Services;
@@ -111,6 +112,13 @@ namespace Piolax_WebApp.Controllers
                 if (!await _service.EmpleadoExiste(numNomina))
                 {
                     return NotFound("El empleado no existe");
+                }
+
+                //verificar si el empleado ya tiene un rol asignado en el area
+
+                if (await _empleadoAreaRolService.ValidarRolPorEmpleadoYArea(numNomina, idArea))
+                {
+                    return BadRequest("El empleado ya tiene un rol asignado en el área seleccionada");
                 }
 
                 // Asigna el área y rol al empleado
