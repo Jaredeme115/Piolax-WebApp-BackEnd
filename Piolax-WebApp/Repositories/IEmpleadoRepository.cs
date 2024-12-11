@@ -14,5 +14,10 @@ namespace Piolax_WebApp.Repositories
         Task<IEnumerable<Empleado>> ConsultarPorStatus(int idStatusEmpleado);
         Task<Empleado> ConsultarPorId(int idEmpleado);
 
+        //Carga masiva de empleados
+        Task AddRangeAsync(IEnumerable<Empleado> empleados);
+
+        
+
     }
 }

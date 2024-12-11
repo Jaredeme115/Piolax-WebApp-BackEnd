@@ -7,6 +7,7 @@ using Piolax_WebApp.Services;
 using Piolax_WebApp.Services.Impl;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.AspNetCore.Mvc;
+using IronXL;
 
 namespace Piolax_WebApp.Services.Impl
 {
@@ -123,5 +124,61 @@ namespace Piolax_WebApp.Services.Impl
             return await _repository.ConsultarPorId(idEmpleado);
         }
 
+        //Servicio para cargar empleados desde un archivo Excel
+        public async Task<string> RegistrarEmpleadosDesdeExcel(IFormFile filePath)
+        {
+            if (filePath == null || filePath.Length == 0)
+                throw new ArgumentException("El archivo es inválido.");
+
+            var errores = new List<string>(); // Para registrar errores de procesamiento
+            int empleadosCargados = 0;
+
+            try
+            {
+                var workbook = WorkBook.Load(filePath.OpenReadStream()); // Carga el archivo Excel
+                var worksheet = workbook.WorkSheets.First(); // Obtiene la primera hoja del archivo
+
+                for (int row = 2; row <= worksheet.RowCount; row++) // Itera desde la fila 2
+                {
+                    try
+                    {
+                        var registroDTO = new RegistroDTO
+                        {
+                            numNomina = worksheet[$"A{row}"].StringValue,
+                            nombre = worksheet[$"B{row}"].StringValue,
+                            apellidoPaterno = worksheet[$"C{row}"].StringValue,
+                            apellidoMaterno = worksheet[$"D{row}"].StringValue,
+                            telefono = worksheet[$"E{row}"].StringValue,
+                            email = worksheet[$"F{row}"].StringValue,
+                            fechaIngreso = DateOnly.FromDateTime(DateTime.Parse(worksheet[$"G{row}"].StringValue)),
+                            password = worksheet[$"H{row}"].StringValue, 
+                            idStatusEmpleado = int.Parse(worksheet[$"I{row}"].StringValue),
+                            idArea = int.Parse(worksheet[$"J{row}"].StringValue),
+                            idRol = int.Parse(worksheet[$"K{row}"].StringValue)
+                        };
+
+                        // Reutiliza el método Registro para insertar el empleado
+                        await Registro(registroDTO);
+                        empleadosCargados++;
+                    }
+                    catch (Exception ex)
+                    {
+                        // Agrega detalles del error para la fila actual
+                        errores.Add($"Error en fila {row}: {ex.Message}");
+                    }
+                }
+
+                var resultado = $"{empleadosCargados} empleados cargados correctamente.";
+                if (errores.Any())
+                {
+                    resultado += $" Se encontraron errores en {errores.Count} filas: {string.Join("; ", errores)}";
+                }
+                return resultado;
+            }
+            catch (Exception ex)
+            {
+                throw new ApplicationException("Error al procesar el archivo Excel.", ex);
+            }
+        }
     }
 }

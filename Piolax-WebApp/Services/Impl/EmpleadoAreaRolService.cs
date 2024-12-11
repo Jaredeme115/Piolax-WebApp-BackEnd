@@ -108,5 +108,10 @@ namespace Piolax_WebApp.Services.Impl
             return await _repository.ObtenerAreaPorEmpleado(numNomina);
         }
 
+        //Metodo para obtener la informacion detallada de todos los empleados (area y rol incluido)
+        public async Task<IEnumerable<EmpleadoAreaRol>> ConsultarTodosConDetalles()
+        {
+            return await _repository.ConsultarTodosConDetalles();
+        }
     }
 }

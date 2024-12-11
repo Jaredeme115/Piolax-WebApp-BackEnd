@@ -11,7 +11,7 @@ namespace Piolax_WebApp.Controllers
     {
         private readonly ISolicitudService _service = service;
 
-       
+
         [HttpPost("Registrar")]
         public async Task<IActionResult> RegistrarSolicitud([FromBody] SolicitudesDTO solicitudesDTO)
         {
@@ -26,7 +26,7 @@ namespace Piolax_WebApp.Controllers
             }
         }
 
-        
+
         [HttpGet("{idSolicitud}/Detalle")]
         public async Task<IActionResult> ObtenerDetalleSolicitud(int idSolicitud)
         {
@@ -50,15 +50,50 @@ namespace Piolax_WebApp.Controllers
                 s.descripcion,
                 fechaSolicitud = s.fechaSolicitud.ToString("dd/MM/yyyy HH:mm:ss"), // Formatear la fecha
                 s.nombreCompletoEmpleado,
-                s.idMaquina,
-                s.idTurno,
-                s.idStatusOrden,
-                s.idStatusAprobacionSolicitante,
-                s.Areas,
-                s.Roles,
+                s.nombreMaquina,
+                s.nombreTurno,
+                s.nombreStatusOrden,
+                s.nombreStatusAprobacionSolicitante,
+                s.area,
+                s.rol,
                 s.paroMaquina
             });
             return Ok(solicitudesFormateadas);
+        }
+
+        [HttpGet("ObtenerSolicitudesEmpleado/{numNomina}")]
+        public async Task<ActionResult<IEnumerable<SolicitudesDetalleDTO>>> ObtenerSolicitudesEmpleado(string numNomina)
+        {
+            var solicitudes = await _service.ObtenerSolicitudesEmpleado(numNomina);
+            var solicitudesFormateadas = solicitudes.Select(s => new
+            {
+                s.idSolicitud,
+                s.descripcion,
+                fechaSolicitud = s.fechaSolicitud.ToString("dd/MM/yyyy HH:mm:ss"), // Formatear la fecha
+                s.nombreCompletoEmpleado,
+                s.nombreMaquina,
+                s.nombreTurno,
+                s.nombreStatusOrden,
+                s.nombreStatusAprobacionSolicitante,
+                s.area,
+                s.rol,
+                s.paroMaquina
+            });
+            return Ok(solicitudesFormateadas);
+        }
+
+        [HttpPut("{idSolicitud}/ModificarEstatusAprobacionSolicitante/{idStatusAprobacionSolicitante}")]
+        public async Task<IActionResult> ModificarEstatusAprobacionSolicitante(int idSolicitud, int idStatusAprobacionSolicitante)
+        {
+            try
+            {
+                var solicitudDetalle = await _service.ModificarEstatusAprobacionSolicitante(idSolicitud, idStatusAprobacionSolicitante);
+                return Ok(solicitudDetalle);
+            }
+            catch (Exception ex)
+            {
+                return BadRequest($"Error al modificar el estatus de aprobación del solicitante: {ex.Message}");
+            }
         }
 
     }

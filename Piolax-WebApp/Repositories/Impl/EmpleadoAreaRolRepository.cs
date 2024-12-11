@@ -127,5 +127,15 @@ namespace Piolax_WebApp.Repositories.Impl
                 .Select(e => e.Area)
                 .ToListAsync();
         }
+
+        //Metodo para obtener la informacion detallada de todos los empleados (area y rol incluido)
+        public async Task<IEnumerable<EmpleadoAreaRol>> ConsultarTodosConDetalles()
+        {
+            return await _context.EmpleadoAreaRol
+                .Include(e => e.Empleado)
+                .Include(e => e.Area)
+                .Include(e => e.Rol)
+                .ToListAsync();
+        }
     }
 }

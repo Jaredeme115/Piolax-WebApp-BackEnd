@@ -60,5 +60,11 @@ namespace Piolax_WebApp.Repositories.Impl
             return await _context.Empleado.SingleOrDefaultAsync(e => e.idEmpleado == idEmpleado);
         }
 
+        public async Task AddRangeAsync(IEnumerable<Empleado> empleados)
+        {
+            await _context.Set<Empleado>().AddRangeAsync(empleados); // Agrega los empleados al contexto.
+            await _context.SaveChangesAsync(); // Guarda los cambios en la base de datos.
+        }
+
     }
 }
