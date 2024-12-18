@@ -9,7 +9,7 @@ namespace Piolax_WebApp.Services
 
         Task ModificarEmpleadoAreaRol(string numNomina, RegistroDTO registroDTO);
 
-        Task AsignarAreaRol(string numNomina, int idArea, int idRol);
+        Task AsignarAreaRol(string numNomina, int idArea, int idRol, bool esAreaPrincipal);
 
         Task EliminarAreaRol(string numNomina, int idArea, int idRol);
 
@@ -20,6 +20,9 @@ namespace Piolax_WebApp.Services
 
         //Metodo para validar si empleado tiene un rol en un area
         Task<bool> ValidarRolPorEmpleadoYArea(string numNomina, int idArea);
+
+        //Metodo para validar si el empleado ya tiene un area principal
+        Task<bool> TieneAreaPrincipal(string numNomina);
 
         //Metodo para obtener el area de un empleado
         Task<IEnumerable<Areas>> ObtenerAreaPorEmpleado(string numNomina);

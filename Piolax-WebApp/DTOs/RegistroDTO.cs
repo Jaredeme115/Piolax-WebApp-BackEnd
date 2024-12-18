@@ -32,7 +32,7 @@ namespace Piolax_WebApp.DTOs
 
         public int idStatusEmpleado { get; set; }
 
-        //Asignación de área y rol
+        //Asignación de área y rol (Area y rol principal)
 
         [Required(ErrorMessage = "El área es requerida")]
         public int idArea { get; set; }
@@ -40,7 +40,11 @@ namespace Piolax_WebApp.DTOs
         [Required(ErrorMessage = "El rol es requerido")]
         public int idRol { get; set; }
 
-        
+        //Propiedad que indica si el área es la principal del empleado
+
+        [Required(ErrorMessage = "El área principal es requerida")]
+        public bool esAreaPrincipal { get; set; }
+
 
     }
 }

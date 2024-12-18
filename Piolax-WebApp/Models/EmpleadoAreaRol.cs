@@ -10,5 +10,8 @@
 
         public int idRol { get; set; }
         public Roles Rol { get; set; }
+
+        // Propiedad que indica si el area es la principal del empleado 
+        public bool esAreaPrincipal { get; set; }
     }
 }

@@ -1,12 +1,13 @@
-﻿using IronXL;
-using Microsoft.AspNetCore.Authorization;
+﻿using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.Win32;
+using OfficeOpenXml;
 using Piolax_WebApp.DTOs;
 using Piolax_WebApp.Models;
 using Piolax_WebApp.Services;
 using Piolax_WebApp.Services.Impl;
 using System.IdentityModel.Tokens.Jwt;
+using System.Net.NetworkInformation;
 using System.Security.Claims;
 
 namespace Piolax_WebApp.Controllers
@@ -34,45 +35,37 @@ namespace Piolax_WebApp.Controllers
             return Ok(await _service.ConsultarTodos());
         }
 
-        //Método para obtener el detalle de un empleado con sus áreas y roles asignados
-        /*[Authorize(Policy = "AdminOnly")]
-        [HttpGet("ConsultarTodosConDetalles")]
-        public async Task<ActionResult<IEnumerable<EmpleadoAreaRol>>> ConsultarTodosConDetalles()
+        [Authorize]
+        [HttpGet("ListadoEmpleados")]
+        public async Task<ActionResult<List<EmpleadoAreaRolDTO>>> ConsultarTodosConDetalles()
         {
-           
-        }*/
+            var empleados = await _service.ConsultarTodos();
 
-        [Authorize(Policy = "AdminOnly")]
-        [HttpGet("{numNomina}/DetalleConAreasRoles")]
-        public async Task<IActionResult> ObtenerDetalleConAreasRoles(string numNomina)
-        {
-            // Obtener el empleado
-            var empleado = await _service.Consultar(numNomina);
-            if (empleado == null)
-            {
-                return NotFound($"No se encontró el empleado con número de nómina: {numNomina}");
-            }
+            var usuariosConAreasRoles = new List<EmpleadoAreaRolDTO>();
 
-            // Obtener las áreas y roles del empleado
-            var areasRoles = await _empleadoAreaRolService.ObtenerAreasRolesPorEmpleado(numNomina);
-            if (!areasRoles.Any())
+            foreach (var u in empleados)
             {
-                return NotFound($"No se encontraron áreas o roles asignados para el empleado con número de nómina: {numNomina}");
-            }
+                var areasRoles = await _empleadoAreaRolService.ObtenerAreasRolesPorEmpleado(u.numNomina);
+                var areaPrincipal = areasRoles.FirstOrDefault(ar => ar.esAreaPrincipal);
+                var areasSecundarias = areasRoles.Where(ar => !ar.esAreaPrincipal).ToList();
 
-            // Crear el DTO de respuesta
-            var empleadoConAreasRolesDTO = new EmpleadoAreaRolDTO
-            {
-                NumNomina = empleado.numNomina,
-                NombreCompleto = $"{empleado.nombre} {empleado.apellidoPaterno} {empleado.apellidoMaterno}",
-                AreasRoles = areasRoles.Select(ar => new AreaRolDTO
+                var empleadoAreaRolDTO = new EmpleadoAreaRolDTO
                 {
-                    Area = ar.Area.nombreArea,
-                    Rol = ar.Rol.nombreRol
-                }).ToList()
-            };
+                    numNomina = u.numNomina,
+                    nombre = u.nombre,
+                    apellidoPaterno = u.apellidoPaterno,
+                    apellidoMaterno = u.apellidoMaterno,
+                    telefono = u.telefono,
+                    fechaIngreso = u.fechaIngreso,
+                    email = u.email,
+                    areaPrincipal = areaPrincipal != null ? new AreaRolDTO { Area = areaPrincipal.Area.nombreArea, Rol = areaPrincipal.Rol.nombreRol } : null,
+                    areasSecundarias = areasSecundarias.Select(ar => new AreaRolDTO { Area = ar.Area.nombreArea, Rol = ar.Rol.nombreRol }).ToList()
+                };
 
-            return Ok(empleadoConAreasRolesDTO);
+                usuariosConAreasRoles.Add(empleadoAreaRolDTO);
+            }
+
+            return Ok(usuariosConAreasRoles);
         }
 
         [Authorize(Policy = "AdminOnly")]
@@ -91,15 +84,24 @@ namespace Piolax_WebApp.Controllers
                 registro.idStatusEmpleado = 1;
             }
 
-            //verificar si el empleado ya tiene un rol asignado en el area
+            // Verificar si el empleado ya tiene un rol asignado en el area
 
             if (await _empleadoAreaRolService.ValidarRolPorEmpleadoYArea(registro.numNomina, registro.idArea))
             {
                 return BadRequest("El empleado ya tiene un rol asignado en el área seleccionada");
             }
 
-            // Registrar el empleado junto con área y rol
-            try
+            if (await _empleadoAreaRolService.TieneAreaPrincipal(registro.numNomina))
+            {
+                return BadRequest("El empleado ya tiene un área principal asignada");
+            }
+            else
+            {
+                registro.esAreaPrincipal = true;
+            }
+
+                // Registrar el empleado junto con área y rol
+                try
             {
                 await _empleadoAreaRolService.RegistrarEmpleadoConAreaYRol(registro);
                 
@@ -113,7 +115,7 @@ namespace Piolax_WebApp.Controllers
 
         [Authorize(Policy = "AdminOnly")]
         [HttpPost("AsignarAreaRol")]
-        public async Task<ActionResult> AsignarAreaRol(string numNomina, int idArea, int idRol)
+        public async Task<ActionResult> AsignarAreaRol([FromBody] string numNomina, int idArea, int idRol, bool esAreaPrincipal)
         {
             try
             {
@@ -131,7 +133,7 @@ namespace Piolax_WebApp.Controllers
                 }
 
                 // Asigna el área y rol al empleado
-                await _empleadoAreaRolService.AsignarAreaRol(numNomina, idArea, idRol);
+                await _empleadoAreaRolService.AsignarAreaRol(numNomina, idArea, idRol, esAreaPrincipal);
                 return Ok("Área y rol asignados exitosamente al empleado.");
             }
             catch (Exception ex)
@@ -220,7 +222,7 @@ namespace Piolax_WebApp.Controllers
             await _empleadoAreaRolService.EliminarAreaRol(numNomina, idArea, idRol);
         }
 
-        [Authorize(Policy = "AdminOnly")]
+       
         [HttpPost("RefreshToken")]
         public async Task<IActionResult> RefreshToken([FromBody] RefreshTokenDTO refreshTokenDTO)
         {
@@ -258,6 +260,8 @@ namespace Piolax_WebApp.Controllers
         [HttpPost("RegistrarDesdeExcel")]
         public async Task<IActionResult> RegistrarDesdeExcel(IFormFile file)
         {
+            ExcelPackage.LicenseContext = LicenseContext.NonCommercial;
+
             if (file == null || file.Length == 0)
             {
                 return BadRequest("Por favor, sube un archivo Excel válido.");
@@ -269,44 +273,81 @@ namespace Piolax_WebApp.Controllers
             try
             {
                 using var stream = file.OpenReadStream();
-                var workbook = WorkBook.Load(stream); // Carga el archivo Excel
-                var worksheet = workbook.WorkSheets.First(); // Usa la primera hoja del archivo
+                using var package = new ExcelPackage(stream); // Carga el archivo Excel usando EPPlus
+                var worksheet = package.Workbook.Worksheets[0]; // Usa la primera hoja del archivo
 
-                for (int row = 2; row <= worksheet.RowCount; row++) // Empieza en la fila 2 (asumiendo encabezados en la fila 1)
+                int rowCount = worksheet.Dimension.Rows; // Obtiene el número de filas en la hoja
+                for (int row = 2; row <= rowCount; row++) // Empieza en la fila 2 (asumiendo encabezados en la fila 1)
                 {
                     try
                     {
-                        var cell = worksheet[$"A{row}"];
-                        if (cell == null || string.IsNullOrWhiteSpace(cell.StringValue))
+                        var numNomina = worksheet.Cells[row, 1]?.Text?.Trim(); // Columna A: Número de nómina
+                        if (string.IsNullOrWhiteSpace(numNomina))
                         {
                             empleadosNoRegistrados.Add($"Fila {row}: El número de nómina está vacío o no es válido.");
                             continue;
                         }
-                        var numNomina = cell.StringValue.Trim();
-                        var nombre = worksheet[$"B{row}"].StringValue.Trim();    // Columna B: Nombre
-                        var apellidoPaterno = worksheet[$"C{row}"].StringValue.Trim(); // Columna C: Apellido paterno
-                        var apellidoMaterno = worksheet[$"D{row}"].StringValue.Trim(); // Columna D: Apellido materno
-                        var telefono = worksheet[$"E{row}"].StringValue.Trim();  // Columna E: Teléfono
-                        var email = worksheet[$"F{row}"].StringValue.Trim();     // Columna F: Email
-                        var fechaIngreso = DateOnly.FromDateTime(DateTime.Parse(worksheet[$"G{row}"].StringValue.Trim())); // Columna G: Fecha de ingreso
-                        var password = worksheet[$"H{row}"].StringValue.Trim(); // Columna H: Password
-                        var idStatusEmpleado = int.Parse(worksheet[$"I{row}"].StringValue.Trim()); // Columna I: ID del status del empleado
-                        var idArea = int.Parse(worksheet[$"J{row}"].StringValue.Trim()); // Columna J: ID del area
-                        var idRol = int.Parse(worksheet[$"K{row}"].StringValue.Trim());  // Columna K: ID del rol
+                        var nombre = worksheet.Cells[row, 2]?.Text?.Trim(); // Columna B: Nombre
+                        if (string.IsNullOrWhiteSpace(nombre))
+                        {
+                            empleadosNoRegistrados.Add($"Fila {row}: El nombre está vacío o no es válido.");
+                            continue;
+                        }
+                        var apellidoPaterno = worksheet.Cells[row, 3]?.Text?.Trim(); // Columna C: Apellido paterno
+                        if (string.IsNullOrWhiteSpace(apellidoPaterno))
+                        {
+                            empleadosNoRegistrados.Add($"Fila {row}: El apellido paterno está vacío o no es válido.");
+                            continue;
+                        }
+                        var apellidoMaterno = worksheet.Cells[row, 4]?.Text?.Trim(); // Columna D: Apellido materno
+                        if (string.IsNullOrWhiteSpace(apellidoMaterno))
+                        {
+                            empleadosNoRegistrados.Add($"Fila {row}: El apellido materno está vacío o no es válido.");
+                            continue;
+                        }
+                        var telefono = worksheet.Cells[row, 5]?.Text?.Trim(); // Columna E: Teléfono
+                        if (string.IsNullOrWhiteSpace(telefono))
+                        {
+                            empleadosNoRegistrados.Add($"Fila {row}: El telefono está vacío o no es válido.");
+                            continue;
+                        }
+                        var email = worksheet.Cells[row, 6]?.Text?.Trim(); // Columna F: Email
+                        if (string.IsNullOrWhiteSpace(email))
+                        {
+                            empleadosNoRegistrados.Add($"Fila {row}: El email está vacío o no es válido.");
+                            continue;
+                        }
+                        var fechaIngreso = DateOnly.FromDateTime(DateTime.Parse(worksheet.Cells[row, 7]?.Text?.Trim())); // Columna G: Fecha de ingreso
+                        var password = worksheet.Cells[row, 8]?.Text?.Trim(); // Columna H: Password
+                        if (string.IsNullOrWhiteSpace(password))
+                        {
+                            empleadosNoRegistrados.Add($"Fila {row}: El password está vacío o no es válido.");
+                            continue;
+                        }
+                        var idStatusEmpleado = int.Parse(worksheet.Cells[row, 9]?.Text?.Trim() ?? "0"); // Columna I: ID del status
+                        var idArea = int.Parse(worksheet.Cells[row, 10]?.Text?.Trim() ?? "0"); // Columna J: ID del área
+                        var idRol = int.Parse(worksheet.Cells[row, 11]?.Text?.Trim() ?? "0"); // Columna K: ID del rol
+                        var esAreaPrincipal = true;
 
+                        // Validar si el empleado ya tiene un área principal asignada
+                        if (await _empleadoAreaRolService.TieneAreaPrincipal(numNomina))
+                        {
+                            empleadosNoRegistrados.Add($"Fila {row}: El empleado con número de nómina {numNomina} ya tiene un área principal asignada.");
+                            continue;
+                        }
 
                         //Validar si el empleado existe, seguido de validar si el empleado ya tiene un rol asignado en el area.
                         //Si existe el empleado y no tiene un rol asignado en el area, se procede a asignar el area y rol al empleado.
 
                         if (await _service.EmpleadoExiste(numNomina))
                         {
-
+                            
                             if (await _empleadoAreaRolService.ValidarRolPorEmpleadoYArea(numNomina, idArea))
                             {
                                 empleadosNoRegistrados.Add($"Fila {row}: El empleado con número de nómina {numNomina} ya existe y cuenta con un rol en el area {idArea}.");
                             } else
                             {
-                                await _empleadoAreaRolService.AsignarAreaRol(numNomina, idArea, idRol);
+                                await _empleadoAreaRolService.AsignarAreaRol(numNomina, idArea, idRol, esAreaPrincipal);
                                 empleadosRegistrados.Add($"Fila {row}: Área y rol asignados correctamente al empleado con número de nómina {numNomina}.");
                             }
 
@@ -354,3 +395,37 @@ namespace Piolax_WebApp.Controllers
 
     }
 }
+
+
+/*[Authorize(Policy = "AdminOnly")]
+[HttpGet("{numNomina}/DetalleConAreasRoles")]
+public async Task<IActionResult> ObtenerDetalleConAreasRoles(string numNomina)
+{
+    // Obtener el empleado
+    var empleado = await _service.Consultar(numNomina);
+    if (empleado == null)
+    {
+        return NotFound($"No se encontró el empleado con número de nómina: {numNomina}");
+    }
+
+    // Obtener las áreas y roles del empleado
+    var areasRoles = await _empleadoAreaRolService.ObtenerAreasRolesPorEmpleado(numNomina);
+    if (!areasRoles.Any())
+    {
+        return NotFound($"No se encontraron áreas o roles asignados para el empleado con número de nómina: {numNomina}");
+    }
+
+    // Crear el DTO de respuesta
+    var empleadoConAreasRolesDTO = new EmpleadoAreaRolDTO
+    {
+        NumNomina = empleado.numNomina,
+        NombreCompleto = $"{empleado.nombre} {empleado.apellidoPaterno} {empleado.apellidoMaterno}",
+        AreasRoles = areasRoles.Select(ar => new AreaRolDTO
+        {
+            Area = ar.Area.nombreArea,
+            Rol = ar.Rol.nombreRol
+        }).ToList()
+    };
+
+    return Ok(empleadoConAreasRolesDTO);
+}*/

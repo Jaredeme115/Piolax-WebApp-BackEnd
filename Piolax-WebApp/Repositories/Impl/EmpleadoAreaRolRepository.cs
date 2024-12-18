@@ -41,7 +41,7 @@ namespace Piolax_WebApp.Repositories.Impl
             await _context.SaveChangesAsync();
         }
 
-        public async Task AgregarAreaYRol(string numNomina, int idArea, int idRol)
+        public async Task AgregarAreaYRol(string numNomina, int idArea, int idRol, bool esAreaPrincipal)
         {
             // Buscar el empleado por número de nómina
             var empleado = await _context.Empleado
@@ -54,7 +54,8 @@ namespace Piolax_WebApp.Repositories.Impl
                 {
                     idEmpleado = empleado.idEmpleado,
                     idArea = idArea,
-                    idRol = idRol
+                    idRol = idRol,
+                    esAreaPrincipal = esAreaPrincipal
                 };
 
                 // Agregar el nuevo registro
@@ -116,6 +117,12 @@ namespace Piolax_WebApp.Repositories.Impl
                 .FirstOrDefaultAsync(e => e.Empleado.numNomina == numNomina && e.idArea == idArea);
 
             return empleadoAreaRol != null;
+        }
+
+        public async Task<bool> TieneAreaPrincipal(string numNomina)
+        {
+            return await _context.EmpleadoAreaRol
+                .AnyAsync(e => e.Empleado.numNomina == numNomina && e.esAreaPrincipal);
         }
 
         //Metodo para obtener el area de un empleado

@@ -35,7 +35,8 @@ namespace Piolax_WebApp.Services.Impl
             {
                 idEmpleado = empleado.idEmpleado,
                 idArea = registroDTO.idArea,
-                idRol = registroDTO.idRol
+                idRol = registroDTO.idRol,
+                esAreaPrincipal = registroDTO.esAreaPrincipal
             };
 
             await _repository.RegistrarEmpleadoYAsignarAreaRol(empleado, empleadoAreaRol);
@@ -65,21 +66,49 @@ namespace Piolax_WebApp.Services.Impl
                 empleadoExistente.passwordSalt = hmac.Key;
             }
 
-            // Crear el nuevo área y rol
-            var empleadoAreaRol = new EmpleadoAreaRol
-            {
-                idEmpleado = empleadoExistente.idEmpleado,
-                idArea = registroDTO.idArea,
-                idRol = registroDTO.idRol
-            };
+            // Obtener las áreas y roles actuales del empleado
+            var areasRolesActuales = await _repository.ObtenerAreasRolesPorEmpleado(numNomina);
 
-            // Actualizar en el repositorio
-            await _repository.ModificarEmpleadoAreaRol(empleadoExistente, empleadoAreaRol);
+            // Verificar si el empleado ya tiene un área principal
+            var areaPrincipalActual = areasRolesActuales.FirstOrDefault(ar => ar.esAreaPrincipal);
+
+            if (areaPrincipalActual != null)
+            {
+                // Cambiar el área principal actual a secundaria
+                areaPrincipalActual.esAreaPrincipal = false;
+                await _repository.ModificarEmpleadoAreaRol(areaPrincipalActual.Empleado, areaPrincipalActual);
+            }
+
+            // Verificar si la nueva área ya está en el listado de áreas secundarias
+            var nuevaAreaRol = areasRolesActuales.FirstOrDefault(ar => ar.idArea == registroDTO.idArea);
+
+            if (nuevaAreaRol != null)
+            {
+                // Actualizar el área secundaria a principal
+                nuevaAreaRol.esAreaPrincipal = true;
+                nuevaAreaRol.idRol = registroDTO.idRol;
+                await _repository.ModificarEmpleadoAreaRol(nuevaAreaRol.Empleado, nuevaAreaRol);
+            }
+            else
+            {
+                // Agregar la nueva área como principal
+                var nuevoEmpleadoAreaRol = new EmpleadoAreaRol
+                {
+                    idEmpleado = empleadoExistente.idEmpleado,
+                    idArea = registroDTO.idArea,
+                    idRol = registroDTO.idRol,
+                    esAreaPrincipal = true
+                };
+                await _repository.AgregarAreaYRol(numNomina, registroDTO.idArea, registroDTO.idRol, true);
+            }
+
+            // Actualizar los datos del empleado en el repositorio
+            await _empleadoRepository.Modificar(empleadoExistente);
         }
 
-        public async Task AsignarAreaRol(string numNomina, int idArea, int idRol)
+        public async Task AsignarAreaRol(string numNomina, int idArea, int idRol, bool esAreaPrincipal)
         {
-            await _repository.AgregarAreaYRol(numNomina, idArea, idRol);
+            await _repository.AgregarAreaYRol(numNomina, idArea, idRol, esAreaPrincipal);
         }
 
         public async Task<IEnumerable<EmpleadoAreaRol>> ObtenerAreasRolesPorEmpleado(string numNomina)
@@ -101,6 +130,11 @@ namespace Piolax_WebApp.Services.Impl
         public async Task<bool> ValidarRolPorEmpleadoYArea(string numNomina, int idArea)
         {
             return await _repository.ValidarRolPorEmpleadoYArea(numNomina, idArea);
+        }
+
+        public async Task<bool> TieneAreaPrincipal(string numNomina)
+        {
+            return await _repository.TieneAreaPrincipal(numNomina);
         }
 
         public async Task<IEnumerable<Areas>> ObtenerAreaPorEmpleado(string numNomina)
