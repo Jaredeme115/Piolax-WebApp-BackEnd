@@ -7,6 +7,7 @@ namespace Piolax_WebApp.Services
     {
         Task<Empleado> Consultar(string numNomina);
         Task<IEnumerable<Empleado>> ConsultarTodos();
+        Task<EmpleadoInfoDTO> ConsultarEmpleadoConDetalles(string numNomina);
         Task<Empleado> Registro(RegistroDTO registro);
         Task<Empleado> Modificar(string numNomina, RegistroDTO registro);
         Task<Empleado> Eliminar(string numNomina);
@@ -17,8 +18,6 @@ namespace Piolax_WebApp.Services
 
         //Carga masiva de empleados
         Task<string> RegistrarEmpleadosDesdeExcel(IFormFile filePath);
-
-        
 
     }
 }

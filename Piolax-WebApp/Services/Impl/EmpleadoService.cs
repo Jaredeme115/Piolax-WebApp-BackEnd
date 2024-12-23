@@ -8,13 +8,15 @@ using Piolax_WebApp.Services.Impl;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.AspNetCore.Mvc;
 using IronXL;
+using Piolax_WebApp.Repositories.Impl;
 
 namespace Piolax_WebApp.Services.Impl
 {
-    public class EmpleadoService(IEmpleadoRepository repository) : IEmpleadoService
+    public class EmpleadoService(IEmpleadoRepository repository, IEmpleadoAreaRolRepository empleadoAreaRolRepository) : IEmpleadoService
     {
         private readonly IEmpleadoRepository _repository = repository;
-       
+        private readonly IEmpleadoAreaRolRepository _empleadoAreaRolRepository = empleadoAreaRolRepository;
+
 
         public Task<IEnumerable<Empleado>> ConsultarTodos()
         {
@@ -41,6 +43,10 @@ namespace Piolax_WebApp.Services.Impl
             return await _repository.Agregar(empleado);
         }
 
+        public async Task<EmpleadoInfoDTO> ConsultarEmpleadoConDetalles(string numNomina)
+        {
+            return await _empleadoAreaRolRepository.ConsultarEmpleadoConDetalles(numNomina);
+        }
 
 
         public async Task<Empleado?> Modificar(string numNomina, RegistroDTO registroDTO)

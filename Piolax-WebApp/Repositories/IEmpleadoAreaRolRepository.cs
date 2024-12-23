@@ -30,5 +30,8 @@ namespace Piolax_WebApp.Repositories
         //Metodo para obtener la informacion detallada de todos los empleados (area y rol incluido)
         Task<IEnumerable<EmpleadoAreaRol>> ConsultarTodosConDetalles();
 
+        //Metodo para obtener la informacion detallada de un empleado (area y rol incluido)
+        Task<EmpleadoInfoDTO> ConsultarEmpleadoConDetalles(string numNomina);
+
     }
 }

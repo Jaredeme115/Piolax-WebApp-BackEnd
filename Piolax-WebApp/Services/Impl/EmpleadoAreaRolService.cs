@@ -147,5 +147,6 @@ namespace Piolax_WebApp.Services.Impl
         {
             return await _repository.ConsultarTodosConDetalles();
         }
+
     }
 }

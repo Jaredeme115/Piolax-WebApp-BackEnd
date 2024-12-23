@@ -20,12 +20,12 @@ namespace Piolax_WebApp.Models
         [Required]
         public string apellidoMaterno { get; set; }
 
-        [Required]
+        //[Required]
         public string telefono { get; set; }
 
         public string email { get; set; }
 
-        [Required]
+        //[Required]
         public DateOnly fechaIngreso { get; set; }
 
         [Required]

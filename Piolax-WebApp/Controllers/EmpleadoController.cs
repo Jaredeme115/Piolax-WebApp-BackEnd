@@ -1,4 +1,5 @@
 ﻿using Microsoft.AspNetCore.Authorization;
+using Microsoft.AspNetCore.Identity;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.Win32;
 using OfficeOpenXml;
@@ -9,6 +10,8 @@ using Piolax_WebApp.Services.Impl;
 using System.IdentityModel.Tokens.Jwt;
 using System.Net.NetworkInformation;
 using System.Security.Claims;
+using System.Security.Cryptography;
+using System.Text;
 
 namespace Piolax_WebApp.Controllers
 {
@@ -19,21 +22,6 @@ namespace Piolax_WebApp.Controllers
         private readonly IEmpleadoAreaRolService _empleadoAreaRolService = empleadoAreaRolService;
         private readonly IRefreshTokensService _refreshTokensService = refreshTokensService;
 
-
-
-        [Authorize (Policy = "AdminOnly")]
-        [HttpGet("Consultar")]
-        public ActionResult<Empleado?> Consultar(string numNomina)
-        {
-            return _service.Consultar(numNomina).Result;
-        }
-
-        [Authorize (Policy = "AdminOnly")]
-        [HttpGet("ConsultarTodos")]
-        public async Task<ActionResult<IEnumerable<Empleado>>> ConsultarTodos()
-        {
-            return Ok(await _service.ConsultarTodos());
-        }
 
         [Authorize]
         [HttpGet("ListadoEmpleados")]
@@ -67,6 +55,33 @@ namespace Piolax_WebApp.Controllers
 
             return Ok(usuariosConAreasRoles);
         }
+
+        [Authorize]
+        [HttpGet("ConsultarEmpleadoConDetalles/{numNomina}")]
+        public async Task<ActionResult<EmpleadoInfoDTO>> ConsultarEmpleadoConDetalles(string numNomina)
+        {
+            var empleadoDetalles = await _service.ConsultarEmpleadoConDetalles(numNomina);
+            if (empleadoDetalles == null)
+            {
+                return NotFound();
+            }
+            return Ok(empleadoDetalles);
+        }
+
+        [Authorize(Policy = "AdminOnly")]
+        [HttpGet("Consultar")]
+        public ActionResult<Empleado?> Consultar(string numNomina)
+        {
+            return _service.Consultar(numNomina).Result;
+        }
+
+        [Authorize(Policy = "AdminOnly")]
+        [HttpGet("ConsultarTodos")]
+        public async Task<ActionResult<IEnumerable<Empleado>>> ConsultarTodos()
+        {
+            return Ok(await _service.ConsultarTodos());
+        }
+
 
         [Authorize(Policy = "AdminOnly")]
         [HttpPost("Registro")]
@@ -144,6 +159,81 @@ namespace Piolax_WebApp.Controllers
 
         [Authorize(Policy = "AdminOnly")]
         [HttpPut("ModificarEmpleadoConAreaYRol/{numNomina}")]
+        public async Task<ActionResult> ModificarEmpleadoAreaRol(string numNomina, [FromBody] RegistroDTO registro)
+        {
+            try
+            {
+                // Verifica si el empleado existe
+                var empleadoExistente = await _service.Consultar(numNomina);
+                if (empleadoExistente == null)
+                {
+                    return NotFound("El empleado no existe");
+                }
+
+                // Obtener las áreas y roles actuales del empleado
+                var areasRoles = await _empleadoAreaRolService.ObtenerAreasRolesPorEmpleado(numNomina);
+                var areaPrincipalActual = areasRoles.FirstOrDefault(ar => ar.esAreaPrincipal);
+
+                // Asignar valores actuales si están en blanco en el RegistroDTO
+                if (string.IsNullOrEmpty(registro.idArea.ToString()) && areaPrincipalActual != null)
+                {
+                    registro.idArea = areaPrincipalActual.idArea;
+                }
+
+                if (string.IsNullOrEmpty(registro.idRol.ToString()) && areaPrincipalActual != null)
+                {
+                    registro.idRol = areaPrincipalActual.idRol;
+                }
+
+                // Verificar si la contraseña está en blanco
+                if (string.IsNullOrEmpty(registro.password))
+                {
+                    // Mantener la contraseña existente (sin cambios)
+                    registro.password = null; // No se modifica
+                }
+                else
+                {
+                    // Generar nuevo hash y salt para la contraseña
+                    using (var hmac = new System.Security.Cryptography.HMACSHA512())
+                    {
+                        empleadoExistente.passwordSalt = hmac.Key;
+                        empleadoExistente.passwordHasH = hmac.ComputeHash(System.Text.Encoding.UTF8.GetBytes(registro.password));
+                    }
+                }
+
+                // Verifica si el empleado ya tiene un área principal
+                if (areaPrincipalActual != null)
+                {
+                    // Actualiza el área principal actual a no principal si el área o rol cambian
+                    if (registro.idArea != areaPrincipalActual.idArea || registro.idRol != areaPrincipalActual.idRol)
+                    {
+                        areaPrincipalActual.esAreaPrincipal = false;
+                        await _empleadoAreaRolService.ModificarEmpleadoAreaRol(numNomina, new RegistroDTO
+                        {
+                            numNomina = numNomina,
+                            idArea = areaPrincipalActual.idArea,
+                            idRol = areaPrincipalActual.idRol,
+                            esAreaPrincipal = false
+                        });
+                    }
+                }
+
+                // Asigna la nueva área como principal
+                await _empleadoAreaRolService.AsignarAreaRol(numNomina, registro.idArea, registro.idRol, true);
+
+                // Modifica el empleado en la base de datos
+                await _service.Modificar(numNomina, registro);
+
+                return Ok("Empleado modificado exitosamente junto con su área y rol.");
+            }
+            catch (Exception ex)
+            {
+                return BadRequest($"Error al modificar el empleado: {ex.Message}");
+            }
+        }
+
+        /*[Authorize(Policy = "AdminOnly")]
+        [HttpPut("ModificarEmpleadoConAreaYRol/{numNomina}")]
         public async Task<ActionResult> ModificarEmpleadoAreaRol(string numNomina, RegistroDTO registro)
         {
             try
@@ -162,7 +252,7 @@ namespace Piolax_WebApp.Controllers
             {
                 return BadRequest($"Error al modificar el empleado: {ex.Message}");
             }
-        }
+        }*/
 
         [Authorize(Policy = "AdminOnly")]
         [HttpDelete("{numNomina}")]
@@ -397,35 +487,18 @@ namespace Piolax_WebApp.Controllers
 }
 
 
-/*[Authorize(Policy = "AdminOnly")]
-[HttpGet("{numNomina}/DetalleConAreasRoles")]
-public async Task<IActionResult> ObtenerDetalleConAreasRoles(string numNomina)
+//------------------------ Métodos A Borrar ------------------------
+
+/*[Authorize (Policy = "AdminOnly")]
+[HttpGet("Consultar")]
+public ActionResult<Empleado?> Consultar(string numNomina)
 {
-    // Obtener el empleado
-    var empleado = await _service.Consultar(numNomina);
-    if (empleado == null)
-    {
-        return NotFound($"No se encontró el empleado con número de nómina: {numNomina}");
-    }
+    return _service.Consultar(numNomina).Result;
+}*/
 
-    // Obtener las áreas y roles del empleado
-    var areasRoles = await _empleadoAreaRolService.ObtenerAreasRolesPorEmpleado(numNomina);
-    if (!areasRoles.Any())
-    {
-        return NotFound($"No se encontraron áreas o roles asignados para el empleado con número de nómina: {numNomina}");
-    }
-
-    // Crear el DTO de respuesta
-    var empleadoConAreasRolesDTO = new EmpleadoAreaRolDTO
-    {
-        NumNomina = empleado.numNomina,
-        NombreCompleto = $"{empleado.nombre} {empleado.apellidoPaterno} {empleado.apellidoMaterno}",
-        AreasRoles = areasRoles.Select(ar => new AreaRolDTO
-        {
-            Area = ar.Area.nombreArea,
-            Rol = ar.Rol.nombreRol
-        }).ToList()
-    };
-
-    return Ok(empleadoConAreasRolesDTO);
+/*[Authorize (Policy = "AdminOnly")]
+[HttpGet("ConsultarTodos")]
+public async Task<ActionResult<IEnumerable<Empleado>>> ConsultarTodos()
+{
+    return Ok(await _service.ConsultarTodos());
 }*/

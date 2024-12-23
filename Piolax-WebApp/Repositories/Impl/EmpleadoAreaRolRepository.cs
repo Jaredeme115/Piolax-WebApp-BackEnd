@@ -144,5 +144,36 @@ namespace Piolax_WebApp.Repositories.Impl
                 .Include(e => e.Rol)
                 .ToListAsync();
         }
+
+        public async Task<EmpleadoInfoDTO> ConsultarEmpleadoConDetalles(string numNomina)
+        {
+            var empleado = await _context.Empleado
+                .Include(e => e.EmpleadoAreaRol)
+                    .ThenInclude(ear => ear.Area)
+                .Include(e => e.EmpleadoAreaRol)
+                    .ThenInclude(ear => ear.Rol)
+                .Where(e => e.numNomina == numNomina)
+                .Select(e => new EmpleadoInfoDTO
+                {
+                    numNomina = e.numNomina,
+                    nombre = e.nombre,
+                    apellidoPaterno = e.apellidoPaterno,
+                    apellidoMaterno = e.apellidoMaterno,
+                    telefono = e.telefono,
+                    email = e.email,
+                    fechaIngreso = e.fechaIngreso,
+                    idStatusEmpleado = e.idStatusEmpleado,
+                    areaPrincipal = e.EmpleadoAreaRol
+                        .Where(ear => ear.esAreaPrincipal) // Filtra solo el área principal
+                        .Select(ear => new AreaRolDTO
+                        {
+                            Area = ear.Area.nombreArea,
+                            Rol = ear.Rol.nombreRol
+                        }).FirstOrDefault() // Toma el primer (y único) resultado
+                }).FirstOrDefaultAsync();
+
+            return empleado;
+        }
+
     }
 }
