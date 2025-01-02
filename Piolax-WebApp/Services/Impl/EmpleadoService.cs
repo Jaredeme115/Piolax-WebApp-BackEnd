@@ -9,6 +9,7 @@ using Microsoft.EntityFrameworkCore;
 using Microsoft.AspNetCore.Mvc;
 using IronXL;
 using Piolax_WebApp.Repositories.Impl;
+using Microsoft.Win32;
 
 namespace Piolax_WebApp.Services.Impl
 {
@@ -64,7 +65,7 @@ namespace Piolax_WebApp.Services.Impl
             empleadoExistente.telefono = registroDTO.telefono;
             empleadoExistente.email = registroDTO.email;
             empleadoExistente.fechaIngreso = registroDTO.fechaIngreso;
-            empleadoExistente.idStatusEmpleado = registroDTO.idStatusEmpleado;
+            //empleadoExistente.idStatusEmpleado = registroDTO.idStatusEmpleado;
 
 
             // Si el password ha cambiado, recalculamos el hash y el salt

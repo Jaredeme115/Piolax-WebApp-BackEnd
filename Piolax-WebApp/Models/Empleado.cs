@@ -20,12 +20,14 @@ namespace Piolax_WebApp.Models
         [Required]
         public string apellidoMaterno { get; set; }
 
-        //[Required]
+        [Required(ErrorMessage = "El telefono es requerido")]
+        [Phone(ErrorMessage = "El teléfono no es válido")]
         public string telefono { get; set; }
 
+        [EmailAddress(ErrorMessage = "El email no es válido")]
         public string email { get; set; }
 
-        //[Required]
+        [Required]
         public DateOnly fechaIngreso { get; set; }
 
         [Required]

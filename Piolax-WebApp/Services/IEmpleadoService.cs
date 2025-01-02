@@ -9,7 +9,7 @@ namespace Piolax_WebApp.Services
         Task<IEnumerable<Empleado>> ConsultarTodos();
         Task<EmpleadoInfoDTO> ConsultarEmpleadoConDetalles(string numNomina);
         Task<Empleado> Registro(RegistroDTO registro);
-        Task<Empleado> Modificar(string numNomina, RegistroDTO registro);
+        Task<Empleado?> Modificar(string numNomina, RegistroDTO registro);
         Task<Empleado> Eliminar(string numNomina);
         Task<bool> EmpleadoExiste(string numNomina);
         Task<IEnumerable<Empleado>> ConsultarPorStatus(int idStatusEmpleado);

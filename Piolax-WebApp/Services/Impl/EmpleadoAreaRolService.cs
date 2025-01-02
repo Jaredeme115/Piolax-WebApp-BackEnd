@@ -56,7 +56,7 @@ namespace Piolax_WebApp.Services.Impl
             empleadoExistente.telefono = registroDTO.telefono;
             empleadoExistente.email = registroDTO.email;
             empleadoExistente.fechaIngreso = registroDTO.fechaIngreso;
-            empleadoExistente.idStatusEmpleado = registroDTO.idStatusEmpleado;
+            //empleadoExistente.idStatusEmpleado = registroDTO.idStatusEmpleado;
 
             // Si hay un cambio de contraseña
             if (!string.IsNullOrWhiteSpace(registroDTO.password))

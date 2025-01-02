@@ -1,6 +1,7 @@
 ﻿using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.AspNetCore.Mvc;
+using Microsoft.EntityFrameworkCore;
 using Microsoft.Win32;
 using OfficeOpenXml;
 using Piolax_WebApp.DTOs;
@@ -157,7 +158,7 @@ namespace Piolax_WebApp.Controllers
             }
         }
 
-        [Authorize(Policy = "AdminOnly")]
+        //[Authorize(Policy = "AdminOnly")]
         [HttpPut("ModificarEmpleadoConAreaYRol/{numNomina}")]
         public async Task<ActionResult> ModificarEmpleadoAreaRol(string numNomina, [FromBody] RegistroDTO registro)
         {
@@ -226,9 +227,22 @@ namespace Piolax_WebApp.Controllers
 
                 return Ok("Empleado modificado exitosamente junto con su área y rol.");
             }
+            catch (DbUpdateException dbEx)
+            {
+                // Manejo específico para errores de la base de datos
+                var innerMessage = dbEx.InnerException?.Message ?? dbEx.Message;
+                return StatusCode(500, $"Error al guardar los cambios en la base de datos: {innerMessage}");
+            }
+            catch (InvalidOperationException invEx)
+            {
+                // Manejo específico para errores de operaciones inválidas
+                return BadRequest($"Operación no válida: {invEx.Message}");
+            }
             catch (Exception ex)
             {
-                return BadRequest($"Error al modificar el empleado: {ex.Message}");
+                // Manejo general para otras excepciones
+                var innerMessage = ex.InnerException?.Message ?? ex.Message;
+                return StatusCode(500, $"Error al modificar el empleado: {innerMessage}");
             }
         }
 
