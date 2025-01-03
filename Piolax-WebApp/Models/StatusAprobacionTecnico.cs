@@ -11,6 +11,6 @@ namespace Piolax_WebApp.Models
         [StringLength(30)]
         public string descripcionStatusAprobacionTecnico { get; set; }
 
-        //public ICollection<Solicitudes> Solicitudes { get; set; } // Lista de solicitudes asociados a statusOrdenAprobacionSolicitante
+        public ICollection<Asignaciones> Asignaciones { get; set; } // Lista de Asignaciones asociados a statusOrdenAprobacionTecnico
     }
 }
