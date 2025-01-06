@@ -14,10 +14,10 @@ namespace Piolax_WebApp.DTOs
         public bool qrScaneado { get; set; }
 
         [Required]
-        public DateTime horaInicio { get; set; }
+        public TimeSpan horaInicio { get; set; }
 
         [Required]
-        public DateTime horaTermino { get; set; }
+        public TimeSpan horaTermino { get; set; }
 
         [Required]
         public string solucion { get; set; }

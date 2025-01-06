@@ -46,6 +46,8 @@ namespace Piolax_WebApp.Models
 
         public ICollection<RefreshTokens> RefreshTokens { get; set; } // Lista de refreshTokens asociados a este empleado
 
+        public virtual ICollection<Asignaciones> Asignaciones { get; set; } = new List<Asignaciones>(); // Lista de Asignaciones asociados a Empleado
+
 
     }
 }

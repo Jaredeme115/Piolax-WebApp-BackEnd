@@ -7,19 +7,37 @@ namespace Piolax_WebApp.Repositories
 {
     public class AppDbContext (DbContextOptions<AppDbContext> options) : DbContext(options)
     {
+        //Empleado
         public DbSet<Empleado> Empleado { get; set; } = default!;
-        public DbSet<Areas> Areas { get; set; } = default!;
-        public DbSet<Roles> Roles { get; set; } = default!;
+        public DbSet<RefreshTokens> RefreshTokens { get; set; } = default!;
         public DbSet<StatusEmpleado> StatusEmpleado { get; set; } = default!;
+        public DbSet<EmpleadoAreaRol> EmpleadoAreaRol { get; set; } = default!;
+
+        //Areas
+        public DbSet<Areas> Areas { get; set; } = default!;
+
+        //Roles
+        public DbSet<Roles> Roles { get; set; } = default!;
+
+        //Maquinas
         public DbSet<Maquinas> Maquinas { get; set; } = default!;
+
+        //Turnos
         public DbSet<Turnos> Turnos { get; set; } = default!;
+
+        //Solicitudes
         public DbSet<StatusOrden> StatusOrden { get; set; } = default!;
         public DbSet<StatusAprobacionSolicitante> StatusAprobacionSolicitante { get; set; } = default!;
         public DbSet<Solicitudes> Solicitudes { get; set; } = default!;
 
-        public DbSet<RefreshTokens> RefreshTokens { get; set; } = default!;
+        //Inventario
+        public DbSet<Inventario> Inventario { get; set; } = default!;
 
-        public DbSet<EmpleadoAreaRol> EmpleadoAreaRol { get; set; } = default!;
+        //Asignaciones
+        public DbSet<Asignaciones> Asignaciones { get; set; } = default!;
+        public DbSet<StatusAprobacionTecnico> StatusAprobacionTecnico { get; set; } = default!;
+        public DbSet<asignacion_refacciones> asignacion_refacciones { get; set; } = default!;
+        public DbSet<CategoriaAsignacion> CategoriaAsignacion { get; set; } = default!;
 
         protected override void OnModelCreating(ModelBuilder modelBuilder)
         {
@@ -29,11 +47,19 @@ namespace Piolax_WebApp.Repositories
                 .WithMany(s => s.Empleados)
                 .HasForeignKey(e => e.idStatusEmpleado);
 
+            // Configurar la relación entre RefreshTokens y Empleado
+            modelBuilder.Entity<RefreshTokens>()
+               .HasOne(rt => rt.Empleado)
+               .WithMany(e => e.RefreshTokens)
+               .HasForeignKey(rt => rt.idEmpleado);
+
+            // Configurar la relación entre Maquinas y Areas
             modelBuilder.Entity<Maquinas>()
                 .HasOne(m => m.Area)
                 .WithMany(a => a.Maquinas)
                 .HasForeignKey(m => m.idArea);
 
+            // Configurar la relación entre EmpleadoAreaRol y Empleado, Area y Rol
             modelBuilder.Entity<EmpleadoAreaRol>()
             .HasKey(uar => new { uar.idEmpleado, uar.idArea, uar.idRol });
 
@@ -52,7 +78,7 @@ namespace Piolax_WebApp.Repositories
                 .WithMany(r => r.EmpleadoAreaRol)
                 .HasForeignKey(uar => uar.idRol);
 
-            // Configurar relaciones de Solicitudes (opcional)
+            // Configurar la relación entre Solicitudes y Empleado, Maquina, Turno, StatusOrden, StatusAprobacionSolicitante
             modelBuilder.Entity<Solicitudes>()
                 .HasOne(s => s.Empleado)
                 .WithMany(e => e.Solicitudes) // Relacion Empleado-Solicitudes 1:N
@@ -78,12 +104,55 @@ namespace Piolax_WebApp.Repositories
                 .WithMany(sas => sas.Solicitudes) // Relacion StatusAprobacionSolicitante-Solicitudes 1:N
                 .HasForeignKey(s => s.idStatusAprobacionSolicitante);
 
-            // Configurar la relación entre RefreshTokens y Empleado
 
-            modelBuilder.Entity<RefreshTokens>()
-               .HasOne(rt => rt.Empleado)
-               .WithMany(e => e.RefreshTokens)
-               .HasForeignKey(rt => rt.idEmpleado);
+            // Configurar la relación entre Asignaciones y Solicitud, Empleado, Inventario, CategoriaAsignacion, StatusAprobacionTecnico
+            modelBuilder.Entity<Asignaciones>()
+                .HasOne(a => a.Solicitud)
+                .WithMany(s => s.Asignaciones)
+                .HasForeignKey(a => a.idSolicitud);
+
+            modelBuilder.Entity<Asignaciones>()
+                .HasOne(a => a.Empleado)
+                .WithMany(e => e.Asignaciones)
+                .HasForeignKey(a => a.idEmpleado);
+
+            modelBuilder.Entity<Asignaciones>()
+                .HasOne(a => a.Inventario)
+                .WithMany(i => i.Asignaciones)
+                .HasForeignKey(a => a.idRefaccion);
+
+            modelBuilder.Entity<Asignaciones>()
+                .HasOne(a => a.CategoriaAsignacion)
+                .WithMany(ca => ca.Asignaciones)
+                .HasForeignKey(a => a.idCategoriaAsignacion);
+
+            modelBuilder.Entity<Asignaciones>()
+                .HasOne(a => a.StatusAprobacionTecnico)
+                .WithMany(sat => sat.Asignaciones)
+                .HasForeignKey(a => a.idStatusAprobacionTecnico);
+
+            // Configurar la relación entre Inventario y Areas, Maquinas
+            modelBuilder.Entity<Inventario>()
+                .HasOne(i => i.Areas)
+                .WithMany(a => a.Inventario)
+                .HasForeignKey(i => i.idArea);
+
+            modelBuilder.Entity<Inventario>()
+                .HasOne(i => i.Maquinas)
+                .WithMany(m => m.Inventario)
+                .HasForeignKey(i => i.idMaquina);
+
+            // Configurar la relación entre asignacion_refacciones y Asignaciones, Inventario
+            modelBuilder.Entity<Inventario>()
+                .HasMany(i => i.Asignaciones)
+                .WithOne(a => a.Inventario)
+                .HasForeignKey(a => a.idRefaccion);
+
+            modelBuilder.Entity<Asignaciones>()
+                .HasMany(a => a.Asignacion_Refacciones)
+                .WithOne(ar => ar.Asignaciones)
+                .HasForeignKey(ar => ar.idAsignacion);
+
 
             base.OnModelCreating(modelBuilder);
 

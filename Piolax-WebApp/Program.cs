@@ -23,28 +23,54 @@ builder.Services.AddDbContext<AppDbContext>(options =>
 
 builder.Services.AddControllers();
 
+//Empleado
 builder.Services.AddScoped<IEmpleadoService, EmpleadoService>();
 builder.Services.AddScoped<IEmpleadoRepository, EmpleadoRepository>();
+
+//Areas
 builder.Services.AddScoped<IAreasService, AreasService>();
 builder.Services.AddScoped<IAreasRepository, AreasRepository>();
+
+//Roles
 builder.Services.AddScoped<IRolesService, RolesService>();
 builder.Services.AddScoped<IRolesRepository, RolesRepository>();
+
+//StatusEmpleado
 builder.Services.AddScoped<IStatusEmpleadoService, StatusEmpleadoService>();
 builder.Services.AddScoped<IStatusEmpleadoRepository, StatusEmpleadoRepository>();
+
+//Maquinas
 builder.Services.AddScoped<IMaquinasService, MaquinasService>();
 builder.Services.AddScoped<IMaquinasRepository, MaquinasRepository>();
+
+//Turnos
 builder.Services.AddScoped<ITurnosService, TurnosService>();
 builder.Services.AddScoped<ITurnosRepository, TurnosRepository>();
+
+//StatusOrden
 builder.Services.AddScoped<IStatusOrdenService, StatusOrdenService>();
 builder.Services.AddScoped<IStatusOrdenRepository, StatusOrdenRepository>();
+
+//StatusAprobacionSolicitante
 builder.Services.AddScoped<IStatusAprobacionSolicitanteService, StatusAprobacionSolicitanteService>();
 builder.Services.AddScoped<IStatusAprobacionSolicitanteRepository, StatusAprobacionSolicitanteRepository>();
+
+//Solicitudes
 builder.Services.AddScoped<ISolicitudService, SolicitudService>();
 builder.Services.AddScoped<ISolicitudesRepository, SolicitudRepository>();
+
+//Empleado-Area-Rol
 builder.Services.AddScoped<IEmpleadoAreaRolService, EmpleadoAreaRolService>();
 builder.Services.AddScoped<IEmpleadoAreaRolRepository, EmpleadoAreaRolRepository>();
+
+//Refresh Token
 builder.Services.AddScoped<IRefreshTokenRepository, RefreshTokenRepository>();
 builder.Services.AddScoped<IRefreshTokensService, RefreshTokensService>();
+
+//Inventario
+builder.Services.AddScoped<IInventarioRepository, InventarioRepository>();
+builder.Services.AddScoped<IInventarioService, InventarioService>();
+
 
 
 builder.Services.AddEndpointsApiExplorer();

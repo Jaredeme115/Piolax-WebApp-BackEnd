@@ -22,6 +22,8 @@ namespace Piolax_WebApp.Models
 
         public ICollection<Solicitudes> Solicitudes { get; set; } // Lista de solicitudes asociados a esta maquina
 
+        public ICollection<Inventario> Inventario { get; set; } // Lista de inventario asociados a esta maquina
+
 
     }
 }

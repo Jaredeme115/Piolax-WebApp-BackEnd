@@ -36,11 +36,14 @@ namespace Piolax_WebApp.Models
 
         [Required]
         public int idAreaSeleccionada { get; set; }
+
         [Required]
         public int idRolSeleccionado { get; set; }
 
         [Required]
         public string paroMaquina { get; set; }
+
+        public virtual ICollection<Asignaciones> Asignaciones { get; set; } = new List<Asignaciones>(); // Lista de Asignaciones asociados a Solicitud
 
 
     }
