@@ -1,15 +1,16 @@
-﻿using Piolax_WebApp.Models;
+﻿using Piolax_WebApp.DTOs;
+using Piolax_WebApp.Models;
 
 namespace Piolax_WebApp.Services
 {
     public interface IInventarioService
     {
-        Task<Inventario> RegistrarInventario(Inventario inventario);
-        Task<Inventario> Modificar(int idRefaccion, Inventario inventario);
+        Task<Inventario> RegistrarInventario(InventarioDTO inventarioDTO);
+        Task<Inventario> Modificar(int idRefaccion, InventarioDTO inventarioDTO);
         Task<Inventario> Eliminar(int idRefaccion);
         Task<Inventario> ConsultarInventarioConDetalles(int idRefaccion);
         Task<IEnumerable<Inventario>> ConsultarTodoInventario();
         Task<Inventario> ConsultarInventarioPorNombre(string nombreProducto);
-        Task<Inventario> ConsultarInventarioPorCategoria(string categoria);
+        Task<Inventario> ConsultarInventarioPorCategoria(int idInventarioCategoria);
     }
 }

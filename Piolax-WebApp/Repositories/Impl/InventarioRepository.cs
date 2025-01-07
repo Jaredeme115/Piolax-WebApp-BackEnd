@@ -1,4 +1,5 @@
 ﻿using Microsoft.EntityFrameworkCore;
+using Piolax_WebApp.DTOs;
 using Piolax_WebApp.Models;
 
 namespace Piolax_WebApp.Repositories.Impl
@@ -41,7 +42,7 @@ namespace Piolax_WebApp.Repositories.Impl
             return await _context.Inventario
                 .Include(i => i.descripcion)
                 .Include(i => i.ubicacion)
-                .Include(i => i.categoria)
+                .Include(i => i.idInventarioCategoria)
                 .Include(i => i.cantidadActual)
                 .Include(i => i.cantidadMin)
                 .Include(i => i.cantidadMax)
@@ -51,7 +52,7 @@ namespace Piolax_WebApp.Repositories.Impl
                 .Include(i => i.proveedor)
                 .Include(i => i.precioUnitario)
                 .Include(i => i.precioInventarioTotal)
-                .Include(i => i.codigoBarra)
+                .Include(i => i.codigoBarras)
                 .Include(i => i.codigoQR)
                 .Include(i => i.proceso)
                 .Include(i => i.idArea)
@@ -66,9 +67,24 @@ namespace Piolax_WebApp.Repositories.Impl
             return await _context.Inventario.Where(p => p.nombreProducto == nombreProducto).FirstOrDefaultAsync();
         }
 
-        public async Task<Inventario?> ConsultarInventarioPorCategoria(string categoria)
+        public async Task<Inventario?> ConsultarInventarioPorCategoria(int idInventarioCategoria)
         {
-            return await _context.Inventario.Where(p => p.categoria == categoria).FirstOrDefaultAsync();
+            return await _context.Inventario.Where(p => p.idInventarioCategoria == idInventarioCategoria).FirstOrDefaultAsync();
+        }
+
+        public async Task<Inventario?> ConsultarInventarioPorID(int idRefaccion)
+        {
+            return await _context.Inventario.Where(p => p.idRefaccion == idRefaccion).FirstOrDefaultAsync();
+        }
+
+        public async Task<IEnumerable<Inventario>> ConsultarProductosPorCategoria(int idInventarioCategoria)
+        {
+            return await _context.Inventario.Where(p => p.idInventarioCategoria == idInventarioCategoria).ToListAsync();
+        }
+
+        public async Task<bool> ExisteProductoInventario(int idRefaccion)
+        {
+            return await _context.Inventario.AnyAsync(p => p.idRefaccion == idRefaccion);
         }
 
 

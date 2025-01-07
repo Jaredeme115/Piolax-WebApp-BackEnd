@@ -12,7 +12,7 @@ namespace Piolax_WebApp.DTOs
         public string ubicacion { get; set; }
 
         [Required]
-        public string categoria { get; set; }
+        public int idInventarioCategoria { get; set; }
 
         [Required]
         public int cantidadActual { get; set; }
@@ -42,7 +42,7 @@ namespace Piolax_WebApp.DTOs
         public float precioInventarioTotal { get; set; }
 
         [Required]
-        public string codigoBarra { get; set; }
+        public string codigoBarras { get; set; }
 
         [Required]
         public string codigoQR { get; set; }

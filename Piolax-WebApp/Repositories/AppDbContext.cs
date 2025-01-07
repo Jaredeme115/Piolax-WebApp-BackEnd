@@ -33,11 +33,16 @@ namespace Piolax_WebApp.Repositories
         //Inventario
         public DbSet<Inventario> Inventario { get; set; } = default!;
 
+        //InventarioCategorias
+        public DbSet<InventarioCategorias> InventarioCategorias { get; set; } = default!;
+
         //Asignaciones
         public DbSet<Asignaciones> Asignaciones { get; set; } = default!;
         public DbSet<StatusAprobacionTecnico> StatusAprobacionTecnico { get; set; } = default!;
         public DbSet<asignacion_refacciones> asignacion_refacciones { get; set; } = default!;
         public DbSet<CategoriaAsignacion> CategoriaAsignacion { get; set; } = default!;
+
+
 
         protected override void OnModelCreating(ModelBuilder modelBuilder)
         {
@@ -131,7 +136,7 @@ namespace Piolax_WebApp.Repositories
                 .WithMany(sat => sat.Asignaciones)
                 .HasForeignKey(a => a.idStatusAprobacionTecnico);
 
-            // Configurar la relación entre Inventario y Areas, Maquinas
+            // Configurar la relación entre Inventario y Areas, Maquinas, InventarioCategorias
             modelBuilder.Entity<Inventario>()
                 .HasOne(i => i.Areas)
                 .WithMany(a => a.Inventario)
@@ -141,6 +146,11 @@ namespace Piolax_WebApp.Repositories
                 .HasOne(i => i.Maquinas)
                 .WithMany(m => m.Inventario)
                 .HasForeignKey(i => i.idMaquina);
+
+            modelBuilder.Entity<Inventario>()
+                .HasOne(i => i.InventarioCategorias)
+                .WithMany(ic => ic.Inventario)
+                .HasForeignKey(i => i.idInventarioCategoria);
 
             // Configurar la relación entre asignacion_refacciones y Asignaciones, Inventario
             modelBuilder.Entity<Inventario>()

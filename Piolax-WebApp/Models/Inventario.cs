@@ -15,7 +15,9 @@ namespace Piolax_WebApp.Models
         public string ubicacion { get; set; }
 
         [Required]
-        public string categoria { get; set; }
+        public int idInventarioCategoria { get; set; }
+
+        public InventarioCategorias InventarioCategorias { get; set; }
 
         [Required]
         public int cantidadActual { get; set; }
@@ -45,7 +47,7 @@ namespace Piolax_WebApp.Models
         public float precioInventarioTotal { get; set; }
 
         [Required]
-        public string codigoBarra { get; set; }
+        public string codigoBarras { get; set; }
 
         [Required]
         public string codigoQR { get; set; }

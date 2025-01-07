@@ -71,6 +71,10 @@ builder.Services.AddScoped<IRefreshTokensService, RefreshTokensService>();
 builder.Services.AddScoped<IInventarioRepository, InventarioRepository>();
 builder.Services.AddScoped<IInventarioService, InventarioService>();
 
+//InventarioCategorias
+builder.Services.AddScoped<IInventarioCategoriasRepository, InventarioCategoriasRepository>();
+builder.Services.AddScoped<IInventarioCategoriasService, InventarioCategoriasService>();
+
 
 
 builder.Services.AddEndpointsApiExplorer();
