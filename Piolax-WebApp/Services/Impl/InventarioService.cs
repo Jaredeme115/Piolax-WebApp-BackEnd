@@ -8,10 +8,10 @@ namespace Piolax_WebApp.Services.Impl
     {
         private readonly IInventarioRepository _repository = repository;
 
-        public async Task<Inventario> ConsultarInventarioConDetalles(int idRefaccion)
+        /*public async Task<Inventario> ConsultarInventarioConDetalles(int idRefaccion)
         {
             return await _repository.ConsultarInventarioConDetalles(idRefaccion);
-        }
+        }*/
 
         public async Task<Inventario> ConsultarInventarioPorCategoria(int idInventarioCategoria)
         {
@@ -28,19 +28,34 @@ namespace Piolax_WebApp.Services.Impl
             return _repository.ConsultarTodoInventario();
         }
 
+        public async Task<bool> ExisteProductoInventario(int idRefaccion)
+        {
+            return await _repository.ExisteProductoInventario(idRefaccion);
+        }
+
+        public async Task<bool> ExisteNumParte(string numParte)
+        {
+            return await _repository.ExisteNumParte(numParte);
+        }
+
+        public async Task<Inventario> ConsultarInventarioPorID(int idRefaccion)
+        {
+            return await _repository.ConsultarInventarioPorID(idRefaccion);
+        }
+
+        public async Task<IEnumerable<Inventario>> ConsultarProductosPorCategoria(int idInventarioCategoria)
+        {
+            return await _repository.ConsultarProductosPorCategoria(idInventarioCategoria);
+        }
+
         public async Task<Inventario> Eliminar(int idRefaccion)
         {
-            var productoExistente = await _repository.ConsultarInventarioConDetalles(idRefaccion);
-
-            if (productoExistente == null)
-                return null; // Devuelve null si el empleado no existe
-
             return await _repository.Eliminar(idRefaccion);
         }
 
         public async Task<Inventario> Modificar(int idRefaccion, InventarioDTO inventarioDTO)
         {
-            var productoExistente = await _repository.ConsultarInventarioConDetalles(idRefaccion);
+            var productoExistente = await _repository.ConsultarInventarioPorID(idRefaccion);
 
             if (productoExistente == null)
             {
@@ -59,9 +74,6 @@ namespace Piolax_WebApp.Services.Impl
             productoExistente.numParte = inventarioDTO.numParte;
             productoExistente.proveedor = inventarioDTO.proveedor;
             productoExistente.precioUnitario = inventarioDTO.precioUnitario;
-            productoExistente.precioInventarioTotal = inventarioDTO.precioInventarioTotal;
-            productoExistente.codigoBarras = inventarioDTO.codigoBarras;
-            productoExistente.codigoQR = inventarioDTO.codigoQR;
             productoExistente.proceso = inventarioDTO.proceso;
             productoExistente.idArea = inventarioDTO.idArea;
             productoExistente.idMaquina = inventarioDTO.idMaquina;

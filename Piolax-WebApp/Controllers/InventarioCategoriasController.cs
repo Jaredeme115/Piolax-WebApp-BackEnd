@@ -10,7 +10,7 @@ namespace Piolax_WebApp.Controllers
     {
         private readonly IInventarioCategoriasService _service = service;
 
-        //[Authorize(Policy = "AdminOnly")]
+        [Authorize(Policy = "AdminOnly")]
         [HttpPost("RegistroInventarioCategoria")]
 
         public async Task<ActionResult<InventarioCategorias>> RegistrarInventarioCategoria(InventarioCategoriasDTO inventarioCategoriaDTO)
@@ -23,7 +23,7 @@ namespace Piolax_WebApp.Controllers
             return await _service.RegistrarInventarioCategoria(inventarioCategoriaDTO);
         }
 
-        //[Authorize(Policy = "AdminOnly")]
+        [Authorize(Policy = "AdminOnly")]
         [HttpPut("ModificarInventarioCategoria")]
 
         public async Task<ActionResult<InventarioCategorias>> Modificar(int idInventarioCategoria, InventarioCategoriasDTO inventarioCategoriaDTO)
@@ -35,7 +35,7 @@ namespace Piolax_WebApp.Controllers
             return await _service.Modificar(idInventarioCategoria, inventarioCategoriaDTO);
         }
 
-        //[Authorize(Policy = "AdminOnly")]
+        [Authorize(Policy = "AdminOnly")]
         [HttpDelete("EliminarInventarioCategoria")]
 
         public async Task<ActionResult<InventarioCategorias>> Eliminar(int idInventarioCategoria)
@@ -48,7 +48,7 @@ namespace Piolax_WebApp.Controllers
             return BadRequest("La categoria no existe");
         }
 
-        //[Authorize(Policy = "AdminOnly")]
+        [Authorize(Policy = "AdminOnly")]
         [HttpGet("ConsultarTodasCategorias")]
 
         public async Task<IEnumerable<InventarioCategorias>> ConsultarTodasCategorias()
@@ -56,7 +56,7 @@ namespace Piolax_WebApp.Controllers
             return await _service.ConsultarTodasCategorias();
         }
 
-        //[Authorize(Policy = "AdminOnly")]
+        [Authorize(Policy = "AdminOnly")]
         [HttpGet("ConsultarCategoriasPorID")]
 
         public async Task<InventarioCategorias> ConsultarCategoriaPorID(int idInventarioCategoria)
@@ -64,7 +64,7 @@ namespace Piolax_WebApp.Controllers
             return await _service.ConsultarCategoriaPorID(idInventarioCategoria);
         }
 
-        //[Authorize(Policy = "AdminOnly")]
+        [Authorize(Policy = "AdminOnly")]
         [HttpGet("ConsultarCategoriasPorNombre")]
 
         public async Task<InventarioCategorias> ConsultarCategoriaPorNombre(string nombreInventarioCategoria)

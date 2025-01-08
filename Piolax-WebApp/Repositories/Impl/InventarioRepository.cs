@@ -22,7 +22,7 @@ namespace Piolax_WebApp.Repositories.Impl
             return inventario;
         }
 
-        public async Task<Inventario> Eliminar(int idRefaccion)
+        public async Task<Inventario?> Eliminar(int idRefaccion)
         {
             var inventario = await _context.Inventario.Where(p => p.idRefaccion == idRefaccion).FirstOrDefaultAsync();
             _context.Remove(inventario);
@@ -36,7 +36,7 @@ namespace Piolax_WebApp.Repositories.Impl
             return inventario;
         }
 
-        public async Task<Inventario?> ConsultarInventarioConDetalles(int idRefaccion)
+        /*public async Task<Inventario?> ConsultarInventarioConDetalles(int idRefaccion)
         {
 
             return await _context.Inventario
@@ -60,7 +60,7 @@ namespace Piolax_WebApp.Repositories.Impl
                 .Include(i => i.fechaEntrega)
                 .Include(i => i.inventarioActivoObsoleto)
                 .FirstOrDefaultAsync(i => i.idRefaccion == idRefaccion);
-        }
+        }*/
 
         public async Task<Inventario?> ConsultarInventarioPorNombre(string nombreProducto)
         {
@@ -87,6 +87,9 @@ namespace Piolax_WebApp.Repositories.Impl
             return await _context.Inventario.AnyAsync(p => p.idRefaccion == idRefaccion);
         }
 
-
+        public async Task<bool> ExisteNumParte(string numParte)
+        {
+            return await _context.Inventario.AnyAsync(p => p.numParte == numParte);
+        }
     }
 }
