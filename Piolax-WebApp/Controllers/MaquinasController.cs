@@ -5,6 +5,10 @@ using Piolax_WebApp.Models;
 using Piolax_WebApp.Services;
 using System.Text;
 using System.Security.Cryptography;
+using QRCoder;
+using System.Drawing;
+using System.Drawing.Imaging;
+using System.IO;
 
 namespace Piolax_WebApp.Controllers
 {
@@ -41,12 +45,10 @@ namespace Piolax_WebApp.Controllers
                 return BadRequest("La maquina ya esta registrada");
             }
 
-            // Generar texto de QR automáticamente
-            maquina.codigoQR = GenerarCodigoQR(maquina.descripcion);
-
-            // Asignar idArea predeterminado si es necesario
-            maquina.idArea = maquina.idArea == 0 ? 2 : maquina.idArea;
-
+            // Generar el código QR
+            string qrCodeText = maquina.descripcion; // Puedes personalizar el contenido del código QR
+            string qrCodeBase64 = GenerateQRCode(qrCodeText);
+            maquina.codigoQR = qrCodeBase64;
 
             return Ok(await _service.Registro(maquina));
         }
@@ -76,18 +78,52 @@ namespace Piolax_WebApp.Controllers
             return Ok(await _service.Eliminar(idMaquina));
         }
 
-        private string GenerarCodigoQR(string descripcion)
+        //[Authorize(Policy = "AdminOnly")]
+        [HttpGet("DescargarQRCode/{idMaquina}")]
+
+        public async Task<IActionResult> DescargarQRCode(int idMaquina)
         {
-            using (var sha256 = SHA256.Create())
+            // Consultar la maquina en la base de datos
+            var maquina = await _service.Consultar(idMaquina);
+            if (maquina == null)
             {
-                var bytes = sha256.ComputeHash(Encoding.UTF8.GetBytes(descripcion + DateTime.Now.Ticks));
-                var builder = new StringBuilder();
-                foreach (var b in bytes)
+                return NotFound("La maquina no existe.");
+            }
+
+            // Obtener el código QR en formato Base64 desde la maquina
+            string codigoQRBase64 = maquina.codigoQR;
+            if (string.IsNullOrEmpty(codigoQRBase64))
+            {
+                return BadRequest("La maquina no tiene un código QR.");
+            }
+
+            // Decodificar el string Base64 a una imagen en bytes
+            byte[] qrCodeBytes = Convert.FromBase64String(codigoQRBase64);
+
+            // Devolver la imagen como archivo descargable
+            return File(qrCodeBytes, "image/png", $"QRCode_{maquina.nombreMaquina}.png");
+        }
+
+        // Funcionalidad para generar el código QR
+        private string GenerateQRCode(string text)
+        {
+            using (QRCodeGenerator qrGenerator = new QRCodeGenerator())
+            {
+                QRCodeData qrCodeData = qrGenerator.CreateQrCode(text, QRCodeGenerator.ECCLevel.Q);
+                using (QRCode qrCode = new QRCode(qrCodeData))
                 {
-                    builder.Append(b.ToString("x2"));
+                    using (Bitmap qrCodeImage = qrCode.GetGraphic(20))
+                    {
+                        using (MemoryStream ms = new MemoryStream())
+                        {
+                            qrCodeImage.Save(ms, ImageFormat.Png);
+                            byte[] byteImage = ms.ToArray();
+                            return Convert.ToBase64String(byteImage);
+                        }
+                    }
                 }
-                return builder.ToString();
             }
         }
+
     }
 }

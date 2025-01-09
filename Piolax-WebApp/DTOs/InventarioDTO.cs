@@ -62,5 +62,8 @@ namespace Piolax_WebApp.DTOs
 
         [Required]
         public bool inventarioActivoObsoleto { get; set; }
+
+        [Required]
+        public string item { get; set; }
     }
 }

@@ -15,22 +15,44 @@ namespace Piolax_WebApp.Controllers
     public class InventarioController(IInventarioService service): BaseApiController
     {
         private readonly IInventarioService _service = service;
+        private static int incrementoMetales = 1;
+        private static int incrementoInyeccion = 1;
+        private static int incrementoEnsamble = 1;
+        private static int incrementoMantenimiento = 1;
 
         //[Authorize(Policy = "AdminOnly")]
         [HttpPost("Registro")]
 
         public async Task<ActionResult<Inventario>> RegistrarInventario(InventarioDTO inventarioDTO)
         {
-            if (await _service.ExisteNumParte(inventarioDTO.numParte))
+            if (await _service.ExisteNumParte(inventarioDTO.item))
             {
-                return BadRequest("El número de parte ya existe");
+                return BadRequest("El producto dentro del inventario ya existe");
             }
 
             // Generar el código QR
             string qrCodeText = inventarioDTO.numParte; // Puedes personalizar el contenido del código QR
             string qrCodeBase64 = GenerateQRCode(qrCodeText);
             inventarioDTO.codigoQR = qrCodeBase64;
-            
+
+            //Asignar valor a la propiedad item
+
+            switch (inventarioDTO.idArea)
+            {
+                case 2:
+                    inventarioDTO.item = "Met0" + incrementoMetales++;
+                    break;
+                case 3:
+                    inventarioDTO.item = "Inyec0" + incrementoInyeccion++;
+                    break;
+                case 6:
+                    inventarioDTO.item = "Ens0" + incrementoEnsamble++;
+                    break;
+                case 7:
+                    inventarioDTO.item = "Mtto0" + incrementoMantenimiento++;
+                    break;
+            }
+
 
             // Asignar valor a la propiedad precioInventarioTotal
             inventarioDTO.precioInventarioTotal = inventarioDTO.precioUnitario * inventarioDTO.cantidadActual;
@@ -43,10 +65,20 @@ namespace Piolax_WebApp.Controllers
 
         public async Task<ActionResult<Inventario>> Modificar(int idRefaccion, InventarioDTO inventarioDTO)
         {
-            if(await _service.ExisteProductoInventario(idRefaccion))
+            if(!await _service.ExisteProductoInventario(idRefaccion))
             {
-                return BadRequest("El producto no existe");
+                return BadRequest("El producto no existe dentro del Inventario");
             }
+
+            // Generar el código QR
+            string qrCodeText = inventarioDTO.numParte; ; // Puedes personalizar el contenido del código QR
+            string qrCodeBase64 = GenerateQRCode(qrCodeText);
+            inventarioDTO.codigoQR = qrCodeBase64;
+
+
+            // Asignar valor a la propiedad precioInventarioTotal
+            inventarioDTO.precioInventarioTotal = inventarioDTO.precioUnitario * inventarioDTO.cantidadActual;
+
 
             return await _service.Modificar(idRefaccion, inventarioDTO);
         }

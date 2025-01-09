@@ -71,6 +71,9 @@ namespace Piolax_WebApp.Models
         [Required]
         public bool inventarioActivoObsoleto { get; set; }
 
+        [Required]
+        public string item { get; set; }
+
 
         public virtual ICollection<Asignaciones> Asignaciones { get; set; } = new List<Asignaciones>(); // Lista de Asignaciones asociados a Inventario
 
