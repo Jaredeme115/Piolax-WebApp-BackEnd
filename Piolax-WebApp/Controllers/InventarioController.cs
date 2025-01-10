@@ -15,17 +15,13 @@ namespace Piolax_WebApp.Controllers
     public class InventarioController(IInventarioService service): BaseApiController
     {
         private readonly IInventarioService _service = service;
-        private static int incrementoMetales = 1;
-        private static int incrementoInyeccion = 1;
-        private static int incrementoEnsamble = 1;
-        private static int incrementoMantenimiento = 1;
 
         //[Authorize(Policy = "AdminOnly")]
         [HttpPost("Registro")]
 
         public async Task<ActionResult<Inventario>> RegistrarInventario(InventarioDTO inventarioDTO)
         {
-            if (await _service.ExisteNumParte(inventarioDTO.item))
+            if (await _service.ExisteNumParte(inventarioDTO.numParte))
             {
                 return BadRequest("El producto dentro del inventario ya existe");
             }
@@ -35,29 +31,33 @@ namespace Piolax_WebApp.Controllers
             string qrCodeBase64 = GenerateQRCode(qrCodeText);
             inventarioDTO.codigoQR = qrCodeBase64;
 
-            //Asignar valor a la propiedad item
-
-            switch (inventarioDTO.idArea)
-            {
-                case 2:
-                    inventarioDTO.item = "Met0" + incrementoMetales++;
-                    break;
-                case 3:
-                    inventarioDTO.item = "Inyec0" + incrementoInyeccion++;
-                    break;
-                case 6:
-                    inventarioDTO.item = "Ens0" + incrementoEnsamble++;
-                    break;
-                case 7:
-                    inventarioDTO.item = "Mtto0" + incrementoMantenimiento++;
-                    break;
-            }
-
-
             // Asignar valor a la propiedad precioInventarioTotal
             inventarioDTO.precioInventarioTotal = inventarioDTO.precioUnitario * inventarioDTO.cantidadActual;
 
-            return await _service.RegistrarInventario(inventarioDTO);
+            // Registrar el inventario sin el valor de item
+            var inventario = await _service.RegistrarInventario(inventarioDTO);
+
+            // Asignar valor a la propiedad item basado en el idRefaccion generado
+            switch (inventarioDTO.idArea)
+            {
+                case 2:
+                    inventario.item = "Met0" + inventario.idRefaccion;
+                    break;
+                case 3:
+                    inventario.item = "Inyec0" + inventario.idRefaccion;
+                    break;
+                case 6:
+                    inventario.item = "Ens0" + inventario.idRefaccion;
+                    break;
+                case 7:
+                    inventario.item = "Mtto0" + inventario.idRefaccion;
+                    break;
+            }
+
+            // Actualizar el inventario con el valor de item
+            await _service.Modificar(inventario.idRefaccion, inventarioDTO);
+
+            return Ok(inventario);
         }
 
         //[Authorize(Policy = "AdminOnly")]

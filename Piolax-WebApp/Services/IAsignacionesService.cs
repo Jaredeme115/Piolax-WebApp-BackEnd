@@ -1,9 +1,9 @@
 ﻿using Piolax_WebApp.DTOs;
 using Piolax_WebApp.Models;
 
-namespace Piolax_WebApp.Repositories
+namespace Piolax_WebApp.Services
 {
-    public interface IAsignacionesRepository
+    public interface IAsignacionesService
     {
         Task<Asignaciones> RegistrarAsignacion(Asignaciones asignaciones);
         Task<Asignaciones> ObtenerAsignacionConDetalles(int idAsignacion);
