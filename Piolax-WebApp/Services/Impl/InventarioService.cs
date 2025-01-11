@@ -63,6 +63,7 @@ namespace Piolax_WebApp.Services.Impl
             }
 
             // Actualizar los campos del producto existente
+
             productoExistente.descripcion = inventarioDTO.descripcion;
             productoExistente.ubicacion = inventarioDTO.ubicacion;
             productoExistente.idInventarioCategoria = inventarioDTO.idInventarioCategoria;
@@ -74,11 +75,14 @@ namespace Piolax_WebApp.Services.Impl
             productoExistente.numParte = inventarioDTO.numParte;
             productoExistente.proveedor = inventarioDTO.proveedor;
             productoExistente.precioUnitario = inventarioDTO.precioUnitario;
+            productoExistente.precioInventarioTotal = inventarioDTO.precioInventarioTotal;
             productoExistente.proceso = inventarioDTO.proceso;
-            productoExistente.idArea = inventarioDTO.idArea;
             productoExistente.idMaquina = inventarioDTO.idMaquina;
             productoExistente.fechaEntrega = inventarioDTO.fechaEntrega;
             productoExistente.inventarioActivoObsoleto = inventarioDTO.inventarioActivoObsoleto;
+
+            //productoExistente.item = inventarioDTO.item;
+            //productoExistente.idArea = inventarioDTO.idArea;
 
             return await _repository.Modificar(idRefaccion, productoExistente);
 
@@ -89,6 +93,7 @@ namespace Piolax_WebApp.Services.Impl
             // Transformar el DTO a la entidad Inventario
             var inventario = new Inventario
             {
+                item = inventarioDTO.item,
                 descripcion = inventarioDTO.descripcion,
                 ubicacion = inventarioDTO.ubicacion,
                 idInventarioCategoria = inventarioDTO.idInventarioCategoria,

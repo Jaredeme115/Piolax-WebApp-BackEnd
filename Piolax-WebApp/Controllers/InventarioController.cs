@@ -23,19 +23,41 @@ namespace Piolax_WebApp.Controllers
         {
             if (await _service.ExisteNumParte(inventarioDTO.numParte))
             {
-                return BadRequest("El número de parte ya existe");
+                return BadRequest("El producto dentro del inventario ya existe");
             }
 
             // Generar el código QR
             string qrCodeText = inventarioDTO.numParte; // Puedes personalizar el contenido del código QR
             string qrCodeBase64 = GenerateQRCode(qrCodeText);
             inventarioDTO.codigoQR = qrCodeBase64;
-            
 
             // Asignar valor a la propiedad precioInventarioTotal
             inventarioDTO.precioInventarioTotal = inventarioDTO.precioUnitario * inventarioDTO.cantidadActual;
 
-            return await _service.RegistrarInventario(inventarioDTO);
+            // Registrar el inventario sin el valor de item
+            var inventario = await _service.RegistrarInventario(inventarioDTO);
+
+            // Asignar valor a la propiedad item basado en el idRefaccion generado
+            switch (inventarioDTO.idArea)
+            {
+                case 2:
+                    inventario.item = "Met0" + inventario.idRefaccion;
+                    break;
+                case 3:
+                    inventario.item = "Inyec0" + inventario.idRefaccion;
+                    break;
+                case 6:
+                    inventario.item = "Ens0" + inventario.idRefaccion;
+                    break;
+                case 7:
+                    inventario.item = "Mtto0" + inventario.idRefaccion;
+                    break;
+            }
+
+            // Actualizar el inventario con el valor de item
+            await _service.Modificar(inventario.idRefaccion, inventarioDTO);
+
+            return Ok(inventario);
         }
 
         //[Authorize(Policy = "AdminOnly")]
@@ -43,10 +65,20 @@ namespace Piolax_WebApp.Controllers
 
         public async Task<ActionResult<Inventario>> Modificar(int idRefaccion, InventarioDTO inventarioDTO)
         {
-            if(await _service.ExisteProductoInventario(idRefaccion))
+            if(!await _service.ExisteProductoInventario(idRefaccion))
             {
-                return BadRequest("El producto no existe");
+                return BadRequest("El producto no existe dentro del Inventario");
             }
+
+            // Generar el código QR
+            string qrCodeText = inventarioDTO.numParte; ; // Puedes personalizar el contenido del código QR
+            string qrCodeBase64 = GenerateQRCode(qrCodeText);
+            inventarioDTO.codigoQR = qrCodeBase64;
+
+
+            // Asignar valor a la propiedad precioInventarioTotal
+            inventarioDTO.precioInventarioTotal = inventarioDTO.precioUnitario * inventarioDTO.cantidadActual;
+
 
             return await _service.Modificar(idRefaccion, inventarioDTO);
         }
