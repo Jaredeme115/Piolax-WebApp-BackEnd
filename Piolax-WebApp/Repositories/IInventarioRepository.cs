@@ -16,6 +16,8 @@ namespace Piolax_WebApp.Repositories
         Task<IEnumerable<Inventario>> ConsultarProductosPorCategoria(int idInventarioCategoria);
         Task<bool> ExisteProductoInventario(int idRefaccion);
         Task<bool> ExisteNumParte(string numParte);
+        Task ActualizarCantidadInventario(int idRefaccion, int cantidadADescontar);
+        Task<int> ConsultarCantidadDisponible(int idRefaccion);
 
     }
 }

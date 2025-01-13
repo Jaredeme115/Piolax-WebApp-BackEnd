@@ -18,55 +18,55 @@ namespace Piolax_WebApp.Repositories.Impl
         public async Task<Asignaciones> ObtenerAsignacionConDetalles(int idAsignacion)
         {
             return await _context.Asignaciones
-                .Include(a => a.Solicitud)
+                .Include(a => a.Solicitud) // Relación con la tabla de solicitudes
+                .Include(a => a.Empleado) // Relación con el técnico asignado
+                    .ThenInclude(e => e.EmpleadoAreaRol)
+                    .ThenInclude(ar => ar.Area) // Relación con el área
                 .Include(a => a.Empleado)
-                .ThenInclude(e => e.EmpleadoAreaRol)
-                .ThenInclude(ar => ar.Area)
-                .Include(a => a.Empleado)
-                .ThenInclude(e => e.EmpleadoAreaRol)
-                .ThenInclude(ar => ar.Rol)
-                .Include(a => a.idRefaccion)
-                .Include(a => a.cantidad)
-                .Include(a => a.maquinaDetenida)
-                .Include(a => a.CategoriaAsignacion)
-                .Include(a => a.StatusAprobacionTecnico)
+                    .ThenInclude(e => e.EmpleadoAreaRol)
+                    .ThenInclude(ar => ar.Rol) // Relación con el rol
+                .Include(a => a.Inventario) // Relación con la tabla de inventario (idRefaccion)
+                .Include(a => a.CategoriaAsignacion) // Relación con la categoría de asignación
+                .Include(a => a.StatusAprobacionTecnico) // Relación con el estado de aprobación técnico
                 .FirstOrDefaultAsync(a => a.idAsignacion == idAsignacion);
         }
+
+
 
         public async Task<IEnumerable<Asignaciones>> ObtenerTodasLasAsignaciones()
         {
             return await _context.Asignaciones
-                .Include(a => a.Solicitud)
+                .Include(a => a.Solicitud) // Relación con la tabla de solicitudes
+                .Include(a => a.Empleado) // Relación con el técnico asignado
+                    .ThenInclude(e => e.EmpleadoAreaRol)
+                    .ThenInclude(ar => ar.Area) // Relación con el área
                 .Include(a => a.Empleado)
-                .ThenInclude(e => e.EmpleadoAreaRol)
-                .ThenInclude(ar => ar.Area)
-                .Include(a => a.Empleado)
-                .ThenInclude(e => e.EmpleadoAreaRol)
-                .ThenInclude(ar => ar.Rol)
-                .Include(a => a.idRefaccion)
-                .Include(a => a.CategoriaAsignacion)
-                .Include(a => a.StatusAprobacionTecnico)
-                .Include(a => a.Asignacion_Refacciones)
+                    .ThenInclude(e => e.EmpleadoAreaRol)
+                    .ThenInclude(ar => ar.Rol) // Relación con el rol
+                .Include(a => a.Inventario) // Relación con la tabla de inventario (idRefaccion)
+                .Include(a => a.CategoriaAsignacion) // Relación con la categoría de asignación
+                .Include(a => a.StatusAprobacionTecnico) // Relación con el estado de aprobación técnico
                 .ToListAsync();
         }
+
 
         public async Task<IEnumerable<Asignaciones>> ObtenerAsignacionPorTecnico(string numNomina)
         {
             return await _context.Asignaciones
-                .Include(a => a.Solicitud)
+                .Include(a => a.Solicitud) // Relación con la tabla de solicitudes
+                .Include(a => a.Empleado) // Relación con el técnico asignado
+                    .ThenInclude(e => e.EmpleadoAreaRol)
+                    .ThenInclude(ar => ar.Area) // Relación con el área
                 .Include(a => a.Empleado)
-                .ThenInclude(e => e.EmpleadoAreaRol)
-                .ThenInclude(ar => ar.Area)
-                .Include(a => a.Empleado)
-                .ThenInclude(e => e.EmpleadoAreaRol)
-                .ThenInclude(ar => ar.Rol)
-                .Include(a => a.idRefaccion)
-                .Include(a => a.CategoriaAsignacion)
-                .Include(a => a.StatusAprobacionTecnico)
-                .Include(a => a.Asignacion_Refacciones)
+                    .ThenInclude(e => e.EmpleadoAreaRol)
+                    .ThenInclude(ar => ar.Rol) // Relación con el rol
+                .Include(a => a.Inventario) // Relación con la tabla de inventario (idRefaccion)
+                .Include(a => a.CategoriaAsignacion) // Relación con la categoría de asignación
+                .Include(a => a.StatusAprobacionTecnico) // Relación con el estado de aprobación técnico
                 .Where(a => a.Empleado.numNomina == numNomina)
                 .ToListAsync();
         }
+
 
         public async Task<AsignacionesDetalleDTO> ModificarEstatusAprobacionTecnico(int idAsignacion, int idStatusAprobacionTecnico)
         {

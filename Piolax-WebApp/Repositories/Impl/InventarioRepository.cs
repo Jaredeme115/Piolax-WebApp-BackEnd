@@ -91,5 +91,35 @@ namespace Piolax_WebApp.Repositories.Impl
         {
             return await _context.Inventario.AnyAsync(p => p.numParte == numParte);
         }
+
+        public async Task ActualizarCantidadInventario(int idRefaccion, int cantidadADescontar)
+        {
+            var inventario = await _context.Inventario.FirstOrDefaultAsync(i => i.idRefaccion == idRefaccion);
+
+            if (inventario == null)
+            {
+                throw new Exception($"No se encontró el inventario con idRefaccion: {idRefaccion}");
+            }
+
+            if (inventario.cantidadActual < cantidadADescontar)
+            {
+                throw new Exception($"No hay suficiente inventario disponible para la refacción con idRefaccion: {idRefaccion}");
+            }
+
+            inventario.cantidadActual -= cantidadADescontar;
+            await _context.SaveChangesAsync();
+        }
+
+        public async Task<int> ConsultarCantidadDisponible(int idRefaccion)
+        {
+            var inventario = await _context.Inventario.FirstOrDefaultAsync(i => i.idRefaccion == idRefaccion);
+
+            if (inventario == null)
+            {
+                throw new Exception($"No se encontró el inventario con idRefaccion: {idRefaccion}");
+            }
+
+            return inventario.cantidadActual;
+        }
     }
 }

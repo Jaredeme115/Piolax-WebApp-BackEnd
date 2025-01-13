@@ -75,6 +75,10 @@ builder.Services.AddScoped<IInventarioService, InventarioService>();
 builder.Services.AddScoped<IInventarioCategoriasRepository, InventarioCategoriasRepository>();
 builder.Services.AddScoped<IInventarioCategoriasService, InventarioCategoriasService>();
 
+//Asignaciones
+builder.Services.AddScoped<IAsignacionesRepository, AsignacionesRepository>();
+builder.Services.AddScoped<IAsignacionesService, AsignacionesService>();
+
 
 
 builder.Services.AddEndpointsApiExplorer();

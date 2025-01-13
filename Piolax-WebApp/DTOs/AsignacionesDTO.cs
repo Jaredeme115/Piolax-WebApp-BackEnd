@@ -10,11 +10,11 @@ namespace Piolax_WebApp.DTOs
         [Required]
         public int idEmpleado { get; set; }
 
-        [Required]
-        public bool qrScaneado { get; set; }
+        //[Required]
+        //public bool qrScaneado { get; set; }
 
-        [Required]
-        public TimeSpan horaInicio { get; set; }
+        //[Required]
+        //public TimeSpan horaInicio { get; set; }
 
         [Required]
         public TimeSpan horaTermino { get; set; }
@@ -36,5 +36,9 @@ namespace Piolax_WebApp.DTOs
 
         [Required]
         public int idStatusAprobacionTecnico { get; set; }
+
+        // Campo temporal: No se guarda en la base de datos
+        [Required]
+        public string codigoQR { get; set; } // Código QR escaneado por el técnico
     }
 }

@@ -45,15 +45,19 @@ namespace Piolax_WebApp.Controllers
                 return BadRequest("La maquina ya esta registrada");
             }
 
-            // Generar el código QR
-            string qrCodeText = maquina.descripcion; // Puedes personalizar el contenido del código QR
-            string qrCodeBase64 = GenerateQRCode(qrCodeText);
-            maquina.codigoQR = qrCodeBase64;
+            // Generar el código QR visualmente
+            string qrCodeImageBase64 = GenerateQRCode(maquina.descripcion); // Genera la imagen Base64 para mostrar
+
+            // Asignar el texto del QR al campo codigoQR
+            maquina.codigoQR = maquina.descripcion; // Guarda el contenido del QR como texto, no como la imagen
+
+            // Puedes guardar la imagen Base64 en otro lugar, si lo necesitas (por ejemplo, para enviarlo al front-end).
 
             return Ok(await _service.Registro(maquina));
         }
 
-       
+
+
         [HttpPut("Modificar")]
         public async Task<ActionResult<Maquinas>> Modificar(int idMaquina, MaquinaDTO maquina)
         {
@@ -78,31 +82,45 @@ namespace Piolax_WebApp.Controllers
             return Ok(await _service.Eliminar(idMaquina));
         }
 
-        //[Authorize(Policy = "AdminOnly")]
         [HttpGet("DescargarQRCode/{idMaquina}")]
-
         public async Task<IActionResult> DescargarQRCode(int idMaquina)
         {
-            // Consultar la maquina en la base de datos
+            // Consultar la máquina
             var maquina = await _service.Consultar(idMaquina);
             if (maquina == null)
             {
-                return NotFound("La maquina no existe.");
+                return NotFound("La máquina no existe.");
             }
 
-            // Obtener el código QR en formato Base64 desde la maquina
-            string codigoQRBase64 = maquina.codigoQR;
-            if (string.IsNullOrEmpty(codigoQRBase64))
+            // Validar el texto del QR
+            string qrCodeText = maquina.codigoQR;
+            if (string.IsNullOrEmpty(qrCodeText))
             {
-                return BadRequest("La maquina no tiene un código QR.");
+                return BadRequest("La máquina no tiene un código QR.");
             }
 
-            // Decodificar el string Base64 a una imagen en bytes
-            byte[] qrCodeBytes = Convert.FromBase64String(codigoQRBase64);
+            try
+            {
+                // Generar la imagen del QR a partir del texto
+                byte[] qrCodeBytes = GenerateQRCodeBytes(qrCodeText);
 
-            // Devolver la imagen como archivo descargable
-            return File(qrCodeBytes, "image/png", $"QRCode_{maquina.nombreMaquina}.png");
+                // Limpiar el nombre del archivo
+                string sanitizedFileName = string.Join("_", maquina.nombreMaquina.Split(Path.GetInvalidFileNameChars()));
+                string fileName = !string.IsNullOrWhiteSpace(sanitizedFileName)
+                    ? $"QRCode_{sanitizedFileName}.png"
+                    : "QRCode.png";
+
+                // Devolver el archivo
+                return File(qrCodeBytes, "image/png", fileName);
+            }
+            catch (Exception ex)
+            {
+                // Loguear errores inesperados
+                Console.Error.WriteLine($"Error al generar el QR: {ex.Message}");
+                return StatusCode(500, "Ocurrió un error inesperado al generar el código QR.");
+            }
         }
+
 
         // Funcionalidad para generar el código QR
         private string GenerateQRCode(string text)
@@ -118,12 +136,34 @@ namespace Piolax_WebApp.Controllers
                         {
                             qrCodeImage.Save(ms, ImageFormat.Png);
                             byte[] byteImage = ms.ToArray();
-                            return Convert.ToBase64String(byteImage);
+                            return Convert.ToBase64String(byteImage); // Esto genera la imagen en Base64
                         }
                     }
                 }
             }
         }
+
+        // Funcionalidad para generar la imagen QR
+        private byte[] GenerateQRCodeBytes(string text)
+        {
+            using (QRCodeGenerator qrGenerator = new QRCodeGenerator())
+            {
+                QRCodeData qrCodeData = qrGenerator.CreateQrCode(text, QRCodeGenerator.ECCLevel.Q);
+                using (QRCode qrCode = new QRCode(qrCodeData))
+                {
+                    using (Bitmap qrCodeImage = qrCode.GetGraphic(20))
+                    {
+                        using (MemoryStream ms = new MemoryStream())
+                        {
+                            qrCodeImage.Save(ms, ImageFormat.Png);
+                            return ms.ToArray();
+                        }
+                    }
+                }
+            }
+        }
+
+
 
     }
 }

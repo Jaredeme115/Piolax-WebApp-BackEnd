@@ -5,10 +5,10 @@ namespace Piolax_WebApp.Services
 {
     public interface IAsignacionesService
     {
-        Task<Asignaciones> RegistrarAsignacion(Asignaciones asignaciones);
-        Task<Asignaciones> ObtenerAsignacionConDetalles(int idAsignacion);
-        Task<IEnumerable<Asignaciones>> ObtenerTodasLasAsignaciones();
-        Task<IEnumerable<Asignaciones>> ObtenerAsignacionPorTecnico(string numNomina);
+        Task<AsignacionesDetalleDTO> RegistrarAsignacion(AsignacionesDTO asignacionesDTO);
+        Task<AsignacionesDetalleDTO> ObtenerAsignacionConDetalles(int idAsignacion);
+        Task<IEnumerable<AsignacionesDetalleDTO>> ObtenerTodasLasAsignaciones();
+        Task<IEnumerable<AsignacionesDetalleDTO>> ObtenerAsignacionPorTecnico(string numNomina);
         Task<AsignacionesDetalleDTO> ModificarEstatusAprobacionTecnico(int idAsignacion, int idStatusAprobacionTecnico);
     }
 }

@@ -1,6 +1,7 @@
 ﻿using Piolax_WebApp.DTOs;
 using Piolax_WebApp.Models;
 using Piolax_WebApp.Repositories;
+using Piolax_WebApp.Repositories.Impl;
 
 namespace Piolax_WebApp.Services.Impl
 {
@@ -118,6 +119,16 @@ namespace Piolax_WebApp.Services.Impl
 
             // Llamar al repositorio para registrar el inventario
             return await _repository.RegistrarInventario(inventario);
+        }
+
+        public async Task ActualizarCantidadInventario(int idRefaccion, int cantidadADescontar)
+        {
+            await _repository.ActualizarCantidadInventario(idRefaccion, cantidadADescontar);
+        }
+
+        public async Task<int> ConsultarCantidadDisponible(int idRefaccion)
+        {
+            return await _repository.ConsultarCantidadDisponible(idRefaccion);
         }
     }
 }
