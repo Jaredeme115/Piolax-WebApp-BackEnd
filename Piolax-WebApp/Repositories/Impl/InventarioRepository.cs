@@ -77,7 +77,7 @@ namespace Piolax_WebApp.Repositories.Impl
             return await _context.Inventario.Where(p => p.idRefaccion == idRefaccion).FirstOrDefaultAsync();
         }
 
-        public async Task<IEnumerable<Inventario>> ConsultarProductosPorCategoria(int idInventarioCategoria)
+        public async Task<IEnumerable<Inventario>> ConsultarTodosLosProductosPorCategoria(int idInventarioCategoria)
         {
             return await _context.Inventario.Where(p => p.idInventarioCategoria == idInventarioCategoria).ToListAsync();
         }

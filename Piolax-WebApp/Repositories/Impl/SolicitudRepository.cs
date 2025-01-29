@@ -15,7 +15,7 @@ namespace Piolax_WebApp.Repositories.Impl
             return solicitudes;
         }
 
-        public async Task<Solicitudes> ObtenerSolicitudConDetalles(int idSolicitud)
+        public async Task<Solicitudes?> ObtenerSolicitudConDetalles(int idSolicitud)
         {
             return await _context.Solicitudes
                 .Include(s => s.Empleado)
@@ -28,6 +28,7 @@ namespace Piolax_WebApp.Repositories.Impl
                 .Include(s => s.Turno)
                 .Include(s => s.StatusOrden)
                 .Include(s => s.StatusAprobacionSolicitante)
+                .Include(s => s.categoriaTicket)
                 .FirstOrDefaultAsync(s => s.idSolicitud == idSolicitud);
 
         }
@@ -45,6 +46,7 @@ namespace Piolax_WebApp.Repositories.Impl
                 .Include(s => s.Turno)
                 .Include(s => s.StatusOrden)
                 .Include(s => s.StatusAprobacionSolicitante)
+                .Include(s => s.categoriaTicket)
                 .ToListAsync();
         }
 
@@ -61,6 +63,7 @@ namespace Piolax_WebApp.Repositories.Impl
            .Include(s => s.Turno)
            .Include(s => s.StatusOrden)
            .Include(s => s.StatusAprobacionSolicitante)
+           .Include(s => s.categoriaTicket)
            .Where(s => s.Empleado.numNomina == numNomina)
            .ToListAsync();
         }
@@ -91,14 +94,20 @@ namespace Piolax_WebApp.Repositories.Impl
                 idStatusAprobacionSolicitante = solicitud.idStatusAprobacionSolicitante,
                 area = solicitud.Empleado.EmpleadoAreaRol.FirstOrDefault(ar => ar.idArea == solicitud.idAreaSeleccionada)?.Area?.nombreArea ?? "N/A",
                 rol = solicitud.Empleado.EmpleadoAreaRol.FirstOrDefault(ar => ar.idRol == solicitud.idRolSeleccionado && ar.idArea == solicitud.idAreaSeleccionada)?.Rol?.nombreRol ?? "N/A",
-                paroMaquina = solicitud.paroMaquina,
+                idCategoriaTicket = solicitud.idCategoriaTicket,
                 nombreMaquina = solicitud.Maquina.nombreMaquina,
                 nombreTurno = solicitud.Turno.descripcion,
                 nombreStatusOrden = solicitud.StatusOrden.descripcionStatusOrden,
-                nombreStatusAprobacionSolicitante = solicitud.StatusAprobacionSolicitante.descripcionStatusAprobacionSolicitante
+                nombreStatusAprobacionSolicitante = solicitud.StatusAprobacionSolicitante.descripcionStatusAprobacionSolicitante,
+                nombreCategoriaTicket = solicitud.categoriaTicket.descripcionCategoriaTicket
             };
 
             return solicitudDetalleDTO;
+        }
+
+        public async Task<bool> ExisteSolicitud(int idSolicitud)
+        {
+            return await _context.Solicitudes.AnyAsync(s => s.idSolicitud == idSolicitud);
         }
 
 

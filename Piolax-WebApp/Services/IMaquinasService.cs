@@ -13,5 +13,11 @@ namespace Piolax_WebApp.Services
         Task<bool> MaquinaExiste(int idMaquina);
         Task<bool> MaquinaExisteRegistro(string nombreMaquina);
         Task<IEnumerable<Maquinas>> ConsultarPorArea(int idArea);
+
+        //Carga Masiva de Maquinas Desde Excel
+        Task<string> RegistrarMaquinasDesdeExcel(IFormFile filePath);
+
+        //Metodo para generar codigoQR
+        byte[] GenerateQRCodeBytes(string text); 
     }
 }

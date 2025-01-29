@@ -9,6 +9,8 @@ using QRCoder;
 using System.Drawing;
 using System.Drawing.Imaging;
 using System.IO;
+using OfficeOpenXml;
+using Piolax_WebApp.Services.Impl;
 
 namespace Piolax_WebApp.Controllers
 {
@@ -42,35 +44,31 @@ namespace Piolax_WebApp.Controllers
         {
             if (await _service.MaquinaExisteRegistro(maquina.descripcion))
             {
-                return BadRequest("La maquina ya esta registrada");
+                return BadRequest("La máquina ya está registrada.");
             }
 
-            // Generar el código QR visualmente
-            string qrCodeImageBase64 = GenerateQRCode(maquina.descripcion); // Genera la imagen Base64 para mostrar
+            // Generar el código QR utilizando el servicio
+            maquina.codigoQR = maquina.descripcion;
 
-            // Asignar el texto del QR al campo codigoQR
-            maquina.codigoQR = maquina.descripcion; // Guarda el contenido del QR como texto, no como la imagen
-
-            // Puedes guardar la imagen Base64 en otro lugar, si lo necesitas (por ejemplo, para enviarlo al front-end).
-
+            // Registrar la máquina
             return Ok(await _service.Registro(maquina));
         }
-
-
 
         [HttpPut("Modificar")]
         public async Task<ActionResult<Maquinas>> Modificar(int idMaquina, MaquinaDTO maquina)
         {
             if (!await _service.MaquinaExiste(idMaquina))
             {
-                return NotFound("La maquina no existe");
+                return NotFound("La máquina no existe.");
             }
+
+            // Regenerar el código QR si se modifica la descripción
+            maquina.codigoQR = maquina.descripcion;
 
             var maquinaModificada = await _service.Modificar(idMaquina, maquina);
             return Ok(maquinaModificada);
         }
 
-   
         [HttpDelete("Eliminar")]
         public async Task<ActionResult<Maquinas>> Eliminar(int idMaquina)
         {
@@ -82,17 +80,43 @@ namespace Piolax_WebApp.Controllers
             return Ok(await _service.Eliminar(idMaquina));
         }
 
+        [HttpPost("RegistrarMaquinasDesdeExcel")]
+        public async Task<IActionResult> RegistrarMaquinasDesdeExcel(IFormFile file)
+        {
+            if (file == null || file.Length == 0)
+            {
+                return BadRequest("El archivo proporcionado es inválido o está vacío.");
+            }
+
+            try
+            {
+                var resultado = await _service.RegistrarMaquinasDesdeExcel(file);
+                return Ok(new { Message = resultado });
+            }
+            catch (ArgumentException ex)
+            {
+                return BadRequest(new { Error = ex.Message });
+            }
+            catch (ApplicationException ex)
+            {
+                return StatusCode(500, new { Error = ex.Message });
+            }
+            catch (Exception ex)
+            {
+                return StatusCode(500, new { Error = "Ocurrió un error inesperado.", Details = ex.Message });
+            }
+        }
+
+
         [HttpGet("DescargarQRCode/{idMaquina}")]
         public async Task<IActionResult> DescargarQRCode(int idMaquina)
         {
-            // Consultar la máquina
             var maquina = await _service.Consultar(idMaquina);
             if (maquina == null)
             {
                 return NotFound("La máquina no existe.");
             }
 
-            // Validar el texto del QR
             string qrCodeText = maquina.codigoQR;
             if (string.IsNullOrEmpty(qrCodeText))
             {
@@ -101,51 +125,28 @@ namespace Piolax_WebApp.Controllers
 
             try
             {
-                // Generar la imagen del QR a partir del texto
-                byte[] qrCodeBytes = GenerateQRCodeBytes(qrCodeText);
+                byte[] qrCodeBytes = _service.GenerateQRCodeBytes(qrCodeText); // Usa el método del servicio
 
-                // Limpiar el nombre del archivo
                 string sanitizedFileName = string.Join("_", maquina.nombreMaquina.Split(Path.GetInvalidFileNameChars()));
                 string fileName = !string.IsNullOrWhiteSpace(sanitizedFileName)
                     ? $"QRCode_{sanitizedFileName}.png"
                     : "QRCode.png";
 
-                // Devolver el archivo
                 return File(qrCodeBytes, "image/png", fileName);
             }
             catch (Exception ex)
             {
-                // Loguear errores inesperados
                 Console.Error.WriteLine($"Error al generar el QR: {ex.Message}");
                 return StatusCode(500, "Ocurrió un error inesperado al generar el código QR.");
             }
         }
 
 
-        // Funcionalidad para generar el código QR
-        private string GenerateQRCode(string text)
-        {
-            using (QRCodeGenerator qrGenerator = new QRCodeGenerator())
-            {
-                QRCodeData qrCodeData = qrGenerator.CreateQrCode(text, QRCodeGenerator.ECCLevel.Q);
-                using (QRCode qrCode = new QRCode(qrCodeData))
-                {
-                    using (Bitmap qrCodeImage = qrCode.GetGraphic(20))
-                    {
-                        using (MemoryStream ms = new MemoryStream())
-                        {
-                            qrCodeImage.Save(ms, ImageFormat.Png);
-                            byte[] byteImage = ms.ToArray();
-                            return Convert.ToBase64String(byteImage); // Esto genera la imagen en Base64
-                        }
-                    }
-                }
-            }
-        }
-
-        // Funcionalidad para generar la imagen QR
         private byte[] GenerateQRCodeBytes(string text)
         {
+            if (string.IsNullOrWhiteSpace(text))
+                throw new ArgumentException("El texto para generar el código QR no puede estar vacío.");
+
             using (QRCodeGenerator qrGenerator = new QRCodeGenerator())
             {
                 QRCodeData qrCodeData = qrGenerator.CreateQrCode(text, QRCodeGenerator.ECCLevel.Q);
@@ -155,8 +156,8 @@ namespace Piolax_WebApp.Controllers
                     {
                         using (MemoryStream ms = new MemoryStream())
                         {
-                            qrCodeImage.Save(ms, ImageFormat.Png);
-                            return ms.ToArray();
+                            qrCodeImage.Save(ms, ImageFormat.Png); // Guarda la imagen como PNG en el stream
+                            return ms.ToArray(); // Devuelve los bytes de la imagen
                         }
                     }
                 }

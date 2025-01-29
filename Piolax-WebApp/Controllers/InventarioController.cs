@@ -26,36 +26,8 @@ namespace Piolax_WebApp.Controllers
                 return BadRequest("El producto dentro del inventario ya existe");
             }
 
-            // Generar el código QR
-            string qrCodeText = inventarioDTO.numParte; // Puedes personalizar el contenido del código QR
-            string qrCodeBase64 = GenerateQRCode(qrCodeText);
-            inventarioDTO.codigoQR = qrCodeBase64;
-
-            // Asignar valor a la propiedad precioInventarioTotal
-            inventarioDTO.precioInventarioTotal = inventarioDTO.precioUnitario * inventarioDTO.cantidadActual;
-
-            // Registrar el inventario sin el valor de item
+            // Registrar el inventario
             var inventario = await _service.RegistrarInventario(inventarioDTO);
-
-            // Asignar valor a la propiedad item basado en el idRefaccion generado
-            switch (inventarioDTO.idArea)
-            {
-                case 2:
-                    inventario.item = "Met0" + inventario.idRefaccion;
-                    break;
-                case 3:
-                    inventario.item = "Inyec0" + inventario.idRefaccion;
-                    break;
-                case 6:
-                    inventario.item = "Ens0" + inventario.idRefaccion;
-                    break;
-                case 7:
-                    inventario.item = "Mtto0" + inventario.idRefaccion;
-                    break;
-            }
-
-            // Actualizar el inventario con el valor de item
-            await _service.Modificar(inventario.idRefaccion, inventarioDTO);
 
             return Ok(inventario);
         }
@@ -69,15 +41,6 @@ namespace Piolax_WebApp.Controllers
             {
                 return BadRequest("El producto no existe dentro del Inventario");
             }
-
-            // Generar el código QR
-            string qrCodeText = inventarioDTO.numParte; ; // Puedes personalizar el contenido del código QR
-            string qrCodeBase64 = GenerateQRCode(qrCodeText);
-            inventarioDTO.codigoQR = qrCodeBase64;
-
-
-            // Asignar valor a la propiedad precioInventarioTotal
-            inventarioDTO.precioInventarioTotal = inventarioDTO.precioUnitario * inventarioDTO.cantidadActual;
 
 
             return await _service.Modificar(idRefaccion, inventarioDTO);
@@ -134,9 +97,9 @@ namespace Piolax_WebApp.Controllers
         //[Authorize(Policy = "AdminOnly")]
         [HttpGet("ConsultarProductosPorCategoria")]
 
-        public async Task<ActionResult<IEnumerable<Inventario>>> ConsultarProductosPorCategoria(int idInventarioCategoria)
+        public async Task<ActionResult<IEnumerable<Inventario>>> ConsultarTodosLosProductosPorCategoria(int idInventarioCategoria)
         {
-            return Ok(await _service.ConsultarProductosPorCategoria(idInventarioCategoria));
+            return Ok(await _service.ConsultarTodosLosProductosPorCategoria(idInventarioCategoria));
         }
 
 
@@ -164,27 +127,6 @@ namespace Piolax_WebApp.Controllers
 
             // Devolver la imagen como archivo descargable
             return File(qrCodeBytes, "image/png", $"QRCode_{producto.numParte}.png");
-        }
-
-        // Funcionalidad para generar el código QR
-        private string GenerateQRCode(string text)
-        {
-            using (QRCodeGenerator qrGenerator = new QRCodeGenerator())
-            {
-                QRCodeData qrCodeData = qrGenerator.CreateQrCode(text, QRCodeGenerator.ECCLevel.Q);
-                using (QRCode qrCode = new QRCode(qrCodeData))
-                {
-                    using (Bitmap qrCodeImage = qrCode.GetGraphic(20))
-                    {
-                        using (MemoryStream ms = new MemoryStream())
-                        {
-                            qrCodeImage.Save(ms, ImageFormat.Png);
-                            byte[] byteImage = ms.ToArray();
-                            return Convert.ToBase64String(byteImage);
-                        }
-                    }
-                }
-            }
         }
 
 

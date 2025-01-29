@@ -5,7 +5,6 @@ namespace Piolax_WebApp.DTOs
 {
     public class InventarioDTO
     {
-        public int idRefaccion { get; set; }
 
         [Required]
         public string descripcion { get; set; }
@@ -43,8 +42,6 @@ namespace Piolax_WebApp.DTOs
         [Required]
         public float precioInventarioTotal { get; set; }
 
-        [Required]
-        public string codigoBarras { get; set; }
 
         [Required]
         public string codigoQR { get; set; }
@@ -67,5 +64,11 @@ namespace Piolax_WebApp.DTOs
 
         [Required]
         public string item { get; set; }
+
+        [Required]
+        public DateTime fechaActualizacion { get; set; }
+
+        [Required]
+        public string EstatusInventario { get; set; }
     }
 }

@@ -56,7 +56,7 @@ namespace Piolax_WebApp.Controllers
                 s.nombreStatusAprobacionSolicitante,
                 s.area,
                 s.rol,
-                s.paroMaquina
+                s.nombreCategoriaTicket
             });
             return Ok(solicitudesFormateadas);
         }
@@ -77,7 +77,7 @@ namespace Piolax_WebApp.Controllers
                 s.nombreStatusAprobacionSolicitante,
                 s.area,
                 s.rol,
-                s.paroMaquina
+                s.nombreCategoriaTicket
             });
             return Ok(solicitudesFormateadas);
         }

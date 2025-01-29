@@ -33,7 +33,7 @@ namespace Piolax_WebApp.DTOs
         public int idRolSeleccionado { get; set; }
 
         [Required]
-        public string paroMaquina { get; set; }
+        public int idCategoriaTicket { get; set; }
 
 
     }

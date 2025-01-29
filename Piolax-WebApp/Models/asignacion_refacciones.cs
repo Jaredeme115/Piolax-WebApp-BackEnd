@@ -19,5 +19,9 @@ namespace Piolax_WebApp.Models
 
         [Required]
         public int cantidad { get; set; }
+
+        [Required]
+        public int idAsignacionTecnico { get; set; }
+        public Asignacion_Tecnico Asignacion_Tecnicos { get; set; }
     }
 }

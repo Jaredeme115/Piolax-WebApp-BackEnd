@@ -29,6 +29,7 @@ namespace Piolax_WebApp.Repositories
         public DbSet<StatusOrden> StatusOrden { get; set; } = default!;
         public DbSet<StatusAprobacionSolicitante> StatusAprobacionSolicitante { get; set; } = default!;
         public DbSet<Solicitudes> Solicitudes { get; set; } = default!;
+        public DbSet<categoriaTicket> categoriaTicket { get; set; } = default!;
 
         //Inventario
         public DbSet<Inventario> Inventario { get; set; } = default!;
@@ -40,7 +41,8 @@ namespace Piolax_WebApp.Repositories
         public DbSet<Asignaciones> Asignaciones { get; set; } = default!;
         public DbSet<StatusAprobacionTecnico> StatusAprobacionTecnico { get; set; } = default!;
         public DbSet<asignacion_refacciones> asignacion_refacciones { get; set; } = default!;
-        public DbSet<CategoriaAsignacion> CategoriaAsignacion { get; set; } = default!;
+        public DbSet<Asignacion_Tecnico> Asignacion_Tecnico { get; set; } = default!;
+        public DbSet<StatusAsignacion> StatusAsignacion { get; set; } = default!;
 
 
 
@@ -83,7 +85,7 @@ namespace Piolax_WebApp.Repositories
                 .WithMany(r => r.EmpleadoAreaRol)
                 .HasForeignKey(uar => uar.idRol);
 
-            // Configurar la relación entre Solicitudes y Empleado, Maquina, Turno, StatusOrden, StatusAprobacionSolicitante
+            // Configurar la relación entre Solicitudes y Empleado, Maquina, Turno, StatusOrden, StatusAprobacionSolicitante, CategoriaTicket
             modelBuilder.Entity<Solicitudes>()
                 .HasOne(s => s.Empleado)
                 .WithMany(e => e.Solicitudes) // Relacion Empleado-Solicitudes 1:N
@@ -109,32 +111,23 @@ namespace Piolax_WebApp.Repositories
                 .WithMany(sas => sas.Solicitudes) // Relacion StatusAprobacionSolicitante-Solicitudes 1:N
                 .HasForeignKey(s => s.idStatusAprobacionSolicitante);
 
+            modelBuilder.Entity<Solicitudes>()
+                .HasOne(s => s.categoriaTicket)
+                .WithMany(ct => ct.Solicitudes) // Relacion CategoriaTicket-Solicitudes 1:N
+                .HasForeignKey(s => s.idCategoriaTicket);
 
-            // Configurar la relación entre Asignaciones y Solicitud, Empleado, Inventario, CategoriaAsignacion, StatusAprobacionTecnico
+
+            // Configurar la relación entre Asignaciones y Solicitud, StatusAsignacion
             modelBuilder.Entity<Asignaciones>()
                 .HasOne(a => a.Solicitud)
                 .WithMany(s => s.Asignaciones)
                 .HasForeignKey(a => a.idSolicitud);
 
-            modelBuilder.Entity<Asignaciones>()
-                .HasOne(a => a.Empleado)
-                .WithMany(e => e.Asignaciones)
-                .HasForeignKey(a => a.idEmpleado);
+            modelBuilder.Entity<StatusAsignacion>()
+                .HasMany(sa => sa.Asignaciones)
+                .WithOne(a => a.StatusAsignacion)
+                .HasForeignKey(a => a.idStatusAsignacion);
 
-            modelBuilder.Entity<Asignaciones>()
-                .HasOne(a => a.Inventario)
-                .WithMany(i => i.Asignaciones)
-                .HasForeignKey(a => a.idRefaccion);
-
-            modelBuilder.Entity<Asignaciones>()
-                .HasOne(a => a.CategoriaAsignacion)
-                .WithMany(ca => ca.Asignaciones)
-                .HasForeignKey(a => a.idCategoriaAsignacion);
-
-            modelBuilder.Entity<Asignaciones>()
-                .HasOne(a => a.StatusAprobacionTecnico)
-                .WithMany(sat => sat.Asignaciones)
-                .HasForeignKey(a => a.idStatusAprobacionTecnico);
 
             // Configurar la relación entre Inventario y Areas, Maquinas, InventarioCategorias
             modelBuilder.Entity<Inventario>()
@@ -152,9 +145,9 @@ namespace Piolax_WebApp.Repositories
                 .WithMany(ic => ic.Inventario)
                 .HasForeignKey(i => i.idInventarioCategoria);
 
-            // Configurar la relación entre asignacion_refacciones y Asignaciones, Inventario
+            // Configurar la relación entre asignacion_refacciones y Asignaciones, Inventario, Asignacion_Tecnico
             modelBuilder.Entity<Inventario>()
-                .HasMany(i => i.Asignaciones)
+                .HasMany(i => i.Asignacion_Refacciones)
                 .WithOne(a => a.Inventario)
                 .HasForeignKey(a => a.idRefaccion);
 
@@ -162,6 +155,43 @@ namespace Piolax_WebApp.Repositories
                 .HasMany(a => a.Asignacion_Refacciones)
                 .WithOne(ar => ar.Asignaciones)
                 .HasForeignKey(ar => ar.idAsignacion);
+
+            modelBuilder.Entity<Asignacion_Tecnico>()
+                .HasMany(at => at.Asignacion_Refacciones)
+                .WithOne(ar => ar.Asignacion_Tecnicos)
+                .HasForeignKey(ar => ar.idAsignacionTecnico);
+
+
+            // Configurar la relación entre Asignacion_Tecnico y Asignaciones, Empleado, StatusAprobacionTecnico
+            modelBuilder.Entity<Asignaciones>()
+                .HasMany(a => a.Asignacion_Tecnico)
+                .WithOne(at => at.Asignacion)
+                .HasForeignKey(at => at.idAsignacion);
+
+            modelBuilder.Entity<Empleado>()
+                .HasMany(e => e.Asignacion_Tecnico)
+                .WithOne(at => at.Empleado)
+                .HasForeignKey(at => at.idEmpleado);
+
+            modelBuilder.Entity<StatusAprobacionTecnico>()
+                .HasMany(sat => sat.Asignacion_Tecnicos)
+                .WithOne(at => at.StatusAprobacionTecnico)
+                .HasForeignKey(at => at.idStatusAprobacionTecnico);
+
+
+            // Configurar la relación entre EstatusInventario, Inventario
+            modelBuilder.Entity<Inventario>()
+                .Property(e => e.EstatusInventario)
+                .HasConversion<string>()
+                .HasColumnType("ENUM('Disponible', 'Pendiente', 'EnReparación')");
+
+
+            // Configurar la propiedad fechaActualizacion de Inventario
+            modelBuilder.Entity<Inventario>()
+                .Property(i => i.fechaActualizacion)
+                .HasColumnType("DATETIME")
+                .HasDefaultValueSql("CURRENT_TIMESTAMP")
+                .ValueGeneratedOnAddOrUpdate(); // Indica que se genera tanto al crear como al actualizar
 
 
             base.OnModelCreating(modelBuilder);

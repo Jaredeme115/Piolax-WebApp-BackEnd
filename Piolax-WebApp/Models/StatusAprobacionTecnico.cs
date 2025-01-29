@@ -11,6 +11,6 @@ namespace Piolax_WebApp.Models
         [StringLength(30)]
         public string descripcionStatusAprobacionTecnico { get; set; }
 
-        public virtual ICollection<Asignaciones> Asignaciones { get; set; } = new List<Asignaciones>(); // Lista de Asignaciones asociados a StatusAprobacionTecnico
+        public virtual ICollection<Asignacion_Tecnico> Asignacion_Tecnicos { get; set; } = new List<Asignacion_Tecnico>(); // Lista de StatusAprobacionTecnico asociados a Asignacion_Tecnico
     }
 }

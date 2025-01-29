@@ -1,5 +1,6 @@
 ﻿using Microsoft.AspNetCore.Routing.Constraints;
 using System.ComponentModel.DataAnnotations;
+using System.ComponentModel.DataAnnotations.Schema;
 
 namespace Piolax_WebApp.Models
 {
@@ -47,9 +48,6 @@ namespace Piolax_WebApp.Models
         public float precioInventarioTotal { get; set; }
 
         [Required]
-        public string codigoBarras { get; set; }
-
-        [Required]
         public string codigoQR { get; set; }
 
         [Required]
@@ -74,8 +72,12 @@ namespace Piolax_WebApp.Models
         [Required]
         public string item { get; set; }
 
+        [Required]
+        public DateTime fechaActualizacion { get; set; }
 
-        public virtual ICollection<Asignaciones> Asignaciones { get; set; } = new List<Asignaciones>(); // Lista de Asignaciones asociados a Inventario
+        [Required]
+        [Column(TypeName = "ENUM('Disponible', 'Pendiente', 'EnReparación')")]
+        public EstatusInventario EstatusInventario { get; set; } = EstatusInventario.Disponible; // Valor predeterminad
 
         public virtual ICollection<asignacion_refacciones> Asignacion_Refacciones { get; set; } = new List<asignacion_refacciones>(); // Lista de asignacion_refacciones asociados a Inventario
     }

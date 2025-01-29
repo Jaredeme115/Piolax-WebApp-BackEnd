@@ -76,8 +76,24 @@ builder.Services.AddScoped<IInventarioCategoriasRepository, InventarioCategorias
 builder.Services.AddScoped<IInventarioCategoriasService, InventarioCategoriasService>();
 
 //Asignaciones
-builder.Services.AddScoped<IAsignacionesRepository, AsignacionesRepository>();
-builder.Services.AddScoped<IAsignacionesService, AsignacionesService>();
+//builder.Services.AddScoped<IAsignacionesRepository, AsignacionesRepository>();
+//builder.Services.AddScoped<IAsignacionesService, AsignacionesService>();
+
+//CategoriasTicket
+builder.Services.AddScoped<ICategoriaTicketRepository, CategoriaTicketRepository>();
+builder.Services.AddScoped<ICategoriaTicketService, CategoriaTicketService>();
+
+//StatusAsignacion
+builder.Services.AddScoped<IStatusAsignacionRepository, StatusAsignacionRepository>();
+builder.Services.AddScoped<IStatusAsignacionService, StatusAsignacionService>();
+
+//AsignacionRefacciones
+//builder.Services.AddScoped<IAsignacionRefaccionesRepository, AsignacionRefaccionesRepository>();
+//builder.Services.AddScoped<IAsignacionRefaccionesService, AsignacionRefaccionesService>();
+
+//AsignacionTecnicos
+//builder.Services.AddScoped<IAsignacionTecnicosRepository, AsignacionTecnicosRepository>();
+//builder.Services.AddScoped<IAsignacionTecnicosService, AsignacionTecnicosService>();
 
 
 
@@ -114,6 +130,9 @@ builder.Services.AddSwaggerGen(options =>
 
 string corsConfiguration = "_corsConfiguration";
 
+
+//Conexion con Localhost
+
 builder.Services.AddCors(options =>
     options.AddPolicy(name: corsConfiguration,
         cors => cors.WithOrigins("http://localhost:4200")
@@ -121,6 +140,17 @@ builder.Services.AddCors(options =>
         .AllowAnyMethod()
     )
 );
+
+
+//Conexion con NGROK
+
+/*builder.Services.AddCors(options =>
+    options.AddPolicy(name: corsConfiguration,
+        cors => cors.WithOrigins("http://localhost:4200", "https://5105-200-188-149-29.ngrok-free.app")
+        .AllowAnyHeader()
+        .AllowAnyMethod()
+    )
+);*/
 
 //Configuración de JWT
 
@@ -150,10 +180,11 @@ builder.Services.AddAuthentication(JwtBearerDefaults.AuthenticationScheme)
 
 builder.Services.AddAuthorization(options =>
 {
-    options.AddPolicy("AdminOnly", policy => policy.RequireRole("Administrador"));
+    options.AddPolicy("AdminOnly", policy => policy.RequireRole("Admin"));
 });
 
 var app = builder.Build();
+
 
 if (app.Environment.IsDevelopment())
 {

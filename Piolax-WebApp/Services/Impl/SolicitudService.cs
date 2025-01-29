@@ -12,7 +12,8 @@ namespace Piolax_WebApp.Services.Impl
         IMaquinasService maquinasService,
         ITurnosService turnosService,
         IStatusOrdenService statusOrdenService,
-        IStatusAprobacionSolicitanteService statusAprobacionSolicitanteService
+        IStatusAprobacionSolicitanteService statusAprobacionSolicitanteService,
+        ICategoriaTicketService categoriaTicketService
         ) : ISolicitudService
     {
         private readonly ISolicitudesRepository _repository = repository;
@@ -22,6 +23,7 @@ namespace Piolax_WebApp.Services.Impl
         private readonly ITurnosService _turnoService = turnosService;
         private readonly IStatusOrdenService _statusOrdenService = statusOrdenService;
         private readonly IStatusAprobacionSolicitanteService _statusAprobacionSolicitanteService = statusAprobacionSolicitanteService;
+        private readonly ICategoriaTicketService _categoriaTicketService = categoriaTicketService;
 
         public async Task<SolicitudesDetalleDTO> RegistrarSolicitud(SolicitudesDTO solicitudesDTO)
         {
@@ -57,7 +59,7 @@ namespace Piolax_WebApp.Services.Impl
                 idStatusAprobacionSolicitante = solicitudesDTO.idStatusAprobacionSolicitante,
                 idAreaSeleccionada = solicitudesDTO.idAreaSeleccionada,
                 idRolSeleccionado = solicitudesDTO.idRolSeleccionado,
-                paroMaquina = solicitudesDTO.paroMaquina
+                idCategoriaTicket = solicitudesDTO.idCategoriaTicket
             };
 
             solicitud = await _repository.RegistrarSolicitud(solicitud);
@@ -76,6 +78,8 @@ namespace Piolax_WebApp.Services.Impl
             //Se recurre a llamar a StatusAprobacionSolicitante Service para obtener el nombre del status de aprobación del solicitante en base al id del status de aprobación del solicitante
             var statusAprobacionSolicitante = await _statusAprobacionSolicitanteService.Consultar(solicitud.idStatusAprobacionSolicitante); // Obtener el status de aprobación del solicitante por ID
 
+            var categoriaTicket = await _categoriaTicketService.Consultar(solicitud.idCategoriaTicket); // Obtener la categoría del ticket por ID
+
             var solicitudDetalleDTO = new SolicitudesDetalleDTO
             {
                 idSolicitud = solicitud.idSolicitud,
@@ -88,11 +92,12 @@ namespace Piolax_WebApp.Services.Impl
                 idStatusAprobacionSolicitante = solicitud.idStatusAprobacionSolicitante,
                 area = areaSeleccionada.Area.nombreArea,
                 rol = rolSeleccionado.Rol.nombreRol,
-                paroMaquina = solicitud.paroMaquina,
+                idCategoriaTicket = solicitud.idCategoriaTicket,
                 nombreMaquina = maquina.nombreMaquina,
                 nombreTurno = turno.descripcion,
                 nombreStatusOrden = statusOrden.descripcionStatusOrden,
-                nombreStatusAprobacionSolicitante = statusAprobacionSolicitante.descripcionStatusAprobacionSolicitante
+                nombreStatusAprobacionSolicitante = statusAprobacionSolicitante.descripcionStatusAprobacionSolicitante,
+                nombreCategoriaTicket = solicitud.categoriaTicket.descripcionCategoriaTicket
             };
 
             return solicitudDetalleDTO;
@@ -126,6 +131,8 @@ namespace Piolax_WebApp.Services.Impl
             //Se recurre a llamar a StatusAprobacionSolicitante Service para obtener el nombre del status de aprobación del solicitante en base al id del status de aprobación del solicitante
             var statusAprobacionSolicitante = await _statusAprobacionSolicitanteService.Consultar(solicitud.idStatusAprobacionSolicitante); // Obtener el status de aprobación del solicitante por ID
 
+            var categoriaTicket = await _categoriaTicketService.Consultar(solicitud.idCategoriaTicket); // Obtener la categoría del ticket por ID
+
             var solicitudesDetalleDTO = new SolicitudesDetalleDTO
             {
                 idSolicitud = solicitud.idSolicitud,
@@ -138,11 +145,12 @@ namespace Piolax_WebApp.Services.Impl
                 idStatusAprobacionSolicitante = solicitud.idStatusAprobacionSolicitante,
                 area = areaSeleccionada.Area.nombreArea,
                 rol = rolSeleccionado.Rol.nombreRol,
-                paroMaquina = solicitud.paroMaquina,
+                idCategoriaTicket = solicitud.idCategoriaTicket,
                 nombreMaquina = maquina.nombreMaquina,
                 nombreTurno = turno.descripcion,
                 nombreStatusOrden = statusOrden.descripcionStatusOrden,
-                nombreStatusAprobacionSolicitante = statusAprobacionSolicitante.descripcionStatusAprobacionSolicitante
+                nombreStatusAprobacionSolicitante = statusAprobacionSolicitante.descripcionStatusAprobacionSolicitante,
+                nombreCategoriaTicket = solicitud.categoriaTicket.descripcionCategoriaTicket
             };
 
             return solicitudesDetalleDTO;
@@ -176,6 +184,8 @@ namespace Piolax_WebApp.Services.Impl
                 //Se recurre a llamar a StatusAprobacionSolicitante Service para obtener el nombre del status de aprobación del solicitante en base al id del status de aprobación del solicitante
                 var statusAprobacionSolicitante = await _statusAprobacionSolicitanteService.Consultar(solicitud.idStatusAprobacionSolicitante); // Obtener el status de aprobación del solicitante por ID
 
+                var categoriaTicket = await _categoriaTicketService.Consultar(solicitud.idCategoriaTicket); // Obtener la categoría del ticket por ID
+
                 var solicitudDetalleDTO = new SolicitudesDetalleDTO
                 {
                     idSolicitud = solicitud.idSolicitud,
@@ -188,11 +198,12 @@ namespace Piolax_WebApp.Services.Impl
                     idStatusAprobacionSolicitante = solicitud.idStatusAprobacionSolicitante,
                     area = areaSeleccionada?.Area?.nombreArea ?? "N/A",
                     rol = rolSeleccionado?.Rol?.nombreRol ?? "N/A",
-                    paroMaquina = solicitud.paroMaquina,
+                    idCategoriaTicket = solicitud.idCategoriaTicket,
                     nombreMaquina = maquina.nombreMaquina,
                     nombreTurno = turno.descripcion,
                     nombreStatusOrden = statusOrden.descripcionStatusOrden,
-                    nombreStatusAprobacionSolicitante = statusAprobacionSolicitante.descripcionStatusAprobacionSolicitante
+                    nombreStatusAprobacionSolicitante = statusAprobacionSolicitante.descripcionStatusAprobacionSolicitante,
+                    nombreCategoriaTicket = solicitud.categoriaTicket.descripcionCategoriaTicket
                 };
 
                 solicitudesDetalleDTO.Add(solicitudDetalleDTO);
@@ -229,6 +240,8 @@ namespace Piolax_WebApp.Services.Impl
                 //Se recurre a llamar a StatusAprobacionSolicitante Service para obtener el nombre del status de aprobación del solicitante en base al id del status de aprobación del solicitante
                 var statusAprobacionSolicitante = await _statusAprobacionSolicitanteService.Consultar(solicitud.idStatusAprobacionSolicitante); // Obtener el status de aprobación del solicitante por ID
 
+                var categoriaTicket = await _categoriaTicketService.Consultar(solicitud.idCategoriaTicket); // Obtener la categoría del ticket por ID
+
                 var solicitudDetalleDTO = new SolicitudesDetalleDTO
                 {
                     idSolicitud = solicitud.idSolicitud,
@@ -241,11 +254,12 @@ namespace Piolax_WebApp.Services.Impl
                     idStatusAprobacionSolicitante = solicitud.idStatusAprobacionSolicitante,
                     area = areaSeleccionada?.Area?.nombreArea ?? "N/A",
                     rol = rolSeleccionado?.Rol?.nombreRol ?? "N/A",
-                    paroMaquina = solicitud.paroMaquina,
+                    idCategoriaTicket = solicitud.idCategoriaTicket,
                     nombreMaquina = maquina.nombreMaquina,
                     nombreTurno = turno.descripcion,
                     nombreStatusOrden = statusOrden.descripcionStatusOrden,
-                    nombreStatusAprobacionSolicitante = statusAprobacionSolicitante.descripcionStatusAprobacionSolicitante
+                    nombreStatusAprobacionSolicitante = statusAprobacionSolicitante.descripcionStatusAprobacionSolicitante,
+                    nombreCategoriaTicket = solicitud.categoriaTicket.descripcionCategoriaTicket
                 };
 
                 solicitudesDetalleDTO.Add(solicitudDetalleDTO);
@@ -283,11 +297,12 @@ namespace Piolax_WebApp.Services.Impl
                 idStatusAprobacionSolicitante = solicitud.idStatusAprobacionSolicitante,
                 area = solicitud.Empleado.EmpleadoAreaRol.FirstOrDefault(ar => ar.idArea == solicitud.idAreaSeleccionada)?.Area?.nombreArea ?? "N/A",
                 rol = solicitud.Empleado.EmpleadoAreaRol.FirstOrDefault(ar => ar.idRol == solicitud.idRolSeleccionado && ar.idArea == solicitud.idAreaSeleccionada)?.Rol?.nombreRol ?? "N/A",
-                paroMaquina = solicitud.paroMaquina,
+                idCategoriaTicket = solicitud.idCategoriaTicket,
                 nombreMaquina = solicitud.Maquina.nombreMaquina,
                 nombreTurno = solicitud.Turno.descripcion,
                 nombreStatusOrden = solicitud.StatusOrden.descripcionStatusOrden,
-                nombreStatusAprobacionSolicitante = statusAprobacionSolicitante.descripcionStatusAprobacionSolicitante
+                nombreStatusAprobacionSolicitante = statusAprobacionSolicitante.descripcionStatusAprobacionSolicitante,
+                nombreCategoriaTicket = solicitud.categoriaTicket.descripcionCategoriaTicket
             };
 
             return solicitudDetalleDTO;

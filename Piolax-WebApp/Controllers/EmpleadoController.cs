@@ -84,7 +84,7 @@ namespace Piolax_WebApp.Controllers
         }
 
 
-        [Authorize(Policy = "AdminOnly")]
+        //[Authorize(Policy = "AdminOnly")]
         [HttpPost("Registro")]
         public async Task<ActionResult<Empleado>> Registro([FromBody] RegistroDTO registro)
         {

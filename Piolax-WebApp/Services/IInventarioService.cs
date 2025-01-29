@@ -15,7 +15,7 @@ namespace Piolax_WebApp.Services
         Task<Inventario> ConsultarInventarioPorNombre(string nombreProducto);
         Task<Inventario> ConsultarInventarioPorCategoria(int idInventarioCategoria);
         Task<Inventario> ConsultarInventarioPorID(int idRefaccion);
-        Task<IEnumerable<Inventario>> ConsultarProductosPorCategoria(int idInventarioCategoria);
+        Task<IEnumerable<Inventario>> ConsultarTodosLosProductosPorCategoria(int idInventarioCategoria);
         Task<bool> ExisteProductoInventario(int idRefaccion);
         Task<bool> ExisteNumParte(string numParte);
         Task ActualizarCantidadInventario(int idRefaccion, int cantidadADescontar);

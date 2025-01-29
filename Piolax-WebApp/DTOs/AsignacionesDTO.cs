@@ -8,37 +8,7 @@ namespace Piolax_WebApp.DTOs
         public int idSolicitud { get; set; }
 
         [Required]
-        public int idEmpleado { get; set; }
+        public int idStatusAsignacion { get; set; }
 
-        //[Required]
-        //public bool qrScaneado { get; set; }
-
-        //[Required]
-        //public TimeSpan horaInicio { get; set; }
-
-        [Required]
-        public TimeSpan horaTermino { get; set; }
-
-        [Required]
-        public string solucion { get; set; }
-
-        [Required]
-        public int idRefaccion { get; set; }
-
-        [Required]
-        public int cantidad { get; set; }
-
-        [Required]
-        public bool maquinaDetenida { get; set; }
-
-        [Required]
-        public int idCategoriaAsignacion { get; set; }
-
-        [Required]
-        public int idStatusAprobacionTecnico { get; set; }
-
-        // Campo temporal: No se guarda en la base de datos
-        [Required]
-        public string codigoQR { get; set; } // Código QR escaneado por el técnico
     }
 }
