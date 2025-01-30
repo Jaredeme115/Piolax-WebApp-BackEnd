@@ -1,19 +1,21 @@
 ﻿using Piolax_WebApp.DTOs;
 using Piolax_WebApp.Models;
+using Piolax_WebApp.Repositories;
 using Piolax_WebApp.Repositories.Impl;
 
 namespace Piolax_WebApp.Services.Impl
 {
-    public class AsignacionTecnicosService : IAsignacionTecnicosService
+    public class AsignacionTecnicosService(
+        IAsignacionTecnicosRepository repository, 
+        IAsignacionRepository asignacionRepository, 
+        IAsignacionRefaccionesRepository asignacionRefaccionesRepository,
+        IInventarioRepository inventarioRepository) : IAsignacionTecnicosService
     {
-        private readonly AsignacionTecnicosRepository _repository;
-        private readonly AsignacionRepository _asignacionRepository;
+        private readonly IAsignacionTecnicosRepository _repository = repository;
+        private readonly IAsignacionRepository _asignacionRepository = asignacionRepository;
+        private readonly IAsignacionRefaccionesRepository _asignacionRefaccionesRepository = asignacionRefaccionesRepository;
+        private readonly IInventarioRepository _inventarioRepository = inventarioRepository;
 
-        public AsignacionTecnicosService(AsignacionTecnicosRepository repository, AsignacionRepository asignacionRepository)
-        {
-            _repository = repository;
-            _asignacionRepository = asignacionRepository;
-        }
 
         public async Task<IEnumerable<Asignacion_TecnicoDetallesDTO>> ConsultarTecnicosPorAsignacion(int idAsignacion)
         {
@@ -61,19 +63,19 @@ namespace Piolax_WebApp.Services.Impl
             }
         }
 
-        public async Task<Asignacion_Tecnico> FinalizarAsignacionTecnico(Asignacion_TecnicoDTO asignacionTecnicoDTO)
+        public async Task<Asignacion_Tecnico> FinalizarAsignacionTecnico(Asignacion_TecnicoFinalizacionDTO asignacionTecnicoFinalizacionDTO)
         {
-            // 1️⃣ Validar si la asignación existe
-            var asignacion = await _asignacionRepository.ConsultarAsignacionPorId(asignacionTecnicoDTO.idAsignacion);
+            // Validar si la asignación existe
+            var asignacion = await _asignacionRepository.ConsultarAsignacionPorId(asignacionTecnicoFinalizacionDTO.idAsignacion);
             if (asignacion == null)
             {
                 throw new ArgumentException("La asignación no existe.");
             }
 
-            // 2️⃣ Validar si el técnico existe en la asignación (usando idAsignacion + idEmpleado)
+            // Validar si el técnico existe en la asignación (usando idAsignacion + idEmpleado)
             var tecnico = await _repository.ConsultarTecnicoPorAsignacionYEmpleado(
-                asignacionTecnicoDTO.idAsignacion,
-                asignacionTecnicoDTO.idEmpleado
+                asignacionTecnicoFinalizacionDTO.idAsignacion,
+                asignacionTecnicoFinalizacionDTO.idEmpleado
             );
 
             if (tecnico == null)
@@ -81,15 +83,22 @@ namespace Piolax_WebApp.Services.Impl
                 throw new ArgumentException("El técnico no está asignado a esta tarea.");
             }
 
-            // 3️⃣ Marcar la hora de finalización y la solución
+            // Marcar la hora de finalización y la solución
             tecnico.horaTermino = DateTime.UtcNow;
-            tecnico.solucion = asignacionTecnicoDTO.solucion;
-            tecnico.idStatusAprobacionTecnico = asignacionTecnicoDTO.idStatusAprobacionTecnico;
+            tecnico.solucion = asignacionTecnicoFinalizacionDTO.solucion;
+            tecnico.idStatusAprobacionTecnico = 1;
             tecnico.esTecnicoActivo = false;
 
             await _repository.ActualizarTecnicoEnAsignacion(tecnico);
 
-            // 4️⃣ Verificar si quedan técnicos activos en la asignación
+            // Descontar las refacciones utilizadas en la asignación
+            var refaccionesUtilizadas = await _asignacionRefaccionesRepository.ConsultarRefaccionesPorAsignacion(asignacionTecnicoFinalizacionDTO.idAsignacion);
+            foreach (var refaccion in refaccionesUtilizadas)
+            {
+                await _inventarioRepository.ActualizarCantidadInventario(refaccion.idRefaccion, refaccion.cantidad);
+            }
+
+            // Verificar si quedan técnicos activos en la asignación
             var hayTecnicosActivos = await _repository.ConsultarTecnicosActivosPorAsignacion(tecnico.idAsignacion);
             if (!hayTecnicosActivos)
             {

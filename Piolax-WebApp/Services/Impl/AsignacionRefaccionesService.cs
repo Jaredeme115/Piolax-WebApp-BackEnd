@@ -1,25 +1,20 @@
 ﻿using Piolax_WebApp.DTOs;
 using Piolax_WebApp.Models;
+using Piolax_WebApp.Repositories;
 using Piolax_WebApp.Repositories.Impl;
 using System.ComponentModel.DataAnnotations;
 
 namespace Piolax_WebApp.Services.Impl
 {
-    public class AsignacionRefaccionesService: IAsignacionRefaccionesService
+    public class AsignacionRefaccionesService(
+        IAsignacionRefaccionesRepository repository,
+        IAsignacionRepository asignacionRepository,
+        IInventarioRepository inventarioRepository
+        ) : IAsignacionRefaccionesService
     {
-        private readonly AsignacionRefaccionesRepository _repository;
-        private readonly AsignacionRepository _asignacionRepository;
-        private readonly InventarioRepository _inventarioRepository;
-
-        public AsignacionRefaccionesService
-            (AsignacionRefaccionesRepository repository, 
-            AsignacionRepository asignacionRepository,
-            InventarioRepository inventarioRepository)
-        {
-            _repository = repository;
-            _asignacionRepository = asignacionRepository;
-            _inventarioRepository = inventarioRepository;
-        }
+        private readonly IAsignacionRefaccionesRepository _repository = repository;
+        private readonly IAsignacionRepository _asignacionRepository = asignacionRepository;
+        private readonly IInventarioRepository _inventarioRepository = inventarioRepository;
 
         public async Task<IEnumerable<asignacion_refacciones>> ConsultarRefaccionesPorAsignacion(int idAsignacion)
         {
@@ -79,9 +74,19 @@ namespace Piolax_WebApp.Services.Impl
 
             // Validar que la asignación no esté en un estado bloqueado
             var asignacion = await _asignacionRepository.ConsultarAsignacionPorId(refaccion.idAsignacion);
-            if (asignacion.StatusAsignacion.descripcionStatusAsignacion == "Bloqueado")
+            if (asignacion == null)
             {
-                throw new InvalidOperationException("No se puede eliminar una refacción de una asignación bloqueada.");
+                throw new InvalidOperationException("La asignación no existe.");
+            }
+
+            if (asignacion.StatusAsignacion == null)
+            {
+                throw new InvalidOperationException("El estado de la asignación no está definido.");
+            }
+
+            if (asignacion.StatusAsignacion.descripcionStatusAsignacion == "Pausa Por Tecnico")
+            {
+                throw new InvalidOperationException("No se puede eliminar una refacción de una asignación Pausada.");
             }
 
             return await _repository.EliminarRefaccionDeAsignacion(idAsignacionRefaccion);

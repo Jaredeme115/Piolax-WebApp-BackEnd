@@ -3,14 +3,9 @@ using Piolax_WebApp.Models;
 
 namespace Piolax_WebApp.Repositories.Impl
 {
-    public class AsignacionRefaccionesRepository: IAsignacionRefaccionesRepository
+    public class AsignacionRefaccionesRepository(AppDbContext context) : IAsignacionRefaccionesRepository
     {
-        private readonly AppDbContext _context;
-
-        public AsignacionRefaccionesRepository(AppDbContext context)
-        {
-            _context = context;
-        }
+        private readonly AppDbContext _context = context;
 
         public async Task<IEnumerable<asignacion_refacciones>> ConsultarRefaccionesPorAsignacion(int idAsignacion)
         {

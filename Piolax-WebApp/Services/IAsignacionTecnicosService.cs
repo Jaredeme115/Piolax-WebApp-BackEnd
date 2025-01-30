@@ -10,7 +10,7 @@ namespace Piolax_WebApp.Services
         Task<IEnumerable<Asignacion_Tecnico>> ConsultarTodosLosTecnicos();
         Task<bool> EliminarTecnicoDeAsignacion(int idAsignacionTecnico);
         Task<bool> ActualizarTecnicoEnAsignacion(Asignacion_TecnicoDTO asignacionTecnicoDTO);
-        Task<Asignacion_Tecnico> FinalizarAsignacionTecnico(Asignacion_TecnicoDTO asignacionTecnicoDTO);
+        Task<Asignacion_Tecnico> FinalizarAsignacionTecnico(Asignacion_TecnicoFinalizacionDTO asignacionTecnicoFinalizacionDTO);
         Task<IEnumerable<Asignacion_TecnicoDetallesDTO>> ConsultarTecnicosConDetallesPorAsignacion(int idAsignacion);
     }
 }

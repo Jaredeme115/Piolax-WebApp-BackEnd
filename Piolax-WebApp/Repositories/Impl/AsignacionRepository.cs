@@ -3,14 +3,9 @@ using Piolax_WebApp.Models;
 
 namespace Piolax_WebApp.Repositories.Impl
 {
-    public class AsignacionRepository: IAsignacionRepository
+    public class AsignacionRepository(AppDbContext context) : IAsignacionRepository
     {
-        private readonly AppDbContext _context;
-
-        public AsignacionRepository(AppDbContext context)
-        {
-            _context = context;
-        }
+        private readonly AppDbContext _context = context;
 
         // Métodos del repositorio
         public async Task<Asignaciones> AgregarAsignacion(Asignaciones asignaciones)
@@ -25,7 +20,7 @@ namespace Piolax_WebApp.Repositories.Impl
             return await _context.Asignaciones.ToListAsync();
         }
 
-        public async Task<Asignaciones> ConsultarAsignacionPorId(int idAsignacion)
+        public async Task<Asignaciones?> ConsultarAsignacionPorId(int idAsignacion)
         {
             return await _context.Asignaciones.FindAsync(idAsignacion);
         }

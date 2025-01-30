@@ -5,27 +5,18 @@ using Piolax_WebApp.Repositories.Impl;
 
 namespace Piolax_WebApp.Services.Impl
 {
-    public class AsignacionService: IAsignacionService
+    public class AsignacionService( 
+        IAsignacionRepository repository, 
+        IAreasRepository areasRepository, 
+        IRolesRepository rolesRepository,
+        IAsignacionTecnicosRepository asignacionTecnicosRepository,
+        ISolicitudesRepository solicitudRepository): IAsignacionService
     {
-        private readonly AsignacionRepository _repository;
-        private readonly AreasRepository _areasRepository;
-        private readonly RolesRepository _rolesRepository;
-        private readonly AsignacionTecnicosRepository _asignacionTecnicosRepository;
-        private readonly SolicitudRepository _solicitudRepository;
-
-        public AsignacionService(
-            AsignacionRepository repository, 
-            AreasRepository areasRepository, 
-            RolesRepository rolesRepository, 
-            AsignacionTecnicosRepository asignacionTecnicosRepository,
-            SolicitudRepository solicitudRepository)
-        {
-            _repository = repository;
-            _areasRepository = areasRepository;
-            _rolesRepository = rolesRepository;
-            _asignacionTecnicosRepository = asignacionTecnicosRepository;
-            _solicitudRepository = solicitudRepository;
-        }
+        private readonly IAsignacionRepository _repository = repository;
+        private readonly IAreasRepository _areasRepository = areasRepository;
+        private readonly IRolesRepository _rolesRepository = rolesRepository;
+        private readonly IAsignacionTecnicosRepository _asignacionTecnicosRepository = asignacionTecnicosRepository;
+        private readonly ISolicitudesRepository _solicitudRepository = solicitudRepository;
 
         public async Task<Asignaciones> AgregarAsignacion(AsignacionesDTO asignacionesDTO)
         {

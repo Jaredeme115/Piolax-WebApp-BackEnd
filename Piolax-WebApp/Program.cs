@@ -21,7 +21,15 @@ builder.Services.AddDbContext<AppDbContext>(options =>
     )
 );
 
-builder.Services.AddControllers();
+//builder.Services.AddControllers();
+
+//Lo agregue por problemas de referencias cíclicas en la serialización JSON
+builder.Services.AddControllers()
+    .AddJsonOptions(options =>
+    {
+        options.JsonSerializerOptions.ReferenceHandler = System.Text.Json.Serialization.ReferenceHandler.Preserve;
+    });
+
 
 //Empleado
 builder.Services.AddScoped<IEmpleadoService, EmpleadoService>();
