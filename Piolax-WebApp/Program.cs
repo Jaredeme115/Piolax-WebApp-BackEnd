@@ -75,10 +75,6 @@ builder.Services.AddScoped<IInventarioService, InventarioService>();
 builder.Services.AddScoped<IInventarioCategoriasRepository, InventarioCategoriasRepository>();
 builder.Services.AddScoped<IInventarioCategoriasService, InventarioCategoriasService>();
 
-//Asignaciones
-//builder.Services.AddScoped<IAsignacionesRepository, AsignacionesRepository>();
-//builder.Services.AddScoped<IAsignacionesService, AsignacionesService>();
-
 //CategoriasTicket
 builder.Services.AddScoped<ICategoriaTicketRepository, CategoriaTicketRepository>();
 builder.Services.AddScoped<ICategoriaTicketService, CategoriaTicketService>();
@@ -87,13 +83,17 @@ builder.Services.AddScoped<ICategoriaTicketService, CategoriaTicketService>();
 builder.Services.AddScoped<IStatusAsignacionRepository, StatusAsignacionRepository>();
 builder.Services.AddScoped<IStatusAsignacionService, StatusAsignacionService>();
 
-//AsignacionRefacciones
-//builder.Services.AddScoped<IAsignacionRefaccionesRepository, AsignacionRefaccionesRepository>();
-//builder.Services.AddScoped<IAsignacionRefaccionesService, AsignacionRefaccionesService>();
+//Asignaciones
+builder.Services.AddScoped<IAsignacionRepository, AsignacionRepository>();
+builder.Services.AddScoped<IAsignacionService, AsignacionService>();
 
-//AsignacionTecnicos
-//builder.Services.AddScoped<IAsignacionTecnicosRepository, AsignacionTecnicosRepository>();
-//builder.Services.AddScoped<IAsignacionTecnicosService, AsignacionTecnicosService>();
+//AsignacionTecnico
+builder.Services.AddScoped<IAsignacionTecnicosRepository, AsignacionTecnicosRepository>();
+builder.Services.AddScoped<IAsignacionTecnicosService, AsignacionTecnicosService>();
+
+//AsignacionRefacciones
+builder.Services.AddScoped<IAsignacionRefaccionesRepository, AsignacionRefaccionesRepository>();
+builder.Services.AddScoped<IAsignacionRefaccionesService, AsignacionRefaccionesService>();
 
 
 

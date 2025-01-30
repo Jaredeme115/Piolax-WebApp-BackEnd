@@ -8,7 +8,7 @@ namespace Piolax_WebApp.Services
         Task<Asignaciones> AgregarAsignacion(AsignacionesDTO asignacionesDTO);
         Task<IEnumerable<Asignaciones>> ConsultarTodasLasAsignaciones();
         Task<Asignaciones> ConsultarAsignacionPorId(int idAsignacion);
-        Task<Asignaciones> ActualizarAsignacion(AsignacionesDTO asignacionesDTO);
+        Task<Asignaciones> ActualizarAsignacion(int idAsignacion, AsignacionesDTO asignacionesDTO);
         Task<bool> EliminarAsignacion(int idAsignacion);
         Task<AsignacionDetallesDTO?> ConsultarAsignacionConDetallesPorId(int idAsignacion);
 

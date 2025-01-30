@@ -3,7 +3,7 @@ using Piolax_WebApp.Models;
 
 namespace Piolax_WebApp.Repositories.Impl
 {
-    public class AsignacionRepository: IAsignacionesRepository
+    public class AsignacionRepository: IAsignacionRepository
     {
         private readonly AppDbContext _context;
 
@@ -30,11 +30,24 @@ namespace Piolax_WebApp.Repositories.Impl
             return await _context.Asignaciones.FindAsync(idAsignacion);
         }
 
-        public async Task<Asignaciones> ActualizarAsignacion(Asignaciones asignaciones)
+        public async Task<Asignaciones> ActualizarAsignacion(int idAsignacion, Asignaciones asignaciones)
         {
-            _context.Asignaciones.Update(asignaciones);
+           
+            var asignacionExistente = await _context.Asignaciones.FindAsync(idAsignacion);
+
+           
+            if (asignacionExistente == null)
+            {
+                return null; 
+            }
+
+           
+            _context.Entry(asignacionExistente).CurrentValues.SetValues(asignaciones);
+
+           
             await _context.SaveChangesAsync();
-            return asignaciones;
+
+            return asignacionExistente;
         }
 
         public async Task<bool> EliminarAsignacion(int idAsignacion)

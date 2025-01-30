@@ -4,12 +4,12 @@ using Piolax_WebApp.Repositories.Impl;
 
 namespace Piolax_WebApp.Services.Impl
 {
-    public class AsignacionTecnicoService : IAsignacionTecnicosService
+    public class AsignacionTecnicosService : IAsignacionTecnicosService
     {
-        private readonly AsignacionTecnicoRepository _repository;
+        private readonly AsignacionTecnicosRepository _repository;
         private readonly AsignacionRepository _asignacionRepository;
 
-        public AsignacionTecnicoService(AsignacionTecnicoRepository repository, AsignacionRepository asignacionRepository)
+        public AsignacionTecnicosService(AsignacionTecnicosRepository repository, AsignacionRepository asignacionRepository)
         {
             _repository = repository;
             _asignacionRepository = asignacionRepository;
@@ -61,22 +61,27 @@ namespace Piolax_WebApp.Services.Impl
             }
         }
 
-        public async Task<bool> FinalizarAsignacionTecnico(Asignacion_TecnicoDTO asignacionTecnicoDTO)
+        public async Task<Asignacion_Tecnico> FinalizarAsignacionTecnico(Asignacion_TecnicoDTO asignacionTecnicoDTO)
         {
-            // 1️⃣ Validar si la asignación y el técnico existen
+            // 1️⃣ Validar si la asignación existe
             var asignacion = await _asignacionRepository.ConsultarAsignacionPorId(asignacionTecnicoDTO.idAsignacion);
             if (asignacion == null)
             {
                 throw new ArgumentException("La asignación no existe.");
             }
 
-            var tecnico = await _repository.ConsultarTecnicoPorID(asignacionTecnicoDTO.idAsignacion);
+            // 2️⃣ Validar si el técnico existe en la asignación (usando idAsignacion + idEmpleado)
+            var tecnico = await _repository.ConsultarTecnicoPorAsignacionYEmpleado(
+                asignacionTecnicoDTO.idAsignacion,
+                asignacionTecnicoDTO.idEmpleado
+            );
+
             if (tecnico == null)
             {
                 throw new ArgumentException("El técnico no está asignado a esta tarea.");
             }
 
-            // 2️⃣ Marcar la hora de finalización y la solución
+            // 3️⃣ Marcar la hora de finalización y la solución
             tecnico.horaTermino = DateTime.UtcNow;
             tecnico.solucion = asignacionTecnicoDTO.solucion;
             tecnico.idStatusAprobacionTecnico = asignacionTecnicoDTO.idStatusAprobacionTecnico;
@@ -84,16 +89,23 @@ namespace Piolax_WebApp.Services.Impl
 
             await _repository.ActualizarTecnicoEnAsignacion(tecnico);
 
-            // 3️⃣ Verificar si quedan técnicos activos en la asignación
+            // 4️⃣ Verificar si quedan técnicos activos en la asignación
             var hayTecnicosActivos = await _repository.ConsultarTecnicosActivosPorAsignacion(tecnico.idAsignacion);
             if (!hayTecnicosActivos)
             {
                 // Si no hay técnicos activos, marcar la asignación como finalizada
                 asignacion.idStatusAsignacion = 4; // Estado "Finalizada"
-                await _asignacionRepository.ActualizarAsignacion(asignacion);
+                var asignacionActualizada = await _asignacionRepository.ActualizarAsignacion(asignacion.idAsignacion, asignacion);
+
+                if (asignacionActualizada == null)
+                {
+                    throw new ArgumentException("No se pudo actualizar la asignación porque no existe.");
+                }
+
+                return tecnico; // Devuelve el técnico actualizado en lugar de la asignación
             }
 
-            return true;
+            return tecnico; // Devuelve el técnico actualizado
         }
 
 
@@ -110,6 +122,12 @@ namespace Piolax_WebApp.Services.Impl
 
         public async Task<bool> ActualizarTecnicoEnAsignacion(Asignacion_TecnicoDTO asignacionTecnicoDTO)
         {
+            // 1️⃣ Validar si la asignación existe
+            var asignacion = await _asignacionRepository.ConsultarAsignacionPorId(asignacionTecnicoDTO.idAsignacion);
+            if (asignacion == null)
+            {
+                throw new ArgumentException("La asignación no existe.");
+            }
             var asignacionTecnico = new Asignacion_Tecnico
             {
                 idAsignacion = asignacionTecnicoDTO.idAsignacion,

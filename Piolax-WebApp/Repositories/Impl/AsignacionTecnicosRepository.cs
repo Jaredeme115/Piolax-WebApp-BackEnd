@@ -3,11 +3,11 @@ using Piolax_WebApp.Models;
 
 namespace Piolax_WebApp.Repositories.Impl
 {
-    public class AsignacionTecnicoRepository: IAsignacionTecnicoRepository
+    public class AsignacionTecnicosRepository: IAsignacionTecnicosRepository
     {
         private readonly AppDbContext _context;
 
-        public AsignacionTecnicoRepository(AppDbContext context)
+        public AsignacionTecnicosRepository(AppDbContext context)
         {
             _context = context;
         }
@@ -28,6 +28,13 @@ namespace Piolax_WebApp.Repositories.Impl
                 await _context.Entry(tecnico).Reference(t => t.Empleado).LoadAsync();
             }
             return tecnico;
+        }
+
+        public async Task<Asignacion_Tecnico?> ConsultarTecnicoPorAsignacionYEmpleado(int idAsignacion, int idEmpleado)
+        {
+            return await _context.Asignacion_Tecnico
+                .Where(t => t.idAsignacion == idAsignacion && t.idEmpleado == idEmpleado)
+                .FirstOrDefaultAsync();
         }
 
         public async Task<bool> ConsultarTecnicosActivosPorAsignacion(int idAsignacion)
