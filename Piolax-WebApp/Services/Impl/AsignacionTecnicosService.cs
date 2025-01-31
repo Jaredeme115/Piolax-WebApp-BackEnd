@@ -2,6 +2,7 @@
 using Piolax_WebApp.Models;
 using Piolax_WebApp.Repositories;
 using Piolax_WebApp.Repositories.Impl;
+using System.Configuration;
 
 namespace Piolax_WebApp.Services.Impl
 {
@@ -39,20 +40,36 @@ namespace Piolax_WebApp.Services.Impl
 
         public async Task<Asignacion_Tecnico> CrearAsignacionTecnico(Asignacion_TecnicoDTO asignacionTecnicoDTO)
         {
+           
             try
             {
+                // Validar si ya hay un técnico activo en la asignación
+                bool hayTecnicoActivo = await _repository.ConsultarTecnicosActivosPorAsignacion(asignacionTecnicoDTO.idAsignacion);
+                if (hayTecnicoActivo)
+                {
+                    // Si ya hay un técnico activo, el nuevo técnico debe ser inactivo
+                    asignacionTecnicoDTO.esTecnicoActivo = false;
+                }
+                else
+                {
+                    // Si no hay un técnico activo, el nuevo técnico será el activo
+                    asignacionTecnicoDTO.esTecnicoActivo = true;
+                }
+
+                // Crear la entidad Asignacion_Tecnico
                 var asignacionTecnico = new Asignacion_Tecnico
                 {
                     idAsignacion = asignacionTecnicoDTO.idAsignacion,
                     idEmpleado = asignacionTecnicoDTO.idEmpleado,
                     horaInicio = DateTime.UtcNow,
                     horaTermino = asignacionTecnicoDTO.horaTermino,
-                    solucion = asignacionTecnicoDTO.solucion,
-                    idStatusAprobacionTecnico = asignacionTecnicoDTO.idStatusAprobacionTecnico,
-                    comentarioPausa = asignacionTecnicoDTO.comentarioPausa,
-                    esTecnicoActivo = asignacionTecnicoDTO.esTecnicoActivo
+                    solucion = "N/A", // Valor por defecto
+                    idStatusAprobacionTecnico = 3, // Valor por defecto (por ejemplo, "Pendiente")
+                    comentarioPausa = "N/A", // Valor por defecto
+                    esTecnicoActivo = asignacionTecnicoDTO.esTecnicoActivo // Definido por la validación anterior
                 };
 
+                // Guardar la asignación del técnico en la base de datos
                 return await _repository.CrearAsignacionTecnico(asignacionTecnico);
             }
             catch (Exception ex)
@@ -115,6 +132,103 @@ namespace Piolax_WebApp.Services.Impl
             }
 
             return tecnico; // Devuelve el técnico actualizado
+        }
+
+        public async Task<bool> PausarAsignacion(int idAsignacion, int idTecnicoQuePausa, string comentarioPausa)
+        {
+            // Validar que la asignación exista
+            var asignacion = await _asignacionRepository.ConsultarAsignacionPorId(idAsignacion);
+            if (asignacion == null)
+            {
+                throw new ArgumentException("La asignación no existe.");
+            }
+
+            // Validar que el técnico que pausa esté asignado a esta asignación
+            var tecnicoQuePausa = await _repository.ConsultarTecnicoPorAsignacionYEmpleado(idAsignacion, idTecnicoQuePausa);
+            if (tecnicoQuePausa == null)
+            {
+                throw new ArgumentException("El técnico no está asignado a esta asignación.");
+            }
+
+            // Validar que el técnico que pausa sea el técnico activo
+            if (!tecnicoQuePausa.esTecnicoActivo)
+            {
+                throw new InvalidOperationException("Solo el técnico activo puede pausar la asignación.");
+            }
+
+            // Cambiar el estado de la asignación a "Pausa"
+            asignacion.idStatusAsignacion = 3; // Suponiendo que 3 es el ID del estado "Pausa"
+            await _asignacionRepository.ActualizarAsignacion(idAsignacion, asignacion);
+
+            // Marcar al técnico que pausa como inactivo y agregar el comentario de pausa
+            tecnicoQuePausa.esTecnicoActivo = false;
+            tecnicoQuePausa.comentarioPausa = comentarioPausa;
+            await _repository.ActualizarTecnicoEnAsignacion(tecnicoQuePausa);
+
+            // Buscar otro técnico asignado a la misma asignación para convertirlo en activo
+            var otrosTecnicos = await _repository.ConsultarTecnicosPorAsignacion(idAsignacion);
+            var siguienteTecnicoActivo = otrosTecnicos.FirstOrDefault(t => t.idEmpleado != idTecnicoQuePausa && t.esTecnicoActivo == false);
+
+            if (siguienteTecnicoActivo != null)
+            {
+                // Convertir al siguiente técnico en activo
+                siguienteTecnicoActivo.esTecnicoActivo = true;
+                await _repository.ActualizarTecnicoEnAsignacion(siguienteTecnicoActivo);
+
+                // Transferir las refacciones seleccionadas al siguiente técnico activo
+                var refacciones = await _asignacionRefaccionesRepository.ConsultarRefaccionesPorAsignacion(idAsignacion);
+                foreach (var refaccion in refacciones)
+                {
+                    if (refaccion.idAsignacionTecnico == tecnicoQuePausa.idAsignacionTecnico)
+                    {
+                        refaccion.idAsignacionTecnico = siguienteTecnicoActivo.idAsignacionTecnico;
+                        await _asignacionRefaccionesRepository.ActualizarRefaccionEnAsignacion(refaccion);
+                    }
+                }
+            }
+            else
+            {
+                // Si no hay otro técnico, la asignación queda en pausa y las refacciones se mantienen
+                // (no se transfieren a otro técnico, pero siguen reservadas en el inventario)
+            }
+
+            return true;
+        }
+
+        public async Task<bool> RetirarTecnicoDeApoyo(int idAsignacion, int idTecnicoQueSeRetira, string comentarioRetiro)
+        {
+            // Validar que la asignación exista
+            var asignacion = await _asignacionRepository.ConsultarAsignacionPorId(idAsignacion);
+            if (asignacion == null)
+            {
+                throw new ArgumentException("La asignación no existe.");
+            }
+
+            // Validar que el técnico que se retira esté asignado a esta asignación
+            var tecnicoQueSeRetira = await _repository.ConsultarTecnicoPorAsignacionYEmpleado(idAsignacion, idTecnicoQueSeRetira);
+            if (tecnicoQueSeRetira == null)
+            {
+                throw new ArgumentException("El técnico no está asignado a esta asignación.");
+            }
+
+            // Validar que el técnico que se retira NO sea el técnico activo
+            if (tecnicoQueSeRetira.esTecnicoActivo)
+            {
+                throw new InvalidOperationException("El técnico activo no puede retirarse usando este método. Use el método de pausar asignación.");
+            }
+
+            // Agregar el comentario de retiro al técnico que se retira
+            tecnicoQueSeRetira.comentarioPausa = comentarioRetiro;
+            await _repository.ActualizarTecnicoEnAsignacion(tecnicoQueSeRetira);
+
+            // Marcar al técnico que se retira como inactivo
+            tecnicoQueSeRetira.esTecnicoActivo = false;
+            await _repository.ActualizarTecnicoEnAsignacion(tecnicoQueSeRetira);
+
+            // No se transfieren refacciones, ya que el técnico no activo no puede registrar refacciones
+            // (Las refacciones asignadas al técnico que se retira permanecen asociadas a él, pero no se transfieren)
+
+            return true;
         }
 
 
@@ -193,6 +307,8 @@ namespace Piolax_WebApp.Services.Impl
             });
 
             return tecnicoDetalles;
+
+           
         }
     }
 }

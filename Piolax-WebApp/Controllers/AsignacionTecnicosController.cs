@@ -2,6 +2,7 @@
 using Piolax_WebApp.DTOs;
 using Piolax_WebApp.Models;
 using Piolax_WebApp.Services;
+using Piolax_WebApp.Services.Impl;
 
 namespace Piolax_WebApp.Controllers
 {
@@ -25,6 +26,18 @@ namespace Piolax_WebApp.Controllers
         public async Task<ActionResult<Asignacion_Tecnico>> FinalizarAsignacionTecnico(Asignacion_TecnicoFinalizacionDTO asignacionTecnicoFinalizacionDTO)
         {
             return await _service.FinalizarAsignacionTecnico(asignacionTecnicoFinalizacionDTO);
+        }
+
+        [HttpPost("PausarAsignacion")]
+        public async Task<ActionResult<bool>> PausarAsignacion(int idAsignacion, int idTecnicoQuePausa, string comentarioPausa)
+        {
+            return await _service.PausarAsignacion(idAsignacion, idTecnicoQuePausa, comentarioPausa);
+        }
+
+        [HttpPost("RetirarTecnicoDeApoyo")]
+        public async Task<ActionResult<bool>> RetirarTecnicoDeApoyo(int idAsignacion, int idTecnicoQueSeRetira, string comentarioRetiro)
+        {
+            return await _service.RetirarTecnicoDeApoyo(idAsignacion, idTecnicoQueSeRetira, comentarioRetiro);
         }
 
         [HttpDelete("EliminarTecnicoDeAsignacion")]

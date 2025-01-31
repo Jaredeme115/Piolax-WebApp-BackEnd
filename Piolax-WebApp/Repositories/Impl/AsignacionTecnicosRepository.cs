@@ -34,9 +34,9 @@ namespace Piolax_WebApp.Repositories.Impl
 
         public async Task<bool> ConsultarTecnicosActivosPorAsignacion(int idAsignacion)
         {
+            // Consulta a la base de datos para verificar si hay técnicos activos en la asignación
             return await _context.Asignacion_Tecnico
-            .Where(x => x.idAsignacion == idAsignacion && x.esTecnicoActivo == true)
-            .AnyAsync();
+                .AnyAsync(t => t.idAsignacion == idAsignacion && t.esTecnicoActivo == true);
         }
 
         public async Task<Asignacion_Tecnico> CrearAsignacionTecnico(Asignacion_Tecnico asignacionTecnico)

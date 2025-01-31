@@ -28,7 +28,7 @@ namespace Piolax_WebApp.Services.Impl
             var asignacion = new Asignaciones
             {
                 idSolicitud = asignacionesDTO.idSolicitud,
-                idStatusAsignacion = asignacionesDTO.idStatusAsignacion
+                idStatusAsignacion = 2
             };
 
             return await _repository.AgregarAsignacion(asignacion);
