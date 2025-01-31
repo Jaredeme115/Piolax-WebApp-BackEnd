@@ -52,14 +52,14 @@ namespace Piolax_WebApp.Services.Impl
 
             return await _repository.CrearAsignacionRefacciones(refacciones);
         }
-        
+
 
         public async Task<IEnumerable<Asignacion_RefaccionesDetallesDTO>> ConsultarTodasLasRefacciones()
         {
             var refacciones = await _repository.ConsultarTodasLasRefacciones();
             return refacciones.Select(refaccion => new Asignacion_RefaccionesDetallesDTO
             {
-                
+
                 idAsignacion = refaccion.idAsignacion,
                 idRefaccion = refaccion.idRefaccion,
                 nombreRefaccion = refaccion.Inventario.nombreProducto,
