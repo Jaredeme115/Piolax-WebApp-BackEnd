@@ -11,7 +11,7 @@ namespace Piolax_WebApp.Controllers
 
         
         [HttpPost("AgregarAsignacion")]
-        public async Task<ActionResult<Asignaciones>> AgregarAsignacion(AsignacionesDTO asignacionesDTO)
+        public async Task<ActionResult<AsignacionResponseDTO>> AgregarAsignacion(AsignacionesDTO asignacionesDTO)
         {
             return await _service.AgregarAsignacion(asignacionesDTO);
         }

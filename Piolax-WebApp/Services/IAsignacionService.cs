@@ -5,7 +5,7 @@ namespace Piolax_WebApp.Services
 {
     public interface IAsignacionService
     {
-        Task<Asignaciones> AgregarAsignacion(AsignacionesDTO asignacionesDTO);
+        Task<AsignacionResponseDTO> AgregarAsignacion(AsignacionesDTO asignacionesDTO);
         Task<IEnumerable<Asignaciones>> ConsultarTodasLasAsignaciones();
         Task<Asignaciones> ConsultarAsignacionPorId(int idAsignacion);
         Task<Asignaciones> ActualizarAsignacion(int idAsignacion, AsignacionesDTO asignacionesDTO);

@@ -29,9 +29,5 @@ namespace Piolax_WebApp.DTOs
 
         [Required]
         public bool esTecnicoActivo { get; set; }
-
-        // Campo temporal: No se guarda en la base de datos
-        [Required]
-        public string codigoQR { get; set; } // Código QR escaneado por el técnico
     }
 }

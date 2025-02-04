@@ -10,5 +10,9 @@ namespace Piolax_WebApp.DTOs
         [Required]
         public int idStatusAsignacion { get; set; }
 
+        // Campo Temporal para el QR
+        [Required(ErrorMessage = "El código QR es requerido.")]
+        public string codigoQR { get; set; }
+
     }
 }
