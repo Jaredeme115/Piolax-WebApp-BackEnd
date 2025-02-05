@@ -24,6 +24,9 @@ namespace Piolax_WebApp.Models
 
         public ICollection<Inventario> Inventario { get; set; } // Lista de inventario asociados a esta maquina
 
+        public virtual ICollection<KpisMantenimiento> KpisMantenimientos { get; set; } = new List<KpisMantenimiento>(); // Lista de KPI´s de Mantenimiento asociados a Maquina
+
+
 
     }
 }

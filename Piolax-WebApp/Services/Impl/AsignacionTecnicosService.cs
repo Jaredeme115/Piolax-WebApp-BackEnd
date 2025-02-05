@@ -11,12 +11,14 @@ namespace Piolax_WebApp.Services.Impl
         IAsignacionTecnicosRepository repository, 
         IAsignacionRepository asignacionRepository, 
         IAsignacionRefaccionesRepository asignacionRefaccionesRepository,
-        IInventarioRepository inventarioRepository) : IAsignacionTecnicosService
+        IInventarioRepository inventarioRepository,
+        IKPIRepository kpiRepository) : IAsignacionTecnicosService
     {
         private readonly IAsignacionTecnicosRepository _repository = repository;
         private readonly IAsignacionRepository _asignacionRepository = asignacionRepository;
         private readonly IAsignacionRefaccionesRepository _asignacionRefaccionesRepository = asignacionRefaccionesRepository;
         private readonly IInventarioRepository _inventarioRepository = inventarioRepository;
+        private readonly IKPIRepository _kpiRepository = kpiRepository;
 
 
         public async Task<IEnumerable<Asignacion_TecnicoDetallesDTO>> ConsultarTecnicosPorAsignacion(int idAsignacion)
@@ -132,7 +134,11 @@ namespace Piolax_WebApp.Services.Impl
                 return tecnico; // Devuelve el técnico actualizado en lugar de la asignación
             }
 
-            return tecnico; // Devuelve el técnico actualizado
+            // Calcular y guardar KPIs (Corregir)
+            /*var asignacion = await _asignacionRepository.ConsultarAsignacionPorId(asignacionTecnicoFinalizacionDTO.idAsignacion);
+            await _kpiRepository.(asignacion.Solicitud.idMaquina, asignacion.Solicitud.idAreaSeleccionada, asignacionTecnicoFinalizacionDTO.idEmpleado);*/
+
+            return tecnico;
         }
 
         public async Task<bool> PausarAsignacion(int idAsignacion, int idTecnicoQuePausa, string comentarioPausa)

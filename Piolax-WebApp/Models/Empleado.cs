@@ -48,6 +48,8 @@ namespace Piolax_WebApp.Models
 
         public virtual ICollection<Asignacion_Tecnico> Asignacion_Tecnico { get; set; } = new List<Asignacion_Tecnico>(); // Lista de Asignacion_Tecnico asociados a Empleado
 
+        public virtual ICollection<KpisMantenimiento> KpisMantenimientos { get; set; } = new List<KpisMantenimiento>(); // Lista de KPI´s de Mantenimiento asociados a Empleado
+
 
     }
 }

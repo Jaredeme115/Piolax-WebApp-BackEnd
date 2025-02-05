@@ -110,6 +110,14 @@ namespace Piolax_WebApp.Repositories.Impl
             return await _context.Solicitudes.AnyAsync(s => s.idSolicitud == idSolicitud);
         }
 
+        public async Task<IEnumerable<Solicitudes>> ConsultarSolicitudesPorMaquinaYArea(int idMaquina, int idArea)
+        {
+            return await _context.Solicitudes
+                .Include(s => s.Asignaciones) // Suponiendo que cada solicitud tiene una asignación asociada
+                .Where(s => s.idMaquina == idMaquina && s.idAreaSeleccionada == idArea)
+                .ToListAsync();
+        }
+
 
     }
 }

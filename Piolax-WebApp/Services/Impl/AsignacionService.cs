@@ -10,13 +10,15 @@ namespace Piolax_WebApp.Services.Impl
         IAreasRepository areasRepository, 
         IRolesRepository rolesRepository,
         IAsignacionTecnicosRepository asignacionTecnicosRepository,
-        ISolicitudesRepository solicitudRepository): IAsignacionService
+        ISolicitudesRepository solicitudRepository,
+        IMaquinasRepository maquinasRepository): IAsignacionService
     {
         private readonly IAsignacionRepository _repository = repository;
         private readonly IAreasRepository _areasRepository = areasRepository;
         private readonly IRolesRepository _rolesRepository = rolesRepository;
         private readonly IAsignacionTecnicosRepository _asignacionTecnicosRepository = asignacionTecnicosRepository;
         private readonly ISolicitudesRepository _solicitudRepository = solicitudRepository;
+        private readonly IMaquinasRepository _maquinaRepository = maquinasRepository;
 
         public async Task<AsignacionResponseDTO> AgregarAsignacion(AsignacionesDTO asignacionesDTO)
         {
@@ -177,6 +179,119 @@ namespace Piolax_WebApp.Services.Impl
 
             return asignacionDetallesDTO;
         }
+
+        #region Métodos de Cálculo de KPIs
+
+        /// <summary>
+        /// Calcula el MTTR (Mean Time To Repair) en horas. Recorre cada registro de técnico en cada asignación finalizada,
+        /// sumando el tiempo de reparación (diferencia entre horaTermino y horaInicio) siempre que los valores sean válidos.
+        /// </summary>
+        /// <param name="idMaquina">Identificador de la máquina.</param>
+        /// <param name="idArea">Identificador del área.</param>
+        /// <param name="idEmpleado">Opcional: para filtrar por un técnico específico.</param>
+        /// <returns>Promedio de tiempo de reparación en horas.</returns>
+        public async Task<double> CalcularMTTR(int idMaquina, int idArea, int? idEmpleado = null)
+        {
+            var asignaciones = await _repository.ConsultarAsignacionesCompletadas(idMaquina, idArea, idEmpleado);
+            if (!asignaciones.Any())
+                return 0;
+
+            double tiempoTotalReparacion = 0;
+            int count = 0;
+            foreach (var asignacion in asignaciones)
+            {
+                // Recorremos cada registro de técnico en la asignación
+                foreach (var tecnico in asignacion.Asignacion_Tecnico)
+                {
+                    // Solo consideramos si los tiempos son válidos y el registro indica un periodo de reparación
+                    if (tecnico.horaInicio > DateTime.MinValue &&
+                        tecnico.horaTermino > DateTime.MinValue &&
+                        tecnico.horaTermino > tecnico.horaInicio)
+                    {
+                        tiempoTotalReparacion += (tecnico.horaTermino - tecnico.horaInicio).TotalHours;
+                        count++;
+                    }
+                }
+            }
+            return count > 0 ? tiempoTotalReparacion / count : 0;
+        }
+
+        /// <summary>
+        /// Calcula el MTTA (Mean Time To Acknowledge) en horas. Se toma el tiempo transcurrido entre la creación
+        /// de la solicitud y el inicio del primer técnico asignado para cada solicitud.
+        /// </summary>
+        /// <param name="idMaquina">Identificador de la máquina.</param>
+        /// <param name="idArea">Identificador del área.</param>
+        /// <returns>Promedio de tiempo de asignación (MTTA) en horas.</returns>
+        public async Task<double> CalcularMTTA(int idMaquina, int idArea)
+        {
+            // Se obtienen las solicitudes para la máquina y área
+            var solicitudes = await _solicitudRepository.ConsultarSolicitudesPorMaquinaYArea(idMaquina, idArea);
+            if (!solicitudes.Any())
+                return 0;
+
+            double tiempoTotalAsignacion = 0;
+            int count = 0;
+
+            // Para cada solicitud, se busca la asignación (o ciclo) que inició primero.
+            foreach (var s in solicitudes)
+            {
+                if (s.Asignaciones != null && s.Asignaciones.Any())
+                {
+                    DateTime? primerInicio = null;
+                    // Recorrer cada asignación asociada a la solicitud
+                    foreach (var asignacion in s.Asignaciones)
+                    {
+                        if (asignacion.Asignacion_Tecnico != null && asignacion.Asignacion_Tecnico.Any())
+                        {
+                            // Se toma el registro de técnico con el menor valor de horaInicio
+                            var primerTecnico = asignacion.Asignacion_Tecnico
+                                .OrderBy(t => t.horaInicio)
+                                .FirstOrDefault();
+
+                            if (primerTecnico != null && primerTecnico.horaInicio > DateTime.MinValue)
+                            {
+                                if (primerInicio == null || primerTecnico.horaInicio < primerInicio)
+                                {
+                                    primerInicio = primerTecnico.horaInicio;
+                                }
+                            }
+                        }
+                    }
+                    // Si se encontró al menos un registro de técnico, se calcula el tiempo de asignación (MTTA)
+                    if (primerInicio != null)
+                    {
+                        tiempoTotalAsignacion += (primerInicio.Value - s.fechaSolicitud).TotalHours;
+                        count++;
+                    }
+                }
+            }
+
+            return count > 0 ? tiempoTotalAsignacion / count : 0;
+        }
+
+
+        /// <summary>
+        /// Calcula el MTBF (Mean Time Between Failures) en horas. Dado que no se cuenta con la fecha de instalación de la máquina,
+        /// se utiliza la fecha mínima de solicitud registrada para la máquina y área como proxy del inicio de operación.
+        /// </summary>
+        /// <param name="idMaquina">Identificador de la máquina.</param>
+        /// <param name="idArea">Identificador del área.</param>
+        /// <returns>Promedio de tiempo entre fallas en horas.</returns>
+        public async Task<double> CalcularMTBF(int idMaquina, int idArea)
+        {
+            var solicitudes = await _solicitudRepository.ConsultarSolicitudesPorMaquinaYArea(idMaquina, idArea);
+            if (!solicitudes.Any())
+                return 0;
+
+            // Se utiliza la fecha mínima de solicitud como proxy para el inicio de operación
+            DateTime fechaInicioOperacion = solicitudes.Min(s => s.fechaSolicitud);
+            double tiempoTotalOperacion = (DateTime.Now - fechaInicioOperacion).TotalHours;
+            int cantidadFallas = solicitudes.Count(); // Se asume cada solicitud es una "falla"
+            return cantidadFallas > 0 ? tiempoTotalOperacion / cantidadFallas : 0;
+        }
+
+        #endregion
 
     }
 }

@@ -44,6 +44,10 @@ namespace Piolax_WebApp.Repositories
         public DbSet<Asignacion_Tecnico> Asignacion_Tecnico { get; set; } = default!;
         public DbSet<StatusAsignacion> StatusAsignacion { get; set; } = default!;
 
+        //KPI´s Mantenimiento
+        public DbSet<KpisMantenimiento> KpisMantenimiento { get; set; } = default!;
+        public DbSet<KpisDetalle> KpisDetalles { get; set; } = default!;
+
 
 
         protected override void OnModelCreating(ModelBuilder modelBuilder)
@@ -65,6 +69,7 @@ namespace Piolax_WebApp.Repositories
                 .HasOne(m => m.Area)
                 .WithMany(a => a.Maquinas)
                 .HasForeignKey(m => m.idArea);
+
 
             // Configurar la relación entre EmpleadoAreaRol y Empleado, Area y Rol
             modelBuilder.Entity<EmpleadoAreaRol>()
@@ -192,6 +197,30 @@ namespace Piolax_WebApp.Repositories
                 .HasColumnType("DATETIME")
                 .HasDefaultValueSql("CURRENT_TIMESTAMP")
                 .ValueGeneratedOnAddOrUpdate(); // Indica que se genera tanto al crear como al actualizar
+
+            // Configurar la relacion entre KpisMantenimiento y Empleados
+            modelBuilder.Entity<KpisMantenimiento>()
+                .HasOne(km => km.Empleado)
+                .WithMany(e => e.KpisMantenimientos)
+                .HasForeignKey(km => km.idEmpleado);
+
+            // Configurar la relacion entre KpisMantenimiento y Areas
+            modelBuilder.Entity<KpisMantenimiento>()
+                .HasOne(km => km.Area)
+                .WithMany(a => a.KpisMantenimientos)
+                .HasForeignKey(km => km.idArea);
+
+            // Configurar la relacion entre KpisMantenimiento y Maquinas   
+            modelBuilder.Entity<KpisMantenimiento>()
+                .HasOne(km => km.Maquina)
+                .WithMany(m => m.KpisMantenimientos)
+                .HasForeignKey(km => km.idMaquina);
+
+            // Configurar la relacion entre KpisDetalles y KpisMantenimiento
+            modelBuilder.Entity<KpisDetalle>()
+                .HasOne(kd => kd.KpisMantenimiento)
+                .WithMany(km => km.KpisDetalle)
+                .HasForeignKey(kd => kd.idKPIMantenimiento);
 
 
             base.OnModelCreating(modelBuilder);

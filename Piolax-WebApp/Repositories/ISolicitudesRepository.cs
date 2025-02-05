@@ -14,6 +14,7 @@ namespace Piolax_WebApp.Repositories
 
         //Método para obtener modificar el estatus de aprobación de la solicitud
         Task<SolicitudesDetalleDTO> ModificarEstatusAprobacionSolicitante(int idSolicitud, int idStatusAprobacionSolicitante);
+        Task<IEnumerable<Solicitudes>> ConsultarSolicitudesPorMaquinaYArea(int idMaquina, int idArea);
 
     }
 }
