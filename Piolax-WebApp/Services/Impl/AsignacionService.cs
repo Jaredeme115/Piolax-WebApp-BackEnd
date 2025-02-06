@@ -185,13 +185,13 @@ namespace Piolax_WebApp.Services.Impl
         #region Métodos de Cálculo de KPIs
 
         /// <summary>
-        /// Calcula el MTTR (Mean Time To Repair) en horas. Recorre cada registro de técnico en cada asignación finalizada,
+        /// Calcula el MTTR (Mean Time To Repair) en minutos. Recorre cada registro de técnico en cada asignación finalizada,
         /// sumando el tiempo de reparación (diferencia entre horaTermino y horaInicio) siempre que los valores sean válidos.
         /// </summary>
         /// <param name="idMaquina">Identificador de la máquina.</param>
         /// <param name="idArea">Identificador del área.</param>
         /// <param name="idEmpleado">Opcional: para filtrar por un técnico específico.</param>
-        /// <returns>Promedio de tiempo de reparación en horas.</returns>
+        /// <returns>Promedio de tiempo de reparación en minutos.</returns>
         public async Task<double> CalcularMTTR(int idMaquina, int idArea, int? idEmpleado = null)
         {
             var asignaciones = await _repository.ConsultarAsignacionesCompletadas(idMaquina, idArea, idEmpleado);
@@ -219,12 +219,12 @@ namespace Piolax_WebApp.Services.Impl
         }
 
         /// <summary>
-        /// Calcula el MTTA (Mean Time To Acknowledge) en horas. Se toma el tiempo transcurrido entre la creación
+        /// Calcula el MTTA (Mean Time To Acknowledge) en minutos. Se toma el tiempo transcurrido entre la creación
         /// de la solicitud y el inicio del primer técnico asignado para cada solicitud.
         /// </summary>
         /// <param name="idMaquina">Identificador de la máquina.</param>
         /// <param name="idArea">Identificador del área.</param>
-        /// <returns>Promedio de tiempo de asignación (MTTA) en horas.</returns>
+        /// <returns>Promedio de tiempo de asignación (MTTA) en minutos.</returns>
         public async Task<double> CalcularMTTA(int idMaquina, int idArea)
         {
             // Se obtienen las solicitudes para la máquina y área
@@ -274,12 +274,12 @@ namespace Piolax_WebApp.Services.Impl
 
 
         /// <summary>
-        /// Calcula el MTBF (Mean Time Between Failures) en horas. Dado que no se cuenta con la fecha de instalación de la máquina,
+        /// Calcula el MTBF (Mean Time Between Failures) en minutos. Dado que no se cuenta con la fecha de instalación de la máquina,
         /// se utiliza la fecha mínima de solicitud registrada para la máquina y área como proxy del inicio de operación.
         /// </summary>
         /// <param name="idMaquina">Identificador de la máquina.</param>
         /// <param name="idArea">Identificador del área.</param>
-        /// <returns>Promedio de tiempo entre fallas en horas.</returns>
+        /// <returns>Promedio de tiempo entre fallas en minutos.</returns>
         public async Task<double> CalcularMTBF(int idMaquina, int idArea)
         {
             var solicitudes = await _solicitudRepository.ConsultarSolicitudesPorMaquinaYArea(idMaquina, idArea);

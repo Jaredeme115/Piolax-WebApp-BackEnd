@@ -66,7 +66,7 @@ namespace Piolax_WebApp.Services.Impl
                 {
                     idAsignacion = asignacionTecnicoDTO.idAsignacion,
                     idEmpleado = asignacionTecnicoDTO.idEmpleado,
-                    horaInicio = DateTime.UtcNow,
+                    horaInicio = DateTime.Now,
                     horaTermino = asignacionTecnicoDTO.horaTermino,
                     solucion = "N/A", // Valor por defecto
                     idStatusAprobacionTecnico = 3, // Valor por defecto (por ejemplo, "Pendiente")
@@ -85,13 +85,25 @@ namespace Piolax_WebApp.Services.Impl
             }
         }
 
-        public async Task<Asignacion_Tecnico> FinalizarAsignacionTecnico(Asignacion_TecnicoFinalizacionDTO asignacionTecnicoFinalizacionDTO)
+        public async Task<Asignacion_TecnicoFinalizacionResponseDTO> FinalizarAsignacionTecnico(Asignacion_TecnicoFinalizacionDTO asignacionTecnicoFinalizacionDTO)
         {
             // Validar si la asignación existe
             var asignacion = await _asignacionRepository.ConsultarAsignacionPorId(asignacionTecnicoFinalizacionDTO.idAsignacion);
             if (asignacion == null)
             {
                 throw new ArgumentException("La asignación no existe.");
+            }
+
+            // Validar si la solicitud asociada a la asignación existe
+            if (asignacion.Solicitud == null)
+            {
+                throw new ArgumentException("La solicitud asociada a la asignación no está disponible.");
+            }
+
+            // Validar si idMaquina e idAreaSeleccionada tienen valores válidos
+            if (asignacion.Solicitud.idMaquina == 0 || asignacion.Solicitud.idAreaSeleccionada == 0)
+            {
+                throw new ArgumentException("La solicitud no tiene un idMaquina o idAreaSeleccionada válido.");
             }
 
             // Validar si el técnico existe en la asignación (usando idAsignacion + idEmpleado)
@@ -105,8 +117,15 @@ namespace Piolax_WebApp.Services.Impl
                 throw new ArgumentException("El técnico no está asignado a esta tarea.");
             }
 
+            // Validar si el empleado asociado al técnico existe
+            if (tecnico.Empleado == null)
+            {
+                throw new ArgumentException("El empleado asociado al técnico no está disponible.");
+            }
+
+
             // Marcar la hora de finalización y la solución
-            tecnico.horaTermino = DateTime.UtcNow;
+            tecnico.horaTermino = DateTime.Now;
             tecnico.solucion = asignacionTecnicoFinalizacionDTO.solucion;
             tecnico.idStatusAprobacionTecnico = 1;
             tecnico.esTecnicoActivo = false;
@@ -133,7 +152,7 @@ namespace Piolax_WebApp.Services.Impl
                     throw new ArgumentException("No se pudo actualizar la asignación porque no existe.");
                 }
 
-                return tecnico; // Devuelve el técnico actualizado en lugar de la asignación
+                //return tecnico; // Devuelve el técnico actualizado en lugar de la asignación
             }
 
             // Aquí es el momento adecuado para calcular y guardar los KPIs
@@ -142,7 +161,22 @@ namespace Piolax_WebApp.Services.Impl
                               asignacion.Solicitud.idAreaSeleccionada,
                               asignacionTecnicoFinalizacionDTO.idEmpleado);
 
-            return tecnico;
+            // Mapear la entidad a un DTO de respuesta
+            var response = new Asignacion_TecnicoFinalizacionResponseDTO
+            {
+                idAsignacionTecnico = tecnico.idAsignacionTecnico,
+                idAsignacion = tecnico.idAsignacion,
+                idEmpleado = tecnico.idEmpleado,
+                nombreCompletoTecnico = $"{tecnico.Empleado.nombre} {tecnico.Empleado.apellidoPaterno} {tecnico.Empleado.apellidoMaterno}",
+                horaInicio = tecnico.horaInicio,
+                horaTermino = tecnico.horaTermino,
+                solucion = tecnico.solucion,
+                idStatusAprobacionTecnico = tecnico.idStatusAprobacionTecnico,
+                nombreStatusAprobacionTecnico = tecnico.StatusAprobacionTecnico?.descripcionStatusAprobacionTecnico,
+                esTecnicoActivo = tecnico.esTecnicoActivo
+            };
+
+            return response;
         }
 
         public async Task<bool> PausarAsignacion(int idAsignacion, int idTecnicoQuePausa, string comentarioPausa)

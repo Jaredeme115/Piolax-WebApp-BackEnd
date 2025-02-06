@@ -46,7 +46,7 @@ namespace Piolax_WebApp.Repositories
 
         //KPI´s Mantenimiento
         public DbSet<KpisMantenimiento> KpisMantenimiento { get; set; } = default!;
-        public DbSet<KpisDetalle> KpisDetalles { get; set; } = default!;
+        public DbSet<KpisDetalle> KpisDetalle { get; set; } = default!;
 
 
 

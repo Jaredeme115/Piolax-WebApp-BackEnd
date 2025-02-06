@@ -17,7 +17,7 @@ namespace Piolax_WebApp.Repositories.Impl
             foreach (var detalle in kpiDetalles)
             {
                 detalle.idKPIMantenimiento = idKPIMantenimiento;
-                _context.KpisDetalles.Add(detalle);
+                _context.KpisDetalle.Add(detalle);
             }
             await _context.SaveChangesAsync();
         }

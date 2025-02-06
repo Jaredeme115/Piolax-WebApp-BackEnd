@@ -22,7 +22,9 @@ namespace Piolax_WebApp.Repositories.Impl
 
         public async Task<Asignaciones?> ConsultarAsignacionPorId(int idAsignacion)
         {
-            return await _context.Asignaciones.FindAsync(idAsignacion);
+            return await _context.Asignaciones
+            .Include(a => a.Solicitud) // Cargar la propiedad Solicitud
+            .FirstOrDefaultAsync(a => a.idAsignacion == idAsignacion);
         }
 
         public async Task<Asignaciones> ActualizarAsignacion(int idAsignacion, Asignaciones asignaciones)

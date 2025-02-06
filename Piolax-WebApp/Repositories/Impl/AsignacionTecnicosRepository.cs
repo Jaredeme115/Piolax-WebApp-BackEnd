@@ -28,6 +28,7 @@ namespace Piolax_WebApp.Repositories.Impl
         public async Task<Asignacion_Tecnico?> ConsultarTecnicoPorAsignacionYEmpleado(int idAsignacion, int idEmpleado)
         {
             return await _context.Asignacion_Tecnico
+                .Include(t => t.Empleado) // Cargar la propiedad Empleado
                 .Where(t => t.idAsignacion == idAsignacion && t.idEmpleado == idEmpleado)
                 .FirstOrDefaultAsync();
         }

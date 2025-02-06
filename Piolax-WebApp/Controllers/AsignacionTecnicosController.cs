@@ -23,7 +23,7 @@ namespace Piolax_WebApp.Controllers
         }
 
         [HttpPost("FinalizarAsignacionTecnico")]
-        public async Task<ActionResult<Asignacion_Tecnico>> FinalizarAsignacionTecnico(Asignacion_TecnicoFinalizacionDTO asignacionTecnicoFinalizacionDTO)
+        public async Task<ActionResult<Asignacion_TecnicoFinalizacionResponseDTO>> FinalizarAsignacionTecnico(Asignacion_TecnicoFinalizacionDTO asignacionTecnicoFinalizacionDTO)
         {
             return await _service.FinalizarAsignacionTecnico(asignacionTecnicoFinalizacionDTO);
         }
