@@ -13,6 +13,9 @@ namespace Piolax_WebApp.Models
         public KpisMantenimiento KpisMantenimiento { get; set; }
 
         [Required]
+        public string kpiNombre { get; set; }
+
+        [Required]
         public float kpiValor { get; set; }
     }
 }

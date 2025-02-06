@@ -103,6 +103,9 @@ builder.Services.AddScoped<IAsignacionTecnicosService, AsignacionTecnicosService
 builder.Services.AddScoped<IAsignacionRefaccionesRepository, AsignacionRefaccionesRepository>();
 builder.Services.AddScoped<IAsignacionRefaccionesService, AsignacionRefaccionesService>();
 
+//KPI's 
+builder.Services.AddScoped<IKPIRepository, KPIRepository>();
+
 
 
 builder.Services.AddEndpointsApiExplorer();

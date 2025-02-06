@@ -12,13 +12,15 @@ namespace Piolax_WebApp.Services.Impl
         IAsignacionRepository asignacionRepository, 
         IAsignacionRefaccionesRepository asignacionRefaccionesRepository,
         IInventarioRepository inventarioRepository,
-        IKPIRepository kpiRepository) : IAsignacionTecnicosService
+        IKPIRepository kpiRepository,
+        IAsignacionService asignacionService) : IAsignacionTecnicosService
     {
         private readonly IAsignacionTecnicosRepository _repository = repository;
         private readonly IAsignacionRepository _asignacionRepository = asignacionRepository;
         private readonly IAsignacionRefaccionesRepository _asignacionRefaccionesRepository = asignacionRefaccionesRepository;
         private readonly IInventarioRepository _inventarioRepository = inventarioRepository;
         private readonly IKPIRepository _kpiRepository = kpiRepository;
+        private readonly IAsignacionService _asignacionService = asignacionService;
 
 
         public async Task<IEnumerable<Asignacion_TecnicoDetallesDTO>> ConsultarTecnicosPorAsignacion(int idAsignacion)
@@ -134,9 +136,11 @@ namespace Piolax_WebApp.Services.Impl
                 return tecnico; // Devuelve el técnico actualizado en lugar de la asignación
             }
 
-            // Calcular y guardar KPIs (Corregir)
-            /*var asignacion = await _asignacionRepository.ConsultarAsignacionPorId(asignacionTecnicoFinalizacionDTO.idAsignacion);
-            await _kpiRepository.(asignacion.Solicitud.idMaquina, asignacion.Solicitud.idAreaSeleccionada, asignacionTecnicoFinalizacionDTO.idEmpleado);*/
+            // Aquí es el momento adecuado para calcular y guardar los KPIs
+            // Se asume que GuardarKPIs es un método disponible (por ejemplo, en un servicio de KPIs o en AsignacionService)
+            await asignacionService.GuardarKPIs(asignacion.Solicitud.idMaquina,
+                              asignacion.Solicitud.idAreaSeleccionada,
+                              asignacionTecnicoFinalizacionDTO.idEmpleado);
 
             return tecnico;
         }

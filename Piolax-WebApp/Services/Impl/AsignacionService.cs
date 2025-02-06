@@ -11,7 +11,8 @@ namespace Piolax_WebApp.Services.Impl
         IRolesRepository rolesRepository,
         IAsignacionTecnicosRepository asignacionTecnicosRepository,
         ISolicitudesRepository solicitudRepository,
-        IMaquinasRepository maquinasRepository): IAsignacionService
+        IMaquinasRepository maquinasRepository,
+        IKPIRepository kpiRepository) : IAsignacionService
     {
         private readonly IAsignacionRepository _repository = repository;
         private readonly IAreasRepository _areasRepository = areasRepository;
@@ -19,6 +20,7 @@ namespace Piolax_WebApp.Services.Impl
         private readonly IAsignacionTecnicosRepository _asignacionTecnicosRepository = asignacionTecnicosRepository;
         private readonly ISolicitudesRepository _solicitudRepository = solicitudRepository;
         private readonly IMaquinasRepository _maquinaRepository = maquinasRepository;
+        private readonly IKPIRepository _kpiRepository = kpiRepository;
 
         public async Task<AsignacionResponseDTO> AgregarAsignacion(AsignacionesDTO asignacionesDTO)
         {
@@ -208,7 +210,7 @@ namespace Piolax_WebApp.Services.Impl
                         tecnico.horaTermino > DateTime.MinValue &&
                         tecnico.horaTermino > tecnico.horaInicio)
                     {
-                        tiempoTotalReparacion += (tecnico.horaTermino - tecnico.horaInicio).TotalHours;
+                        tiempoTotalReparacion += (tecnico.horaTermino - tecnico.horaInicio).TotalMinutes;
                         count++;
                     }
                 }
@@ -261,7 +263,7 @@ namespace Piolax_WebApp.Services.Impl
                     // Si se encontró al menos un registro de técnico, se calcula el tiempo de asignación (MTTA)
                     if (primerInicio != null)
                     {
-                        tiempoTotalAsignacion += (primerInicio.Value - s.fechaSolicitud).TotalHours;
+                        tiempoTotalAsignacion += (primerInicio.Value - s.fechaSolicitud).TotalMinutes;
                         count++;
                     }
                 }
@@ -286,12 +288,40 @@ namespace Piolax_WebApp.Services.Impl
 
             // Se utiliza la fecha mínima de solicitud como proxy para el inicio de operación
             DateTime fechaInicioOperacion = solicitudes.Min(s => s.fechaSolicitud);
-            double tiempoTotalOperacion = (DateTime.Now - fechaInicioOperacion).TotalHours;
+            double tiempoTotalOperacion = (DateTime.Now - fechaInicioOperacion).TotalMinutes;
             int cantidadFallas = solicitudes.Count(); // Se asume cada solicitud es una "falla"
             return cantidadFallas > 0 ? tiempoTotalOperacion / cantidadFallas : 0;
         }
 
         #endregion
+
+        public async Task GuardarKPIs(int idMaquina, int idArea, int? idEmpleado = null)
+        {
+            var mttr = await CalcularMTTR(idMaquina, idArea, idEmpleado);
+            var mtta = await CalcularMTTA(idMaquina, idArea);
+            var mtbf = await CalcularMTBF(idMaquina, idArea);
+
+            // Si la propiedad idEmpleado en el modelo es no nullable, se asigna un valor por defecto (por ejemplo, 0)
+            var kpiMantenimiento = new KpisMantenimiento
+            {
+                idMaquina = idMaquina,
+                idArea = idArea,
+                idEmpleado = idEmpleado ?? 0,
+                fechaCalculo = DateTime.UtcNow
+            };
+
+            await _kpiRepository.GuardarKPIMantenimiento(kpiMantenimiento);
+
+            var kpiDetalles = new List<KpisDetalle>
+            {
+                new KpisDetalle { kpiNombre = "MTTR", kpiValor = (float)mttr },
+                new KpisDetalle { kpiNombre = "MTTA", kpiValor = (float)mtta },
+                new KpisDetalle { kpiNombre = "MTBF", kpiValor = (float)mtbf }
+            };
+
+            await _kpiRepository.GuardarKPIDetalles(kpiMantenimiento.idKPIMantenimiento, kpiDetalles);
+        }
+
 
     }
 }
