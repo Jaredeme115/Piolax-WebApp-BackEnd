@@ -34,6 +34,10 @@ namespace Piolax_WebApp.Models
         [Required]
         public bool esTecnicoActivo { get; set; }
 
+        // NUEVO: Tiempo total de trabajo que el técnico ha acumulado,
+        // descontando pausas propias o retiros parciales
+        public double tiempoAcumuladoMinutos { get; set; } = 0;
+
         public virtual ICollection<asignacion_refacciones> Asignacion_Refacciones { get; set; } = new List<asignacion_refacciones>(); // Lista de asignacion_refacciones asociados a Asignacion_Tecnico
     }
 }

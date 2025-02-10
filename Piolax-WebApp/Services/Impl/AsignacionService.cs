@@ -49,7 +49,7 @@ namespace Piolax_WebApp.Services.Impl
             var asignacion = new Asignaciones
             {
                 idSolicitud = asignacionesDTO.idSolicitud,
-                idStatusAsignacion = 2 // En proceso tecnico
+                idStatusAsignacion = 1 // En proceso tecnico
             };
 
             // Guardar la asignación en la base de datos
@@ -200,17 +200,16 @@ namespace Piolax_WebApp.Services.Impl
 
             double tiempoTotalReparacion = 0;
             int count = 0;
+
             foreach (var asignacion in asignaciones)
             {
-                // Recorremos cada registro de técnico en la asignación
                 foreach (var tecnico in asignacion.Asignacion_Tecnico)
                 {
-                    // Solo consideramos si los tiempos son válidos y el registro indica un periodo de reparación
-                    if (tecnico.horaInicio > DateTime.MinValue &&
-                        tecnico.horaTermino > DateTime.MinValue &&
-                        tecnico.horaTermino > tecnico.horaInicio)
+                    // En lugar de restar (horaTermino - horaInicio),
+                    // usamos tecnico.tiempoAcumuladoMinutos:
+                    if (tecnico.tiempoAcumuladoMinutos > 0)
                     {
-                        tiempoTotalReparacion += (tecnico.horaTermino - tecnico.horaInicio).TotalMinutes;
+                        tiempoTotalReparacion += tecnico.tiempoAcumuladoMinutos;
                         count++;
                     }
                 }
@@ -227,49 +226,36 @@ namespace Piolax_WebApp.Services.Impl
         /// <returns>Promedio de tiempo de asignación (MTTA) en minutos.</returns>
         public async Task<double> CalcularMTTA(int idMaquina, int idArea)
         {
-            // Se obtienen las solicitudes para la máquina y área
+            // Obtiene solicitudes
             var solicitudes = await _solicitudRepository.ConsultarSolicitudesPorMaquinaYArea(idMaquina, idArea);
             if (!solicitudes.Any())
                 return 0;
 
-            double tiempoTotalAsignacion = 0;
+            double tiempoTotal = 0;
             int count = 0;
 
-            // Para cada solicitud, se busca la asignación (o ciclo) que inició primero.
             foreach (var s in solicitudes)
             {
-                if (s.Asignaciones != null && s.Asignaciones.Any())
-                {
-                    DateTime? primerInicio = null;
-                    // Recorrer cada asignación asociada a la solicitud
-                    foreach (var asignacion in s.Asignaciones)
-                    {
-                        if (asignacion.Asignacion_Tecnico != null && asignacion.Asignacion_Tecnico.Any())
-                        {
-                            // Se toma el registro de técnico con el menor valor de horaInicio
-                            var primerTecnico = asignacion.Asignacion_Tecnico
-                                .OrderBy(t => t.horaInicio)
-                                .FirstOrDefault();
+                // Podrías buscar la asignación principal o la primera
+                var asignacion = s.Asignaciones?.FirstOrDefault(a => a.idStatusAsignacion >= 1);
+                if (asignacion == null) continue;
 
-                            if (primerTecnico != null && primerTecnico.horaInicio > DateTime.MinValue)
-                            {
-                                if (primerInicio == null || primerTecnico.horaInicio < primerInicio)
-                                {
-                                    primerInicio = primerTecnico.horaInicio;
-                                }
-                            }
-                        }
-                    }
-                    // Si se encontró al menos un registro de técnico, se calcula el tiempo de asignación (MTTA)
-                    if (primerInicio != null)
-                    {
-                        tiempoTotalAsignacion += (primerInicio.Value - s.fechaSolicitud).TotalMinutes;
-                        count++;
-                    }
-                }
+                // Encuentra primer técnico
+                var primerTecnico = asignacion.Asignacion_Tecnico.OrderBy(t => t.horaInicio).FirstOrDefault();
+                if (primerTecnico == null) continue;
+
+                // Espera inicial: primerTecnico.horaInicio - s.fechaSolicitud
+                double esperaInicial = (primerTecnico.horaInicio - s.fechaSolicitud).TotalMinutes;
+
+                // Espera por pausas: asignacion.tiempoEsperaAcumuladoMinutos
+                // (Asumiendo que has ido sumando en cada pausa)
+                double esperaPausas = asignacion.tiempoEsperaAcumuladoMinutos;
+
+                tiempoTotal += (esperaInicial + esperaPausas);
+                count++;
             }
 
-            return count > 0 ? tiempoTotalAsignacion / count : 0;
+            return (count > 0) ? (tiempoTotal / count) : 0;
         }
 
 

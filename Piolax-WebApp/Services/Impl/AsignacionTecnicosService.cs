@@ -59,6 +59,15 @@ namespace Piolax_WebApp.Services.Impl
                 {
                     // Si no hay un técnico activo, el nuevo técnico será el activo
                     asignacionTecnicoDTO.esTecnicoActivo = true;
+
+                    // Como este técnico es activo, revisa el estado de la asignación y cámbialo a "En Proceso Técnico"
+                    var asignacion = await _asignacionRepository.ConsultarAsignacionPorId(asignacionTecnicoDTO.idAsignacion);
+                    if (asignacion == null)
+                        throw new Exception("La asignación no existe.");
+
+                    // Aquí 1 (o 2) debe ser la constante/ID de "En Proceso Técnico"
+                    asignacion.idStatusAsignacion = 1;
+                    await _asignacionRepository.ActualizarAsignacion(asignacion.idAsignacion, asignacion);
                 }
 
                 // Crear la entidad Asignacion_Tecnico
@@ -69,7 +78,7 @@ namespace Piolax_WebApp.Services.Impl
                     horaInicio = DateTime.Now,
                     horaTermino = asignacionTecnicoDTO.horaTermino,
                     solucion = "N/A", // Valor por defecto
-                    idStatusAprobacionTecnico = 3, // Valor por defecto (por ejemplo, "Pendiente")
+                    idStatusAprobacionTecnico = 3, // Valor = Pendiente
                     comentarioPausa = "N/A", // Valor por defecto
                     esTecnicoActivo = asignacionTecnicoDTO.esTecnicoActivo // Definido por la validación anterior
                 };
@@ -123,8 +132,9 @@ namespace Piolax_WebApp.Services.Impl
                 throw new ArgumentException("El empleado asociado al técnico no está disponible.");
             }
 
-
-            // Marcar la hora de finalización y la solución
+            // 1. Cerrar su intervalo de trabajo
+            double minutosTrabajo = (DateTime.Now - tecnico.horaInicio).TotalMinutes;
+            tecnico.tiempoAcumuladoMinutos += minutosTrabajo;
             tecnico.horaTermino = DateTime.Now;
             tecnico.solucion = asignacionTecnicoFinalizacionDTO.solucion;
             tecnico.idStatusAprobacionTecnico = 1;
@@ -144,7 +154,7 @@ namespace Piolax_WebApp.Services.Impl
             if (!hayTecnicosActivos)
             {
                 // Si no hay técnicos activos, marcar la asignación como finalizada
-                asignacion.idStatusAsignacion = 4; // Estado "Finalizada"
+                asignacion.idStatusAsignacion = 3; // Estado "Finalizada"
                 var asignacionActualizada = await _asignacionRepository.ActualizarAsignacion(asignacion.idAsignacion, asignacion);
 
                 if (asignacionActualizada == null)
@@ -201,8 +211,17 @@ namespace Piolax_WebApp.Services.Impl
                 throw new InvalidOperationException("Solo el técnico activo puede pausar la asignación.");
             }
 
-            // Cambiar el estado de la asignación a "Pausa"
-            asignacion.idStatusAsignacion = 3; // Suponiendo que 3 es el ID del estado "Pausa"
+            // Acumular tiempo efectivo del técnico
+            double minutosTrabajo = (DateTime.Now - tecnicoQuePausa.horaInicio).TotalMinutes;
+            tecnicoQuePausa.tiempoAcumuladoMinutos += minutosTrabajo;
+            tecnicoQuePausa.horaTermino = DateTime.Now;  // Indica pausa
+            tecnicoQuePausa.esTecnicoActivo = false;
+            tecnicoQuePausa.comentarioPausa = comentarioPausa;
+            await _repository.ActualizarTecnicoEnAsignacion(tecnicoQuePausa);
+
+            // Cambiar la asignación a "pausa" y marcar el tiempo en que queda sin técnico
+            asignacion.idStatusAsignacion = 2; // "Pausa"
+            asignacion.ultimaVezSinTecnico = DateTime.Now; // Inicia espera
             await _asignacionRepository.ActualizarAsignacion(idAsignacion, asignacion);
 
             // Marcar al técnico que pausa como inactivo y agregar el comentario de pausa
@@ -261,6 +280,11 @@ namespace Piolax_WebApp.Services.Impl
             {
                 throw new InvalidOperationException("El técnico activo no puede retirarse usando este método. Use el método de pausar asignación.");
             }
+
+            // Cerrar su intervalo de trabajo
+            double minutosTrabajo = (DateTime.Now - tecnicoQueSeRetira.horaInicio).TotalMinutes;
+            tecnicoQueSeRetira.tiempoAcumuladoMinutos += minutosTrabajo;
+            tecnicoQueSeRetira.horaTermino = DateTime.Now;
 
             // Agregar el comentario de retiro al técnico que se retira
             tecnicoQueSeRetira.comentarioPausa = comentarioRetiro;

@@ -73,7 +73,7 @@ namespace Piolax_WebApp.Repositories.Impl
                 .Include(a => a.Asignacion_Tecnico)
                 .Where(a => a.Solicitud.idMaquina == idMaquina &&
                             a.Solicitud.idAreaSeleccionada == idArea &&
-                            a.idStatusAsignacion == 4);
+                            a.idStatusAsignacion == 3);
 
             if (idEmpleado.HasValue)
             {
