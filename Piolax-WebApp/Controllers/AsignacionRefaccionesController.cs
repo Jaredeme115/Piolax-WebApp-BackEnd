@@ -10,7 +10,7 @@ namespace Piolax_WebApp.Controllers
         private readonly IAsignacionRefaccionesService _service = service;
 
         [HttpPost("CrearAsignacionRefacciones")]
-        public async Task<ActionResult<asignacion_refacciones>> CrearAsignacionRefacciones(Asignacion_RefaccionesDTO asignacionRefaccionesDTO)
+        public async Task<ActionResult<Asignacion_RefaccionesResponseDTO>> CrearAsignacionRefacciones(Asignacion_RefaccionesDTO asignacionRefaccionesDTO)
         {
             return await _service.CrearAsignacionRefacciones(asignacionRefaccionesDTO);
         }

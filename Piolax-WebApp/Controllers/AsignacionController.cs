@@ -22,11 +22,11 @@ namespace Piolax_WebApp.Controllers
             return Ok(await _service.ConsultarTodasLasAsignaciones());
         }
 
-        [HttpGet("ConsultarAsignacionPorId")]
+        /*[HttpGet("ConsultarAsignacionPorId")]
         public async Task<ActionResult<Asignaciones>> ConsultarAsignacionPorId(int idAsignacion)
         {
             return await _service.ConsultarAsignacionPorId(idAsignacion);
-        }
+        }*/
 
         [HttpPut("ModificarAsignacion")]
         public async Task<ActionResult<Asignaciones>> ActualizarAsignacion(int idAsignacion, AsignacionesDTO asignacionesDTO)

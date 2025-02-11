@@ -24,7 +24,10 @@ namespace Piolax_WebApp.Repositories.Impl
 
         public async Task<IEnumerable<asignacion_refacciones>> ConsultarTodasLasRefacciones()
         {
-            return await _context.asignacion_refacciones.ToListAsync();
+            return await _context.asignacion_refacciones
+                .Include(r => r.Inventario)
+                .Include(r => r.Asignacion_Tecnicos)
+                .ToListAsync();
         }
 
         public async Task<bool> EliminarRefaccionDeAsignacion(int idAsignacionRefaccion)

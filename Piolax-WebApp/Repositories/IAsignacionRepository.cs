@@ -1,4 +1,5 @@
-﻿using Piolax_WebApp.Models;
+﻿using Piolax_WebApp.DTOs;
+using Piolax_WebApp.Models;
 
 namespace Piolax_WebApp.Repositories
 {

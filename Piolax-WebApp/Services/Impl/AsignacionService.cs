@@ -293,7 +293,7 @@ namespace Piolax_WebApp.Services.Impl
                 idMaquina = idMaquina,
                 idArea = idArea,
                 idEmpleado = idEmpleado ?? 0,
-                fechaCalculo = DateTime.UtcNow
+                fechaCalculo = DateTime.Now
             };
 
             await _kpiRepository.GuardarKPIMantenimiento(kpiMantenimiento);

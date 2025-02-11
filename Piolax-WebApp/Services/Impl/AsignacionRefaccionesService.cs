@@ -21,7 +21,7 @@ namespace Piolax_WebApp.Services.Impl
             return await _repository.ConsultarRefaccionesPorAsignacion(idAsignacion);
         }
 
-        public async Task<asignacion_refacciones> CrearAsignacionRefacciones(Asignacion_RefaccionesDTO asignacionRefaccionesDTO)
+        public async Task<Asignacion_RefaccionesResponseDTO> CrearAsignacionRefacciones(Asignacion_RefaccionesDTO asignacionRefaccionesDTO)
         {
             // Validar si la asignación existe
             if (await _asignacionRepository.ConsultarAsignacionPorId(asignacionRefaccionesDTO.idAsignacion) == null)
@@ -42,6 +42,7 @@ namespace Piolax_WebApp.Services.Impl
                 throw new ArgumentException("No hay suficiente cantidad disponible en el inventario.");
             }
 
+            // Crear la nueva asignación de refacción
             var refacciones = new asignacion_refacciones
             {
                 idAsignacion = asignacionRefaccionesDTO.idAsignacion,
@@ -50,8 +51,22 @@ namespace Piolax_WebApp.Services.Impl
                 idAsignacionTecnico = asignacionRefaccionesDTO.idAsignacionTecnico
             };
 
-            return await _repository.CrearAsignacionRefacciones(refacciones);
+            // Guardar la asignación en la base de datos
+            var nuevaAsignacion = await _repository.CrearAsignacionRefacciones(refacciones);
+
+            // Mapear la entidad a DTO de respuesta
+            var responseDTO = new Asignacion_RefaccionesResponseDTO
+            {
+                idAsignacionRefaccion = nuevaAsignacion.idAsignacionRefaccion,
+                idAsignacion = nuevaAsignacion.idAsignacion,
+                idRefaccion = nuevaAsignacion.idRefaccion,
+                cantidad = nuevaAsignacion.cantidad,
+                idAsignacionTecnico = nuevaAsignacion.idAsignacionTecnico
+            };
+
+            return responseDTO;
         }
+
 
 
         public async Task<IEnumerable<Asignacion_RefaccionesDetallesDTO>> ConsultarTodasLasRefacciones()
@@ -59,10 +74,11 @@ namespace Piolax_WebApp.Services.Impl
             var refacciones = await _repository.ConsultarTodasLasRefacciones();
             return refacciones.Select(refaccion => new Asignacion_RefaccionesDetallesDTO
             {
-
+                idAsignacionRefaccion = refaccion.idAsignacionRefaccion,
                 idAsignacion = refaccion.idAsignacion,
                 idRefaccion = refaccion.idRefaccion,
-                nombreRefaccion = refaccion.Inventario.nombreProducto,
+                nombreRefaccion = refaccion.Inventario?.nombreProducto ?? "N/A",
+                idAsignacionTecnico = refaccion.Asignacion_Tecnicos.idAsignacionTecnico,
                 cantidad = refaccion.cantidad
             });
         }

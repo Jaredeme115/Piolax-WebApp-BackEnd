@@ -17,7 +17,7 @@ namespace Piolax_WebApp.Controllers
         }
 
         [HttpPost("CrearAsignacionTecnico")]
-        public async Task<ActionResult<Asignacion_Tecnico>> CrearAsignacionTecnico(Asignacion_TecnicoDTO asignacionTecnicoDTO)
+        public async Task<ActionResult<Asignacion_TecnicoResponseDTO?>> CrearAsignacionTecnico(Asignacion_TecnicoDTO asignacionTecnicoDTO)
         {
             return await _service.CrearAsignacionTecnico(asignacionTecnicoDTO);
         }
