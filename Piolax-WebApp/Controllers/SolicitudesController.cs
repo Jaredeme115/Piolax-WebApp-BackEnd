@@ -96,5 +96,22 @@ namespace Piolax_WebApp.Controllers
             }
         }
 
+        [HttpGet("ConsultarSolicitudesNoTomadas")]
+        public async Task<ActionResult<IEnumerable<Solicitudes>>> ConsultarSolicitudesNoTomadas()
+        {
+            var solicitudes = await _service.ConsultarSolicitudesNoTomadas();
+            return Ok(solicitudes);
+
+        }
+
+        [HttpGet("ConsultarSolicitudesTerminadas")]
+        public async Task<ActionResult<IEnumerable<Solicitudes>>> ConsultarSolicitudesTerminadas()
+        {
+            var solicitudes = await _service.ConsultarSolicitudesTerminadas();
+            return Ok(solicitudes);
+
+        }
+
+
     }
  }

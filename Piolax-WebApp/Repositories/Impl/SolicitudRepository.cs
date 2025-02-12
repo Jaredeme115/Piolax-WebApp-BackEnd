@@ -19,19 +19,22 @@ namespace Piolax_WebApp.Repositories.Impl
         {
             return await _context.Solicitudes
                 .Include(s => s.Empleado)
-                .ThenInclude(e => e.EmpleadoAreaRol)
-                .ThenInclude(ar => ar.Area)
+                    .ThenInclude(e => e.EmpleadoAreaRol)
+                        .ThenInclude(ar => ar.Area)
                 .Include(s => s.Empleado)
-                .ThenInclude(e => e.EmpleadoAreaRol)
-                .ThenInclude(ar => ar.Rol)
+                    .ThenInclude(e => e.EmpleadoAreaRol)
+                        .ThenInclude(ar => ar.Rol)
                 .Include(s => s.Maquina)
                 .Include(s => s.Turno)
                 .Include(s => s.StatusOrden)
                 .Include(s => s.StatusAprobacionSolicitante)
                 .Include(s => s.categoriaTicket)
+                // Incluir las asignaciones y sus técnicos para poder evaluar el estado de aprobación del técnico.
+                .Include(s => s.Asignaciones)
+                    .ThenInclude(a => a.Asignacion_Tecnico)
                 .FirstOrDefaultAsync(s => s.idSolicitud == idSolicitud);
-
         }
+
 
         public async Task<IEnumerable<Solicitudes>> ObtenerSolicitudes()
         {
@@ -116,6 +119,32 @@ namespace Piolax_WebApp.Repositories.Impl
                 .Include(s => s.Asignaciones) // Suponiendo que cada solicitud tiene una asignación asociada
                 .Where(s => s.idMaquina == idMaquina && s.idAreaSeleccionada == idArea)
                 .ToListAsync();
+        }
+
+        public async Task<IEnumerable<Solicitudes>> ConsultarSolicitudesNoTomadas()
+        {
+            return await _context.Solicitudes
+                .Where(s => s.idStatusOrden == 3) // Filtra solicitudes "No tomadas"
+                .OrderBy(s => s.fechaSolicitud)   // Ordena de manera ascendente (más antiguas primero)
+                .ToListAsync();
+        }
+
+        public async Task<IEnumerable<Solicitudes>> ConsultarSolicitudesTerminadas()
+        {
+            return await _context.Solicitudes
+                .Where(s => s.idStatusOrden == 1) // Filtra solicitudes "Terminadas"
+                .OrderBy(s => s.fechaSolicitud)   // Ordena de manera ascendente (más antiguas primero)
+                .ToListAsync();
+        }
+
+        public async Task ActualizarStatusOrden(int idSolicitud, int idStatusOrden)
+        {
+            var solicitud = await _context.Solicitudes.FindAsync(idSolicitud);
+            if (solicitud != null)
+            {
+                solicitud.idStatusOrden = idStatusOrden;
+                await _context.SaveChangesAsync();
+            }
         }
 
 

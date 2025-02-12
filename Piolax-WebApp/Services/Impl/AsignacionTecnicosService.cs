@@ -13,7 +13,8 @@ namespace Piolax_WebApp.Services.Impl
         IAsignacionRefaccionesRepository asignacionRefaccionesRepository,
         IInventarioRepository inventarioRepository,
         IKPIRepository kpiRepository,
-        IAsignacionService asignacionService) : IAsignacionTecnicosService
+        IAsignacionService asignacionService,
+        ISolicitudService solicitudService) : IAsignacionTecnicosService
     {
         private readonly IAsignacionTecnicosRepository _repository = repository;
         private readonly IAsignacionRepository _asignacionRepository = asignacionRepository;
@@ -21,6 +22,8 @@ namespace Piolax_WebApp.Services.Impl
         private readonly IInventarioRepository _inventarioRepository = inventarioRepository;
         private readonly IKPIRepository _kpiRepository = kpiRepository;
         private readonly IAsignacionService _asignacionService = asignacionService;
+        private readonly ISolicitudService _solicitudService = solicitudService;
+
 
 
         public async Task<IEnumerable<Asignacion_TecnicoDetallesDTO>> ConsultarTecnicosPorAsignacion(int idAsignacion)
@@ -41,107 +44,6 @@ namespace Piolax_WebApp.Services.Impl
                 esTecnicoActivo = tecnico.esTecnicoActivo
             });
         }
-
-
-        /*public async Task<Asignacion_TecnicoResponseDTO?> CrearAsignacionTecnico(Asignacion_TecnicoDTO asignacionTecnicoDTO)
-        {
-            try
-            {
-                // 1. Verifica que la asignación exista
-                var asignacion = await _asignacionRepository.ConsultarAsignacionPorId(asignacionTecnicoDTO.idAsignacion);
-                if (asignacion == null)
-                    throw new Exception("La asignación no existe.");
-
-                // 2. Busca si este técnico ya existe en la asignación (mismo idAsignacion + idEmpleado)
-                var tecnicoExistente = await _repository.ConsultarTecnicoPorAsignacionYEmpleado(
-                    asignacionTecnicoDTO.idAsignacion,
-                    asignacionTecnicoDTO.idEmpleado
-                );
-
-                // 3. Si YA existe un técnico para esta asignación y empleado, entonces lo "reanudas"
-                if (tecnicoExistente != null)
-                {
-                    // --- REUTILIZAR LA MISMA FILA ---
-
-                    // (A) Revisar si ya hay otro técnico activo (que no sea él)
-                    bool hayOtroTecnicoActivo = await _repository.ConsultarTecnicosActivosPorAsignacion(asignacionTecnicoDTO.idAsignacion);
-
-                    // (B) Si no hay otro técnico activo, este será el activo.
-                    //     Si sí hay otro, lo creamos como inactivo.
-                    if (!hayOtroTecnicoActivo)
-                    {
-                        tecnicoExistente.esTecnicoActivo = true;
-                        // Cambiar la asignación a "En Proceso Técnico" si no lo está
-                        if (asignacion.idStatusAsignacion != 1) // 1 = "En Proceso Técnico"
-                        {
-                            asignacion.idStatusAsignacion = 1;
-                            await _asignacionRepository.ActualizarAsignacion(asignacion.idAsignacion, asignacion);
-                        }
-                    }
-                    else
-                    {
-                        tecnicoExistente.esTecnicoActivo = false;
-                    }
-
-                    // (C) Actualizar la hora de reanudación (cerrar el intervalo anterior si fuera necesario)
-                    //     Como estamos reanudando, ponemos un nuevo "horaInicio".
-                    //     Si antes lo habíamos pausado, su intervalo anterior ya debería haberse cerrado.
-                    tecnicoExistente.horaInicio = DateTime.Now;
-                    tecnicoExistente.comentarioPausa = "N/A"; // limpiar el comentario de pausa si deseas
-                                                              // horaTermino queda como estaba hasta que se finalice o pause otra vez
-
-                    // (D) Actualizar al técnico en la BD
-                    await _repository.ActualizarTecnicoEnAsignacion(tecnicoExistente);
-
-                    return tecnicoExistente;
-                }
-                else
-                {
-                    // --- CREAR UN NUEVO REGISTRO ---
-                    // Validar si ya hay un técnico activo en la asignación
-                    bool hayTecnicoActivo = await _repository.ConsultarTecnicosActivosPorAsignacion(asignacionTecnicoDTO.idAsignacion);
-                    if (hayTecnicoActivo)
-                    {
-                        // Si ya hay un técnico activo, este nuevo será inactivo
-                        asignacionTecnicoDTO.esTecnicoActivo = false;
-                    }
-                    else
-                    {
-                        // Si no hay técnico activo, este nuevo técnico será el activo
-                        asignacionTecnicoDTO.esTecnicoActivo = true;
-
-                        // Cambiamos la asignación a "En Proceso Técnico"
-                        if (asignacion.idStatusAsignacion != 1) // 1 = "En Proceso Técnico"
-                        {
-                            asignacion.idStatusAsignacion = 1;
-                            await _asignacionRepository.ActualizarAsignacion(asignacion.idAsignacion, asignacion);
-                        }
-                    }
-
-                    // Crear la entidad Asignacion_Tecnico
-                    var asignacionTecnico = new Asignacion_TecnicoResponseDTO
-                    {
-                        idAsignacion = asignacionTecnicoDTO.idAsignacion,
-                        idEmpleado = asignacionTecnicoDTO.idEmpleado,
-                        horaInicio = DateTime.Now,
-                        horaTermino = asignacionTecnicoDTO.horaTermino,
-                        solucion = "N/A", // Valor por defecto
-                        idStatusAprobacionTecnico = 3, // Valor = Pendiente
-                        comentarioPausa = "N/A",
-                        esTecnicoActivo = asignacionTecnicoDTO.esTecnicoActivo
-                    };
-
-                    // Guardar la asignación del técnico en la base de datos
-                    return await _repository.CrearAsignacionTecnico(asignacionTecnico);
-                }
-            }
-            catch (Exception ex)
-            {
-                // Loggear el error
-                Console.WriteLine($"Error al crear la asignación del técnico: {ex.Message}");
-                throw;
-            }
-        }*/
 
         public async Task<Asignacion_TecnicoResponseDTO?> CrearAsignacionTecnico(Asignacion_TecnicoDTO asignacionTecnicoDTO)
         {
@@ -177,6 +79,8 @@ namespace Piolax_WebApp.Services.Impl
                         {
                             asignacion.idStatusAsignacion = 1;
                             await _asignacionRepository.ActualizarAsignacion(asignacion.idAsignacion, asignacion);
+                            // Actualizamos la solicitud a "En proceso" (valor 2)
+                            await _solicitudService.ActualizarStatusOrden(asignacion.Solicitud.idSolicitud, 2);
                         }
                     }
                     else
@@ -205,12 +109,15 @@ namespace Piolax_WebApp.Services.Impl
                     else
                     {
                         asignacionTecnicoDTO.esTecnicoActivo = true;
+                        // Al no haber técnicos activos, se actualiza la solicitud a "En proceso" (valor 2)
+                        await _solicitudService.ActualizarStatusOrden(asignacion.Solicitud.idSolicitud, 2);
 
                         // Cambiamos la asignación a "En Proceso Técnico" si no lo está
                         if (asignacion.idStatusAsignacion != 1) // 1 = "En Proceso Técnico"
                         {
                             asignacion.idStatusAsignacion = 1;
                             await _asignacionRepository.ActualizarAsignacion(asignacion.idAsignacion, asignacion);
+                            await _solicitudService.ActualizarStatusOrden(asignacion.Solicitud.idSolicitud, 2);
                         }
                     }
 
@@ -318,13 +225,15 @@ namespace Piolax_WebApp.Services.Impl
             if (!hayTecnicosActivos)
             {
                 // Si no hay técnicos activos, marcar la asignación como finalizada
-                asignacion.idStatusAsignacion = 3; // Estado "Finalizada"
+                //asignacion.idStatusAsignacion = 3; // Estado "Finalizada"
                 var asignacionActualizada = await _asignacionRepository.ActualizarAsignacion(asignacion.idAsignacion, asignacion);
 
                 if (asignacionActualizada == null)
                 {
                     throw new ArgumentException("No se pudo actualizar la asignación porque no existe.");
                 }
+
+                await _solicitudService.ActualizarStatusOrden(asignacion.Solicitud.idSolicitud, 4); // "Esperando Validacion"
 
                 //return tecnico; // Devuelve el técnico actualizado en lugar de la asignación
             }
@@ -418,6 +327,8 @@ namespace Piolax_WebApp.Services.Impl
             {
                 // Si no hay otro técnico, la asignación queda en pausa y las refacciones se mantienen
                 // (no se transfieren a otro técnico, pero siguen reservadas en el inventario)
+
+                await _solicitudService.ActualizarStatusOrden(asignacion.Solicitud.idSolicitud, 5); // "Pausa"
             }
 
             return true;

@@ -10,6 +10,10 @@ namespace Piolax_WebApp.Services
         Task<IEnumerable<SolicitudesDetalleDTO>> ObtenerSolicitudes();
         Task<IEnumerable<SolicitudesDetalleDTO>> ObtenerSolicitudesEmpleado(string numNomina);
         Task<SolicitudesDetalleDTO> ModificarEstatusAprobacionSolicitante(int idSolicitud, int idStatusAprobacionSolicitante);
+        Task<IEnumerable<Solicitudes>> ConsultarSolicitudesNoTomadas();
+        Task<IEnumerable<Solicitudes>> ConsultarSolicitudesTerminadas();
+        Task ActualizarStatusOrden(int idSolicitud, int idStatusOrden);
+
 
     }
 }

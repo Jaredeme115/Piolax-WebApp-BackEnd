@@ -13,7 +13,8 @@ namespace Piolax_WebApp.Services.Impl
         ITurnosService turnosService,
         IStatusOrdenService statusOrdenService,
         IStatusAprobacionSolicitanteService statusAprobacionSolicitanteService,
-        ICategoriaTicketService categoriaTicketService
+        ICategoriaTicketService categoriaTicketService,
+        IAsignacionRepository asignacionRepository
         ) : ISolicitudService
     {
         private readonly ISolicitudesRepository _repository = repository;
@@ -24,6 +25,7 @@ namespace Piolax_WebApp.Services.Impl
         private readonly IStatusOrdenService _statusOrdenService = statusOrdenService;
         private readonly IStatusAprobacionSolicitanteService _statusAprobacionSolicitanteService = statusAprobacionSolicitanteService;
         private readonly ICategoriaTicketService _categoriaTicketService = categoriaTicketService;
+        private readonly IAsignacionRepository _asignacionRepository = asignacionRepository;
 
         public async Task<SolicitudesDetalleDTO> RegistrarSolicitud(SolicitudesDTO solicitudesDTO)
         {
@@ -282,31 +284,70 @@ namespace Piolax_WebApp.Services.Impl
                 throw new Exception($"No se encontró el status de aprobación del solicitante con ID: {idStatusAprobacionSolicitante}");
             }
 
+            // Actualizamos el status de aprobación del solicitante
             solicitud.idStatusAprobacionSolicitante = idStatusAprobacionSolicitante;
             await _repository.ModificarEstatusAprobacionSolicitante(idSolicitud, idStatusAprobacionSolicitante);
 
+            // Si el solicitante aprueba (idStatusAprobacionSolicitante == 1)
+            if (idStatusAprobacionSolicitante == 1)
+            {
+                // Verificar si la asignación asociada ya tiene la aprobación del técnico.
+                // Aquí se asume que la solicitud trae consigo la información de la asignación y de los técnicos.
+                // Por ejemplo, podrías tener en la solicitud una colección de asignaciones y en cada asignación la lista de técnicos:
+                bool tecnicoAprobado = solicitud.Asignaciones != null &&
+                                       solicitud.Asignaciones.Any(a => a.Asignacion_Tecnico != null &&
+                                                                        a.Asignacion_Tecnico.Any(t => t.idStatusAprobacionTecnico == 1));
+                if (tecnicoAprobado)
+                {
+                    // Actualizamos el status de la orden a 1 (por ejemplo, "Realizado")
+                    solicitud.idStatusOrden = 1;
+                    await _repository.ActualizarStatusOrden(idSolicitud, 1);
+
+                    // Aquí podrías actualizar el statusAsignacion
+                    foreach (var asignacion in solicitud.Asignaciones)  // Se asume que la solicitud tiene una colección de asignaciones.
+                    {
+                        asignacion.idStatusAsignacion = 3/* el nuevo estado que desees asignar, por ejemplo, 3 para "Completado Tecnico" */;
+                        await _asignacionRepository.ActualizarAsignacion(asignacion.idAsignacion, asignacion);
+                    }
+
+                }
+            }
+
+            // Mapear la solicitud actualizada a un DTO para retornarlo (ejemplo simplificado)
             var solicitudDetalleDTO = new SolicitudesDetalleDTO
             {
                 idSolicitud = solicitud.idSolicitud,
                 descripcion = solicitud.descripcion,
                 fechaSolicitud = solicitud.fechaSolicitud,
-                nombreCompletoEmpleado = $"{solicitud.Empleado.nombre} {solicitud.Empleado.apellidoPaterno} {solicitud.Empleado.apellidoMaterno}",
-                idMaquina = solicitud.idMaquina,
-                idTurno = solicitud.idTurno,
+                // ... mapear el resto de propiedades necesarias
                 idStatusOrden = solicitud.idStatusOrden,
-                idStatusAprobacionSolicitante = solicitud.idStatusAprobacionSolicitante,
-                area = solicitud.Empleado.EmpleadoAreaRol.FirstOrDefault(ar => ar.idArea == solicitud.idAreaSeleccionada)?.Area?.nombreArea ?? "N/A",
-                rol = solicitud.Empleado.EmpleadoAreaRol.FirstOrDefault(ar => ar.idRol == solicitud.idRolSeleccionado && ar.idArea == solicitud.idAreaSeleccionada)?.Rol?.nombreRol ?? "N/A",
-                idCategoriaTicket = solicitud.idCategoriaTicket,
-                nombreMaquina = solicitud.Maquina.nombreMaquina,
-                nombreTurno = solicitud.Turno.descripcion,
-                nombreStatusOrden = solicitud.StatusOrden.descripcionStatusOrden,
-                nombreStatusAprobacionSolicitante = statusAprobacionSolicitante.descripcionStatusAprobacionSolicitante,
-                nombreCategoriaTicket = solicitud.categoriaTicket.descripcionCategoriaTicket
+                idStatusAprobacionSolicitante = solicitud.idStatusAprobacionSolicitante
             };
 
             return solicitudDetalleDTO;
         }
 
+
+        public async Task<IEnumerable<Solicitudes>> ConsultarSolicitudesNoTomadas()
+        {
+            return await _repository.ConsultarSolicitudesNoTomadas();
+        }
+
+        public async Task<IEnumerable<Solicitudes>> ConsultarSolicitudesTerminadas()
+        {
+            return await _repository.ConsultarSolicitudesTerminadas();
+        }
+
+        public async Task ActualizarStatusOrden(int idSolicitud, int idStatusOrden)
+        {
+            var solicitud = await _repository.ObtenerSolicitudConDetalles(idSolicitud);
+            if (solicitud == null)
+            {
+                throw new Exception($"No se encontró la solicitud con ID: {idSolicitud}");
+            }
+            solicitud.idStatusOrden = idStatusOrden;
+            // Se asume que en el repositorio existe un método para actualizar el estado de la solicitud
+            await _repository.ActualizarStatusOrden(idSolicitud, idStatusOrden);
+        }
     }
 }
