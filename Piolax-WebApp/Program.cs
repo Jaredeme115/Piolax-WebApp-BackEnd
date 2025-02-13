@@ -8,6 +8,9 @@ using Piolax_WebApp.Services.Impl;
 using Piolax_WebApp.Repositories;
 using Piolax_WebApp.Repositories.Impl;
 using System.Collections.Specialized;
+using Piolax_WebApp.BackgroundServices; 
+using Piolax_WebApp.Hubs;
+
 
 
 var builder = WebApplication.CreateBuilder(args);
@@ -22,13 +25,7 @@ builder.Services.AddDbContext<AppDbContext>(options =>
 );
 
 builder.Services.AddControllers();
-
-//Lo agregue por problemas de referencias cíclicas en la serialización JSON
-/*builder.Services.AddControllers()
-    .AddJsonOptions(options =>
-    {
-        options.JsonSerializerOptions.ReferenceHandler = System.Text.Json.Serialization.ReferenceHandler.Preserve;
-    });*/
+builder.Services.AddSignalR();
 
 
 //Empleado
@@ -105,6 +102,9 @@ builder.Services.AddScoped<IAsignacionRefaccionesService, AsignacionRefaccionesS
 
 //KPI's 
 builder.Services.AddScoped<IKPIRepository, KPIRepository>();
+
+//Notificaciones
+builder.Services.AddScoped<NewRequestNotificationService>();
 
 
 

@@ -299,14 +299,36 @@ namespace Piolax_WebApp.Services.Impl
                                                                         a.Asignacion_Tecnico.Any(t => t.idStatusAprobacionTecnico == 1));
                 if (tecnicoAprobado)
                 {
-                    // Actualizamos el status de la orden a 1 (por ejemplo, "Realizado")
+                    // Actualizamos el status de la orden a 1 ("Realizado")
                     solicitud.idStatusOrden = 1;
                     await _repository.ActualizarStatusOrden(idSolicitud, 1);
 
                     // Aquí podrías actualizar el statusAsignacion
                     foreach (var asignacion in solicitud.Asignaciones)  // Se asume que la solicitud tiene una colección de asignaciones.
                     {
-                        asignacion.idStatusAsignacion = 3/* el nuevo estado que desees asignar, por ejemplo, 3 para "Completado Tecnico" */;
+                        asignacion.idStatusAsignacion = 3;
+                        await _asignacionRepository.ActualizarAsignacion(asignacion.idAsignacion, asignacion);
+                    }
+
+                }
+            }
+            // Si el solicitante rechaza (idStatusAprobacionSolicitante == 2)
+            else if (idStatusAprobacionSolicitante == 2)
+            {
+
+                bool tecnicoAprobado = solicitud.Asignaciones != null &&
+                                      solicitud.Asignaciones.Any(a => a.Asignacion_Tecnico != null &&
+                                                                       a.Asignacion_Tecnico.Any(t => t.idStatusAprobacionTecnico == 1));
+
+                if (tecnicoAprobado)
+                {
+                    solicitud.idStatusOrden = 6; // Actualizamos el status de la orden a 6 ("Rechazada")
+                    await _repository.ActualizarStatusOrden(idSolicitud, 6);
+
+                    // Aquí podrías actualizar el statusAsignacion
+                    foreach (var asignacion in solicitud.Asignaciones)
+                    {
+                        asignacion.idStatusAsignacion = 4; // Se asume que el status 4 es "No tomada"
                         await _asignacionRepository.ActualizarAsignacion(asignacion.idAsignacion, asignacion);
                     }
 

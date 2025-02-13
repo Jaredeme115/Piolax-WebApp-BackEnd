@@ -124,8 +124,9 @@ namespace Piolax_WebApp.Repositories.Impl
         public async Task<IEnumerable<Solicitudes>> ConsultarSolicitudesNoTomadas()
         {
             return await _context.Solicitudes
-                .Where(s => s.idStatusOrden == 3) // Filtra solicitudes "No tomadas"
-                .OrderBy(s => s.fechaSolicitud)   // Ordena de manera ascendente (más antiguas primero)
+                .Where(s => (s.idStatusOrden == 6 || s.idStatusOrden == 3)) // Filtra solicitudes "No tomadas"
+                .OrderBy(s => s.idStatusOrden == 6 ? 0 : s.idStatusOrden == 3 ? 1 : 2)
+                .ThenBy(s => s.fechaSolicitud)
                 .ToListAsync();
         }
 

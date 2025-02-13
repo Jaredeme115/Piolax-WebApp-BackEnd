@@ -44,6 +44,11 @@ namespace Piolax_WebApp.Models
         public int idCategoriaTicket { get; set; }
         public categoriaTicket categoriaTicket { get; set; }
 
+        //Nuevo atributo agregado para el envio de notificaciones mediante SignalR
+
+        [Required]
+        public bool notificado { get; set; } = false;
+
         public virtual ICollection<Asignaciones> Asignaciones { get; set; } = new List<Asignaciones>(); // Lista de Asignaciones asociados a Solicitud
 
 

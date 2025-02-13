@@ -3,13 +3,19 @@ using Microsoft.AspNetCore.Mvc;
 using Piolax_WebApp.DTOs;
 using Piolax_WebApp.Models;
 using Piolax_WebApp.Services;
+using Piolax_WebApp.Repositories;
 using Piolax_WebApp.Services.Impl;
+using Microsoft.AspNetCore.SignalR;
+using Piolax_WebApp.Hubs;
+using System;
+using System.Threading.Tasks;
 
 namespace Piolax_WebApp.Controllers
 {
-    public class SolicitudesController(ISolicitudService service) : BaseApiController
+    public class SolicitudesController(ISolicitudService service, IHubContext<NotificationHub> hubContext) : BaseApiController
     {
         private readonly ISolicitudService _service = service;
+        private readonly IHubContext<NotificationHub> _hubContext = hubContext;
 
 
         [HttpPost("Registrar")]
@@ -18,6 +24,13 @@ namespace Piolax_WebApp.Controllers
             try
             {
                 var solicitudDetalle = await _service.RegistrarSolicitud(solicitudesDTO);
+
+                await _hubContext.Clients.All.SendAsync("ReceiveNewRequest", new
+                {
+                    idSolicitud = solicitudDetalle.idSolicitud,
+                    descripcion = solicitudesDTO.descripcion,
+                    fechaSolicitud = solicitudesDTO.fechaSolicitud
+                });
                 return Ok(solicitudDetalle);
             }
             catch (Exception ex)

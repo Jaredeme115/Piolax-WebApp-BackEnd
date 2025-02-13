@@ -35,6 +35,9 @@ namespace Piolax_WebApp.DTOs
         [Required]
         public int idCategoriaTicket { get; set; }
 
+        [Required]
+        public bool notificado { get; set; }
+
 
     }
 }
