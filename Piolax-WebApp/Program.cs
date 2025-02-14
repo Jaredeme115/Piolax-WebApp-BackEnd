@@ -149,6 +149,7 @@ builder.Services.AddCors(options =>
         cors => cors.WithOrigins("http://localhost:4200")
         .AllowAnyHeader()
         .AllowAnyMethod()
+        .AllowCredentials()
     )
 );
 
@@ -212,5 +213,8 @@ app.UseAuthentication();
 app.UseAuthorization();
 
 app.MapControllers();
+
+// Endpoint de SignalR
+app.MapHub<NotificationHub>("/notificationHub");
 
 app.Run();
