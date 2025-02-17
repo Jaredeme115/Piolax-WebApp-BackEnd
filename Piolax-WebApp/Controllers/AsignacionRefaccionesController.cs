@@ -10,7 +10,7 @@ namespace Piolax_WebApp.Controllers
         private readonly IAsignacionRefaccionesService _service = service;
 
         [HttpPost("CrearAsignacionRefacciones")]
-        public async Task<ActionResult<Asignacion_RefaccionesResponseDTO>> CrearAsignacionRefacciones(Asignacion_RefaccionesDTO asignacionRefaccionesDTO)
+        public async Task<ActionResult<Asignacion_RefaccionesResponseDTO>> CrearAsignacionRefacciones([FromBody] Asignacion_RefaccionesDTO asignacionRefaccionesDTO)
         {
             return await _service.CrearAsignacionRefacciones(asignacionRefaccionesDTO);
         }
@@ -22,13 +22,13 @@ namespace Piolax_WebApp.Controllers
         }
 
         [HttpDelete("EliminarRefaccionDeAsignacion")]
-        public async Task<ActionResult<bool>> EliminarRefaccionDeAsignacion(int idAsignacionRefaccion)
+        public async Task<ActionResult<bool>> EliminarRefaccionDeAsignacion([FromBody] int idAsignacionRefaccion)
         {
             return await _service.EliminarRefaccionDeAsignacion(idAsignacionRefaccion);
         }
 
         [HttpPut("ActualizarRefaccionEnAsignacion")]
-        public async Task<ActionResult<bool>> ActualizarRefaccionEnAsignacion(Asignacion_RefaccionesDTO asignacionRefaccionesDTO)
+        public async Task<ActionResult<bool>> ActualizarRefaccionEnAsignacion([FromBody] Asignacion_RefaccionesDTO asignacionRefaccionesDTO)
         {
             return await _service.ActualizarRefaccionEnAsignacion(asignacionRefaccionesDTO);
         }

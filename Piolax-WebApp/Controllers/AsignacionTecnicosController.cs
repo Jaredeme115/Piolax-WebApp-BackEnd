@@ -17,31 +17,31 @@ namespace Piolax_WebApp.Controllers
         }
 
         [HttpPost("CrearAsignacionTecnico")]
-        public async Task<ActionResult<Asignacion_TecnicoResponseDTO?>> CrearAsignacionTecnico(Asignacion_TecnicoDTO asignacionTecnicoDTO)
+        public async Task<ActionResult<Asignacion_TecnicoResponseDTO?>> CrearAsignacionTecnico([FromBody] Asignacion_TecnicoDTO asignacionTecnicoDTO)
         {
             return await _service.CrearAsignacionTecnico(asignacionTecnicoDTO);
         }
 
         [HttpPost("FinalizarAsignacionTecnico")]
-        public async Task<ActionResult<Asignacion_TecnicoFinalizacionResponseDTO>> FinalizarAsignacionTecnico(Asignacion_TecnicoFinalizacionDTO asignacionTecnicoFinalizacionDTO)
+        public async Task<ActionResult<Asignacion_TecnicoFinalizacionResponseDTO>> FinalizarAsignacionTecnico([FromBody] Asignacion_TecnicoFinalizacionDTO asignacionTecnicoFinalizacionDTO)
         {
             return await _service.FinalizarAsignacionTecnico(asignacionTecnicoFinalizacionDTO);
         }
 
         [HttpPost("PausarAsignacion")]
-        public async Task<ActionResult<bool>> PausarAsignacion(int idAsignacion, int idTecnicoQuePausa, string comentarioPausa)
+        public async Task<ActionResult<bool>> PausarAsignacion([FromBody] int idAsignacion, int idTecnicoQuePausa, string comentarioPausa)
         {
             return await _service.PausarAsignacion(idAsignacion, idTecnicoQuePausa, comentarioPausa);
         }
 
         [HttpPost("RetirarTecnicoDeApoyo")]
-        public async Task<ActionResult<bool>> RetirarTecnicoDeApoyo(int idAsignacion, int idTecnicoQueSeRetira, string comentarioRetiro)
+        public async Task<ActionResult<bool>> RetirarTecnicoDeApoyo([FromBody] int idAsignacion, int idTecnicoQueSeRetira, string comentarioRetiro)
         {
             return await _service.RetirarTecnicoDeApoyo(idAsignacion, idTecnicoQueSeRetira, comentarioRetiro);
         }
 
         [HttpDelete("EliminarTecnicoDeAsignacion")]
-        public async Task<ActionResult<bool>> EliminarTecnicoDeAsignacion(int idAsignacionTecnico)
+        public async Task<ActionResult<bool>> EliminarTecnicoDeAsignacion([FromBody] int idAsignacionTecnico)
         {
             return await _service.EliminarTecnicoDeAsignacion(idAsignacionTecnico);
         }
@@ -53,7 +53,7 @@ namespace Piolax_WebApp.Controllers
         }
 
         [HttpPut("ActualizarTecnicoEnAsignacion")]
-        public async Task<ActionResult<bool>> ActualizarTecnicoEnAsignacion(Asignacion_TecnicoDTO asignacionTecnicoDTO)
+        public async Task<ActionResult<bool>> ActualizarTecnicoEnAsignacion([FromBody] Asignacion_TecnicoDTO asignacionTecnicoDTO)
         {
             return await _service.ActualizarTecnicoEnAsignacion(asignacionTecnicoDTO);
         }

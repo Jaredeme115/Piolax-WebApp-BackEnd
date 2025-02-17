@@ -11,7 +11,7 @@ namespace Piolax_WebApp.Controllers
 
         
         [HttpPost("AgregarAsignacion")]
-        public async Task<ActionResult<AsignacionResponseDTO>> AgregarAsignacion(AsignacionesDTO asignacionesDTO)
+        public async Task<ActionResult<AsignacionResponseDTO>> AgregarAsignacion([FromBody]AsignacionesDTO asignacionesDTO)
         {
             return await _service.AgregarAsignacion(asignacionesDTO);
         }
@@ -29,13 +29,13 @@ namespace Piolax_WebApp.Controllers
         }*/
 
         [HttpPut("ModificarAsignacion")]
-        public async Task<ActionResult<Asignaciones>> ActualizarAsignacion(int idAsignacion, AsignacionesDTO asignacionesDTO)
+        public async Task<ActionResult<Asignaciones>> ActualizarAsignacion(int idAsignacion, [FromBody] AsignacionesDTO asignacionesDTO)
         {
             return await _service.ActualizarAsignacion(idAsignacion, asignacionesDTO);
         }
 
         [HttpDelete("EliminarAsignacion")]
-        public async Task<ActionResult<Asignaciones>> EliminarAsignacion(int idAsignacion)
+        public async Task<ActionResult<Asignaciones>> EliminarAsignacion([FromBody] int idAsignacion)
         {
             return Ok(await _service.EliminarAsignacion(idAsignacion));
         }

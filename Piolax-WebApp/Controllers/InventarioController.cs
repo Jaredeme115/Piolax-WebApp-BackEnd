@@ -19,7 +19,7 @@ namespace Piolax_WebApp.Controllers
         //[Authorize(Policy = "AdminOnly")]
         [HttpPost("Registro")]
 
-        public async Task<ActionResult<Inventario>> RegistrarInventario(InventarioDTO inventarioDTO)
+        public async Task<ActionResult<Inventario>> RegistrarInventario([FromBody] InventarioDTO inventarioDTO)
         {
             if (await _service.ExisteNumParte(inventarioDTO.numParte))
             {
@@ -35,7 +35,7 @@ namespace Piolax_WebApp.Controllers
         //[Authorize(Policy = "AdminOnly")]
         [HttpPut("Modificar")]
 
-        public async Task<ActionResult<Inventario>> Modificar(int idRefaccion, InventarioDTO inventarioDTO)
+        public async Task<ActionResult<Inventario>> Modificar(int idRefaccion, [FromBody] InventarioDTO inventarioDTO)
         {
             if(!await _service.ExisteProductoInventario(idRefaccion))
             {
@@ -48,7 +48,7 @@ namespace Piolax_WebApp.Controllers
 
         //[Authorize(Policy = "AdminOnly")]
         [HttpDelete("Eliminar")]
-        public async Task<ActionResult<Inventario>> Eliminar(int idRefaccion)
+        public async Task<ActionResult<Inventario>> Eliminar([FromBody] int idRefaccion)
         {
             if (await _service.ExisteProductoInventario(idRefaccion))
             {
