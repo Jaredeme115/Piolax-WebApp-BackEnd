@@ -94,5 +94,19 @@ namespace Piolax_WebApp.Repositories.Impl
             return true;
         }
 
+        public async Task<IEnumerable<Asignacion_Tecnico>> ConsultarOrdenesEnPausaDelTecnico(int idEmpleado)
+        {
+            // Ajusta los valores 3 y 5 según tu base de datos
+            return await _context.Asignacion_Tecnico
+                .Include(at => at.Asignacion)  // Para poder mapear después a un DTO que incluya datos de la asignación
+                .Where(at =>
+                    at.idEmpleado == idEmpleado
+                    && !string.IsNullOrEmpty(at.comentarioPausa) // El técnico pausó
+                    && at.idStatusAprobacionTecnico != 3         // No está “Completada”
+                    && at.idStatusAprobacionTecnico != 5         // No está “Esperando validación”
+                )
+                .ToListAsync();
+        }
+
     }
 }

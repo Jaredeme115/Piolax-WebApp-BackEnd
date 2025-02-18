@@ -63,5 +63,16 @@ namespace Piolax_WebApp.Controllers
         {
             return Ok(await _service.ConsultarTecnicosConDetallesPorAsignacion(idAsignacion));
         }
+
+        [HttpGet("OrdenesPausadasPorTecnico")]
+        public async Task<ActionResult<IEnumerable<Asignacion_TecnicoDetallesDTO>>> OrdenesPausadasPorTecnico(int idEmpleado)
+        {
+            var ordenesPausadas = await _service.ConsultarOrdenesEnPausaPorTecnico(idEmpleado);
+
+            if (!ordenesPausadas.Any())
+                return NotFound("No se encontraron órdenes pausadas para este técnico.");
+
+            return Ok(ordenesPausadas);
+        }
     }
 }

@@ -14,5 +14,8 @@ namespace Piolax_WebApp.Services
         Task<bool> PausarAsignacion(int idAsignacion, int idTecnicoQuePausa, string comentarioPausa);
         Task<bool> RetirarTecnicoDeApoyo(int idAsignacion, int idTecnicoQueSeRetira, string comentarioRetiro);
         Task<IEnumerable<Asignacion_TecnicoDetallesDTO>> ConsultarTecnicosConDetallesPorAsignacion(int idAsignacion);
+        Task<IEnumerable<Asignacion_TecnicoDetallesDTO>> ConsultarOrdenesEnPausaPorTecnico(int idEmpleado);
+
+
     }
 }

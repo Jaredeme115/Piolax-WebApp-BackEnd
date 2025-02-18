@@ -454,5 +454,30 @@ namespace Piolax_WebApp.Services.Impl
 
            
         }
+
+        public async Task<IEnumerable<Asignacion_TecnicoDetallesDTO>> ConsultarOrdenesEnPausaPorTecnico(int idEmpleado)
+        {
+            var asignacionesPausadas = await _repository.ConsultarOrdenesEnPausaDelTecnico(idEmpleado);
+
+            // Luego mapeas a DTO. Probablemente muy similar a tu método ConsultarTecnicosPorAsignacion,
+            // pero en lugar de recibir un idAsignacion, estás filtrando por idEmpleado y su estado pausado:
+            var resultado = asignacionesPausadas.Select(at => new Asignacion_TecnicoDetallesDTO
+            {
+                idAsignacionTecnico = at.idAsignacionTecnico,
+                idAsignacion = at.idAsignacion,
+                idEmpleado = at.idEmpleado,
+                nombreCompletoTecnico = $"{at.Empleado?.nombre} {at.Empleado?.apellidoPaterno} {at.Empleado?.apellidoMaterno}",
+                horaInicio = at.horaInicio,
+                horaTermino = at.horaTermino,
+                solucion = at.solucion,
+                idStatusAprobacionTecnico = at.idStatusAprobacionTecnico,
+                nombreStatusAprobacionTecnico = at.StatusAprobacionTecnico?.descripcionStatusAprobacionTecnico,
+                comentarioPausa = at.comentarioPausa,
+                esTecnicoActivo = at.esTecnicoActivo,
+                // Otras propiedades que te interesen (Refacciones, etc.)
+            });
+
+            return resultado;
+        }
     }
 }
