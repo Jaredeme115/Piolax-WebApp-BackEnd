@@ -141,30 +141,5 @@ namespace Piolax_WebApp.Controllers
             }
         }
 
-
-        private byte[] GenerateQRCodeBytes(string text)
-        {
-            if (string.IsNullOrWhiteSpace(text))
-                throw new ArgumentException("El texto para generar el código QR no puede estar vacío.");
-
-            using (QRCodeGenerator qrGenerator = new QRCodeGenerator())
-            {
-                QRCodeData qrCodeData = qrGenerator.CreateQrCode(text, QRCodeGenerator.ECCLevel.Q);
-                using (QRCode qrCode = new QRCode(qrCodeData))
-                {
-                    using (Bitmap qrCodeImage = qrCode.GetGraphic(20))
-                    {
-                        using (MemoryStream ms = new MemoryStream())
-                        {
-                            qrCodeImage.Save(ms, ImageFormat.Png); // Guarda la imagen como PNG en el stream
-                            return ms.ToArray(); // Devuelve los bytes de la imagen
-                        }
-                    }
-                }
-            }
-        }
-
-
-
     }
 }

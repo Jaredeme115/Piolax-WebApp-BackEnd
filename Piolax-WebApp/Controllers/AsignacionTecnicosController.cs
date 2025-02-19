@@ -29,9 +29,9 @@ namespace Piolax_WebApp.Controllers
         }
 
         [HttpPost("PausarAsignacion")]
-        public async Task<ActionResult<bool>> PausarAsignacion([FromBody] int idAsignacion, int idTecnicoQuePausa, string comentarioPausa)
+        public async Task<ActionResult<bool>> PausarAsignacion([FromBody] PausarAsignacionDTO pausarAsignacionDTO)
         {
-            return await _service.PausarAsignacion(idAsignacion, idTecnicoQuePausa, comentarioPausa);
+            return await _service.PausarAsignacion(pausarAsignacionDTO.idAsignacion, pausarAsignacionDTO.idTecnicoQuePausa, pausarAsignacionDTO.comentarioPausa);
         }
 
         [HttpPost("RetirarTecnicoDeApoyo")]

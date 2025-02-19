@@ -24,6 +24,7 @@ namespace Piolax_WebApp.Repositories.Impl
         {
             return await _context.Asignaciones
             .Include(a => a.Solicitud) // Cargar la propiedad Solicitud
+            .Include(a => a.StatusAsignacion) // Cargar la relación con StatusAsignacion
             .FirstOrDefaultAsync(a => a.idAsignacion == idAsignacion);
         }
 

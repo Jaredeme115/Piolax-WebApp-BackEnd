@@ -22,7 +22,7 @@ namespace Piolax_WebApp.Controllers
         }
 
         [HttpDelete("EliminarRefaccionDeAsignacion")]
-        public async Task<ActionResult<bool>> EliminarRefaccionDeAsignacion([FromBody] int idAsignacionRefaccion)
+        public async Task<ActionResult<bool>> EliminarRefaccionDeAsignacion(int idAsignacionRefaccion)
         {
             return await _service.EliminarRefaccionDeAsignacion(idAsignacionRefaccion);
         }
