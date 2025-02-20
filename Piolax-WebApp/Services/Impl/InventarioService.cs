@@ -52,30 +52,34 @@ namespace Piolax_WebApp.Services.Impl
 
         public async Task<Inventario> RegistrarInventario(InventarioDTO inventarioDTO)
         {
-            // Validar que el DTO tiene datos válidos
             if (inventarioDTO == null)
+            {
                 throw new ArgumentNullException(nameof(inventarioDTO), "El objeto InventarioDTO no puede ser nulo.");
+            }
 
-            var item = GenerarItem(
-                inventarioDTO.nombreProducto,
-                inventarioDTO.idInventarioCategoria, //Eliminar
-                inventarioDTO.numParte,
-                inventarioDTO.idArea
-            );
+            if (string.IsNullOrWhiteSpace(inventarioDTO.numParte))
+            {
+                throw new ArgumentException("El número de parte no puede estar vacío.");
+            }
 
+            // Verificar si el producto ya existe en la base de datos
+            if (await _repository.ExisteNumParte(inventarioDTO.numParte))
+            {
+                throw new InvalidOperationException("El producto ya está registrado en el inventario.");
+            }
+
+            // Generar el campo `item`
+            var item = GenerarItem(inventarioDTO.nombreProducto, inventarioDTO.numParte, inventarioDTO.idArea);
             inventarioDTO.item = item;
 
-            // Generar el código QR
-            string qrCodeText = inventarioDTO.numParte; // Puedes personalizar el contenido del código QR
-            string qrCodeBase64 = GenerateQRCode(qrCodeText);
+            // Generar el código QR si `numParte` es válido
+            string qrCodeBase64 = !string.IsNullOrEmpty(inventarioDTO.numParte) ? GenerateQRCode(inventarioDTO.numParte) : null;
             inventarioDTO.codigoQR = qrCodeBase64;
 
-
-            // Asignar valor a la propiedad precioInventarioTotal
+            // Calcular el precio total
             inventarioDTO.precioInventarioTotal = inventarioDTO.precioUnitario * inventarioDTO.cantidadActual;
 
-
-            // Transformar el DTO a la entidad Inventario
+            // Transformar DTO a entidad
             var inventario = new Inventario
             {
                 item = inventarioDTO.item,
@@ -97,17 +101,9 @@ namespace Piolax_WebApp.Services.Impl
                 idMaquina = inventarioDTO.idMaquina,
                 fechaEntrega = inventarioDTO.fechaEntrega,
                 inventarioActivoObsoleto = inventarioDTO.inventarioActivoObsoleto,
-
-                // Manejar el valor del estado desde el DTO (si es proporcionado) o usar un valor predeterminado
-                EstatusInventario = string.IsNullOrWhiteSpace(inventarioDTO.EstatusInventario)
-            ? EstatusInventario.Disponible // Valor predeterminado si no se especifica
-            : Enum.TryParse<EstatusInventario>(inventarioDTO.EstatusInventario, true, out var status)
-                ? status
-                : throw new ArgumentException("El estado proporcionado no es válido.", nameof(inventarioDTO.EstatusInventario))
+                EstatusInventario = Enum.TryParse<EstatusInventario>(inventarioDTO.EstatusInventario, true, out var status) ? status : EstatusInventario.Disponible
             };
 
-
-            // Llamar al repositorio para registrar el inventario
             return await _repository.RegistrarInventario(inventario);
         }
 
@@ -115,23 +111,26 @@ namespace Piolax_WebApp.Services.Impl
         public async Task<Inventario> Modificar(int idRefaccion, InventarioDTO inventarioDTO)
         {
             var productoExistente = await _repository.ConsultarInventarioPorID(idRefaccion);
-
             if (productoExistente == null)
             {
-                throw new Exception("El producto no existe");
+                throw new InvalidOperationException("El producto no existe.");
             }
 
+            // Si cambia el número de parte, generar nuevo código QR
+            if (productoExistente.numParte != inventarioDTO.numParte)
+            {
+                string qrCodeBase64 = GenerateQRCode(inventarioDTO.numParte);
+                inventarioDTO.codigoQR = qrCodeBase64;
+            }
+            else
+            {
+                inventarioDTO.codigoQR = productoExistente.codigoQR; // Mantener el QR actual
+            }
 
-            // Generar el código QR
-            string qrCodeText = inventarioDTO.numParte; ; // Puedes personalizar el contenido del código QR
-            string qrCodeBase64 = GenerateQRCode(qrCodeText);
-            inventarioDTO.codigoQR = qrCodeBase64;
-
-            // Asignar valor a la propiedad precioInventarioTotal
+            // Recalcular el precio total
             inventarioDTO.precioInventarioTotal = inventarioDTO.precioUnitario * inventarioDTO.cantidadActual;
 
-            // Actualizar los campos del producto existente
-
+            // Mapear los cambios
             productoExistente.descripcion = inventarioDTO.descripcion;
             productoExistente.ubicacion = inventarioDTO.ubicacion;
             productoExistente.idInventarioCategoria = inventarioDTO.idInventarioCategoria;
@@ -149,7 +148,7 @@ namespace Piolax_WebApp.Services.Impl
             productoExistente.fechaEntrega = inventarioDTO.fechaEntrega;
             productoExistente.inventarioActivoObsoleto = inventarioDTO.inventarioActivoObsoleto;
 
-            return await _repository.Modificar(idRefaccion, productoExistente);
+            return await _repository.Modificar(productoExistente);
 
         }
 
@@ -163,18 +162,30 @@ namespace Piolax_WebApp.Services.Impl
             return await _repository.ConsultarCantidadDisponible(idRefaccion);
         }
 
-        public async Task<Inventario> Eliminar(int idRefaccion)
+        public async Task<bool> Eliminar(int idRefaccion)
         {
-            return await _repository.Eliminar(idRefaccion);
+            if (idRefaccion <= 0)
+            {
+                throw new ArgumentException("ID de refacción no válido.");
+            }
+
+            var eliminado = await _repository.Eliminar(idRefaccion);
+
+            if (eliminado == null)
+            {
+                throw new InvalidOperationException("No se encontró la refacción con el ID especificado.");
+            }
+
+            return true;
         }
 
-        public string GenerarItem(string nombreProducto, int idInventarioCategoria, string numParte, int idArea)
+        public string GenerarItem(string nombreProducto, string numParte, int idArea)
         {
             // Tomar las iniciales del nombre del producto (las primeras dos palabras)
             var iniciales = string.Join("", nombreProducto.Split(' ').Take(2).Select(palabra => palabra.Substring(0, 1).ToUpper()));
 
             // Construir el CURP concatenando los valores
-            return $"{iniciales}-{idArea}-{idInventarioCategoria}-{numParte}";
+            return $"{iniciales}-{idArea}-{numParte}";
         }
 
         // Funcionalidad para generar el código QR

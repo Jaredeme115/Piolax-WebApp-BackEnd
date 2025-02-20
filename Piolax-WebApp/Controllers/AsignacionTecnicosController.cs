@@ -35,15 +35,15 @@ namespace Piolax_WebApp.Controllers
         }
 
         [HttpPost("RetirarTecnicoDeApoyo")]
-        public async Task<ActionResult<bool>> RetirarTecnicoDeApoyo([FromBody] int idAsignacion, int idTecnicoQueSeRetira, string comentarioRetiro)
+        public async Task<ActionResult<bool>> RetirarTecnicoDeApoyo([FromBody] RetirarTecnicoDTO retirarTecnicoDTO)
         {
-            return await _service.RetirarTecnicoDeApoyo(idAsignacion, idTecnicoQueSeRetira, comentarioRetiro);
+            return await _service.RetirarTecnicoDeApoyo(retirarTecnicoDTO.idAsignacion, retirarTecnicoDTO.idTecnicoQueSeRetira, retirarTecnicoDTO.comentarioRetiro);
         }
 
         [HttpDelete("EliminarTecnicoDeAsignacion")]
-        public async Task<ActionResult<bool>> EliminarTecnicoDeAsignacion([FromBody] int idAsignacionTecnico)
+        public async Task<ActionResult<bool>> EliminarTecnicoDeAsignacion([FromBody] EliminarTecnicoDTO eliminarTecnicoDTO)
         {
-            return await _service.EliminarTecnicoDeAsignacion(idAsignacionTecnico);
+            return await _service.EliminarTecnicoDeAsignacion(eliminarTecnicoDTO.idAsignacionTecnico);
         }
 
         [HttpGet("ConsultarTodosLosTecnicos")]

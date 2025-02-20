@@ -7,7 +7,7 @@ namespace Piolax_WebApp.Services
     {
         Task<Inventario> RegistrarInventario(InventarioDTO inventarioDTO);
         Task<Inventario> Modificar(int idRefaccion, InventarioDTO inventarioDTO);
-        Task<Inventario> Eliminar(int idRefaccion);
+        Task<bool> Eliminar(int idRefaccion);
         Task<IEnumerable<Inventario>> ConsultarTodoInventario();
 
         //Task<Inventario> ConsultarInventarioConDetalles(int idRefaccion);

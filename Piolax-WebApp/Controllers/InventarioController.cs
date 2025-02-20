@@ -21,41 +21,76 @@ namespace Piolax_WebApp.Controllers
 
         public async Task<ActionResult<Inventario>> RegistrarInventario([FromBody] InventarioDTO inventarioDTO)
         {
-            if (await _service.ExisteNumParte(inventarioDTO.numParte))
+            if (inventarioDTO == null)
             {
-                return BadRequest("El producto dentro del inventario ya existe");
+                return BadRequest("Los datos del inventario son inválidos.");
             }
 
-            // Registrar el inventario
-            var inventario = await _service.RegistrarInventario(inventarioDTO);
+            if (await _service.ExisteNumParte(inventarioDTO.numParte))
+            {
+                return Conflict("El producto ya existe en el inventario.");
+            }
 
-            return Ok(inventario);
+            try
+            {
+                var inventario = await _service.RegistrarInventario(inventarioDTO);
+                return CreatedAtAction(nameof(RegistrarInventario), new { id = inventario.idRefaccion }, inventario);
+            }
+            catch (Exception ex)
+            {
+                return StatusCode(500, "Error al registrar el inventario: " + ex.Message);
+            }
         }
 
         //[Authorize(Policy = "AdminOnly")]
-        [HttpPut("Modificar")]
+        [HttpPut("Modificar/{idRefaccion}")]
 
         public async Task<ActionResult<Inventario>> Modificar(int idRefaccion, [FromBody] InventarioDTO inventarioDTO)
         {
-            if(!await _service.ExisteProductoInventario(idRefaccion))
+
+            if (idRefaccion <= 0)
             {
-                return BadRequest("El producto no existe dentro del Inventario");
+                return BadRequest("ID de refacción inválido.");
             }
 
+            var existeProducto = await _service.ExisteProductoInventario(idRefaccion);
+            if (!existeProducto)
+            {
+                return NotFound("El producto no existe en el inventario.");
+            }
 
-            return await _service.Modificar(idRefaccion, inventarioDTO);
+            try
+            {
+                var resultado = await _service.Modificar(idRefaccion, inventarioDTO);
+                return Ok(resultado);
+            }
+            catch (Exception ex)
+            {
+                return StatusCode(500, "Error interno del servidor: " + ex.Message);
+            }
         }
 
         //[Authorize(Policy = "AdminOnly")]
-        [HttpDelete("Eliminar")]
-        public async Task<ActionResult<Inventario>> Eliminar([FromBody] int idRefaccion)
+        [HttpDelete("Eliminar/{idRefaccion}")]
+        public async Task<ActionResult<bool>> Eliminar(int idRefaccion)
         {
-            if (await _service.ExisteProductoInventario(idRefaccion))
+            try
             {
-                return BadRequest("El producto no existe");
+                var resultado = await _service.Eliminar(idRefaccion);
+                return Ok(resultado);
             }
-
-            return await _service.Eliminar(idRefaccion);
+            catch (ArgumentException ex)
+            {
+                return BadRequest(ex.Message); // ID inválido
+            }
+            catch (InvalidOperationException ex)
+            {
+                return NotFound(ex.Message); // No existe el ID
+            }
+            catch (Exception ex)
+            {
+                return StatusCode(500, "Error interno del servidor: " + ex.Message);
+            }
         }
 
         //[Authorize(Policy = "AdminOnly")]

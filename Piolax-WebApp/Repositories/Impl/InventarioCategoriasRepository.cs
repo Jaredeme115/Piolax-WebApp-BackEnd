@@ -9,24 +9,59 @@ namespace Piolax_WebApp.Repositories.Impl
 
         public async Task<InventarioCategorias> RegistrarInventarioCategoria(InventarioCategorias inventarioCategoria)
         {
-            _context.Add(inventarioCategoria);
-            await _context.SaveChangesAsync();
-            return inventarioCategoria;
+            try
+            {
+                _context.Add(inventarioCategoria);
+                int cambios = await _context.SaveChangesAsync();
+                return cambios > 0 ? inventarioCategoria : null;
+            }
+            catch (DbUpdateException ex)
+            {
+                throw new InvalidOperationException("Error al guardar la categoría en la base de datos.", ex);
+            }
         }
 
-        public async Task<InventarioCategorias> Modificar(int idInventarioCategoria, InventarioCategorias inventarioCategoria)
+        public async Task<InventarioCategorias?> Modificar(int idInventarioCategoria, InventarioCategorias inventarioCategoria)
         {
-            _context.Update(inventarioCategoria);
-            await _context.SaveChangesAsync();
-            return inventarioCategoria;
+            if (inventarioCategoria == null)
+            {
+                throw new ArgumentNullException(nameof(inventarioCategoria), "La categoría no puede ser nula.");
+            }
+
+            try
+            {
+                _context.InventarioCategorias.Update(inventarioCategoria);
+                var filasAfectadas = await _context.SaveChangesAsync();
+
+                return filasAfectadas > 0 ? inventarioCategoria : null;
+            }
+            catch (DbUpdateException ex)
+            {
+                throw new InvalidOperationException("Error al actualizar la base de datos.", ex);
+            }
         }
 
         public async Task<InventarioCategorias> Eliminar(int idInventarioCategoria)
         {
-            var inventarioCategoria = await _context.InventarioCategorias.Where(p => p.idInventarioCategoria == idInventarioCategoria).FirstOrDefaultAsync();
-            _context.Remove(inventarioCategoria);
-            await _context.SaveChangesAsync();
-            return inventarioCategoria;
+            var inventarioCategoria = await _context.InventarioCategorias
+         .Where(p => p.idInventarioCategoria == idInventarioCategoria)
+         .FirstOrDefaultAsync();
+
+            if (inventarioCategoria == null)
+            {
+                return null; // Para que el controlador devuelva 404 Not Found
+            }
+
+            try
+            {
+                _context.InventarioCategorias.Remove(inventarioCategoria);
+                await _context.SaveChangesAsync();
+                return inventarioCategoria;
+            }
+            catch (DbUpdateException ex)
+            {
+                throw new InvalidOperationException("Error al eliminar la categoría en la base de datos.", ex);
+            }
         }
 
         public async Task<IEnumerable<InventarioCategorias>> ConsultarTodasCategorias()

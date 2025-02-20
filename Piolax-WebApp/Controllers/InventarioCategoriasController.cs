@@ -15,40 +15,78 @@ namespace Piolax_WebApp.Controllers
 
         public async Task<ActionResult<InventarioCategorias>> RegistrarInventarioCategoria([FromBody] InventarioCategoriasDTO inventarioCategoriaDTO)
         {
-            if(await _service.CategoriaExistePorNombre(inventarioCategoriaDTO.nombreInventarioCategoria))
+            // Verifica si el modelo es válido
+            if (!ModelState.IsValid)
             {
-                return BadRequest("La categoria ya existe");
+                return BadRequest("Los datos de la categoría son inválidos.");
             }
 
-            return await _service.RegistrarInventarioCategoria(inventarioCategoriaDTO);
+            // Verifica si el nombre de la categoría ya existe
+            if (await _service.CategoriaExistePorNombre(inventarioCategoriaDTO.nombreInventarioCategoria))
+            {
+                return Conflict("La categoría ya existe en el sistema.");
+            }
+
+            try
+            {
+                var nuevaCategoria = await _service.RegistrarInventarioCategoria(inventarioCategoriaDTO);
+                return CreatedAtAction(nameof(RegistrarInventarioCategoria), new { id = nuevaCategoria.idInventarioCategoria }, nuevaCategoria);
+            }
+            catch (Exception ex)
+            {
+                return StatusCode(500, $"Error interno del servidor: {ex.Message}");
+            }
         }
 
         [Authorize(Policy = "AdminOnly")]
-        [HttpPut("ModificarInventarioCategoria")]
+        [HttpPut("ModificarInventarioCategoria/{idInventarioCategoria}")]
 
         public async Task<ActionResult<InventarioCategorias>> Modificar(int idInventarioCategoria, [FromBody] InventarioCategoriasDTO inventarioCategoriaDTO)
         {
-            if(await _service.CategoriaExistePorNombre(inventarioCategoriaDTO.nombreInventarioCategoria))
+            if (inventarioCategoriaDTO == null)
             {
-                return BadRequest("La categoria ya existe");
+                return BadRequest("Los datos de la categoría son inválidos.");
             }
-            return await _service.Modificar(idInventarioCategoria, inventarioCategoriaDTO);
+
+            if (await _service.CategoriaExistePorNombre(inventarioCategoriaDTO.nombreInventarioCategoria))
+            {
+                return Conflict("La categoría ya existe.");
+            }
+
+            try
+            {
+                var categoriaActualizada = await _service.Modificar(idInventarioCategoria, inventarioCategoriaDTO);
+                return categoriaActualizada != null ? Ok(categoriaActualizada) : NotFound("No se encontró la categoría.");
+            }
+            catch (Exception ex)
+            {
+                return StatusCode(500, "Error al modificar la categoría: " + ex.Message);
+            }
         }
 
         [Authorize(Policy = "AdminOnly")]
-        [HttpDelete("EliminarInventarioCategoria")]
+        [HttpDelete("EliminarInventarioCategoria/{idInventarioCategoria}")]
 
-        public async Task<ActionResult<InventarioCategorias>> Eliminar([FromBody] int idInventarioCategoria)
+        public async Task<ActionResult<InventarioCategorias>> Eliminar(int idInventarioCategoria)
         {
-            if(await _service.CategoriaExistePorID(idInventarioCategoria))
+            var existeCategoria = await _service.CategoriaExistePorID(idInventarioCategoria);
+            if (!existeCategoria)
             {
-                return await _service.Eliminar(idInventarioCategoria);
+                return NotFound("La categoría no existe.");
             }
 
-            return BadRequest("La categoria no existe");
+            try
+            {
+                var categoriaEliminada = await _service.Eliminar(idInventarioCategoria);
+                return categoriaEliminada != null ? Ok(categoriaEliminada) : StatusCode(500, "Error al eliminar la categoría.");
+            }
+            catch (Exception ex)
+            {
+                return StatusCode(500, $"Error interno: {ex.Message}");
+            }
         }
 
-        [Authorize(Policy = "AdminOnly")]
+        //[Authorize(Policy = "AdminOnly")]
         [HttpGet("ConsultarTodasCategorias")]
 
         public async Task<IEnumerable<InventarioCategorias>> ConsultarTodasCategorias()

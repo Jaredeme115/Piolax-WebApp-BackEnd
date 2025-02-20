@@ -11,29 +11,51 @@ namespace Piolax_WebApp.Services.Impl
         public async Task<InventarioCategorias> RegistrarInventarioCategoria(InventarioCategoriasDTO inventarioCategoriaDTO)
         {
 
-            var inventarioCategoria = new InventarioCategorias
+            if (inventarioCategoriaDTO == null || string.IsNullOrWhiteSpace(inventarioCategoriaDTO.nombreInventarioCategoria))
+            {
+                throw new ArgumentException("El objeto InventarioCategoriasDTO no puede ser nulo o vacío.");
+            }
+
+            var nuevaCategoria = new InventarioCategorias
             {
                 nombreInventarioCategoria = inventarioCategoriaDTO.nombreInventarioCategoria
             };
-            return await _repository.RegistrarInventarioCategoria(inventarioCategoria);
-        }
 
-        public async Task<InventarioCategorias> Modificar(int idInventarioCategoria, InventarioCategoriasDTO inventarioCategoriaDTO)
-        {
-            var categoriaExiste = await _repository.ConsultarCategoriaPorID(idInventarioCategoria);
-            if (categoriaExiste == null)
+            var categoriaGuardada = await _repository.RegistrarInventarioCategoria(nuevaCategoria);
+
+            if (categoriaGuardada == null)
             {
-                throw new Exception("La categoria no existe");
+                throw new Exception("Error al registrar la categoría en la base de datos.");
             }
 
-            // Actualizamos los datos de la Categoria
-            categoriaExiste.nombreInventarioCategoria = inventarioCategoriaDTO.nombreInventarioCategoria;
-
-            return await _repository.Modificar(idInventarioCategoria, categoriaExiste);
+            return categoriaGuardada;
         }
 
-        public async Task<InventarioCategorias> Eliminar(int idInventarioCategoria)
+        public async Task<InventarioCategorias?> Modificar(int idInventarioCategoria, InventarioCategoriasDTO inventarioCategoriaDTO)
         {
+            var categoriaExistente = await _repository.ConsultarCategoriaPorID(idInventarioCategoria);
+
+            if (categoriaExistente == null)
+            {
+                return null; // Retornar null para manejarlo en el controlador
+            }
+
+            // Actualizamos los datos de la Categoría
+            categoriaExistente.nombreInventarioCategoria = inventarioCategoriaDTO.nombreInventarioCategoria;
+
+            var resultado = await _repository.Modificar(idInventarioCategoria, categoriaExistente);
+            return resultado ?? throw new Exception("Error inesperado al modificar la categoría.");
+        }
+
+        public async Task<InventarioCategorias?> Eliminar(int idInventarioCategoria)
+        {
+            var categoriaExistente = await _repository.ConsultarCategoriaPorID(idInventarioCategoria);
+
+            if (categoriaExistente == null)
+            {
+                return null; // Para manejarlo en el controlador
+            }
+
             return await _repository.Eliminar(idInventarioCategoria);
         }
 
