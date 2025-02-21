@@ -20,5 +20,6 @@ namespace Piolax_WebApp.Services
         Task<bool> ExisteNumParte(string numParte);
         Task ActualizarCantidadInventario(int idRefaccion, int cantidadADescontar);
         Task<int> ConsultarCantidadDisponible(int idRefaccion);
+        Task<IEnumerable<Inventario>> ConsultarRefaccionesPorFiltros(bool? piezaCritica, bool? inventarioActivoObsoleto);
     }
 }

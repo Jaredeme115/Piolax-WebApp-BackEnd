@@ -137,6 +137,14 @@ namespace Piolax_WebApp.Controllers
             return Ok(await _service.ConsultarTodosLosProductosPorCategoria(idInventarioCategoria));
         }
 
+        
+        [HttpGet("filtrar-refacciones")]
+        public async Task<IActionResult> FiltrarRefacciones([FromQuery] bool? piezaCritica, [FromQuery] bool? inventarioObsoleto)
+        {
+            var result = await _service.ConsultarRefaccionesPorFiltros(piezaCritica, inventarioObsoleto);
+            return Ok(result);
+        }
+
 
         //[Authorize(Policy = "AdminOnly")]
         [HttpGet("DescargarQRCode/{idRefaccion}")]

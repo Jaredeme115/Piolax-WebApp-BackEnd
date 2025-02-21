@@ -173,5 +173,19 @@ namespace Piolax_WebApp.Repositories.Impl
 
             return inventario.cantidadActual;
         }
+
+        public async Task<IEnumerable<Inventario>> ConsultarRefaccionesPorFiltros(bool? piezaCritica, bool? inventarioActivoObsoleto)
+        {
+            // Partimos de un IQueryable para ir aplicando filtros condicionalmente
+            var query = _context.Inventario.AsQueryable();
+
+            if (piezaCritica.HasValue)
+                query = query.Where(x => x.piezaCritica == piezaCritica.Value);
+
+            if (inventarioActivoObsoleto.HasValue)
+                query = query.Where(x => x.inventarioActivoObsoleto == inventarioActivoObsoleto.Value);
+
+            return await query.ToListAsync();
+        }
     }
 }

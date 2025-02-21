@@ -188,6 +188,12 @@ namespace Piolax_WebApp.Services.Impl
             return $"{iniciales}-{idArea}-{numParte}";
         }
 
+        public async Task<IEnumerable<Inventario>> ConsultarRefaccionesPorFiltros(bool? piezaCritica, bool? inventarioActivoObsoleto)
+        {
+            return await _repository.ConsultarRefaccionesPorFiltros(piezaCritica, inventarioActivoObsoleto);
+        }
+
+
         // Funcionalidad para generar el código QR
         private string GenerateQRCode(string text)
         {
