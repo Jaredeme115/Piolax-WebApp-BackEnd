@@ -13,6 +13,7 @@ namespace Piolax_WebApp.Services
         Task<IEnumerable<Solicitudes>> ConsultarSolicitudesNoTomadas();
         Task<IEnumerable<Solicitudes>> ConsultarSolicitudesTerminadas();
         Task ActualizarStatusOrden(int idSolicitud, int idStatusOrden);
+        Task<IEnumerable<SolicitudesDetalleDTO>> ObtenerSolicitudesConPrioridadAsync();
 
 
     }

@@ -69,14 +69,14 @@ namespace Piolax_WebApp.Controllers
             return Ok(empleadoDetalles);
         }
 
-        [Authorize(Policy = "AdminOnly")]
+        //[Authorize(Policy = "AdminOnly")]
         [HttpGet("Consultar")]
         public ActionResult<Empleado?> Consultar(string numNomina)
         {
             return _service.Consultar(numNomina).Result;
         }
 
-        [Authorize(Policy = "AdminOnly")]
+        //[Authorize(Policy = "AdminOnly")]
         [HttpGet("ConsultarTodos")]
         public async Task<ActionResult<IEnumerable<Empleado>>> ConsultarTodos()
         {
@@ -84,7 +84,7 @@ namespace Piolax_WebApp.Controllers
         }
 
 
-        //[Authorize(Policy = "AdminOnly")]
+        //[Authorize(Policy = "AdminOnly")] Este metodo no debe llevar autorización debido a que debe permitir a un empleado registrarse
         [HttpPost("Registro")]
         public async Task<ActionResult<Empleado>> Registro([FromBody] RegistroDTO registro)
         {
@@ -129,7 +129,7 @@ namespace Piolax_WebApp.Controllers
             }
         }
 
-        [Authorize(Policy = "AdminOnly")]
+        //[Authorize(Policy = "AdminOnly")]
         [HttpPost("AsignarAreaRol")]
         public async Task<ActionResult> AsignarAreaRol([FromBody] string numNomina, int idArea, int idRol, bool esAreaPrincipal)
         {
@@ -280,7 +280,7 @@ namespace Piolax_WebApp.Controllers
             return Ok(await _service.Eliminar(numNomina));
         }
 
-        //Login con JWT de Acceso y Refresh
+        //Login con JWT de Acceso y Refresh (Tampoco debe de llevar authorize)
         [HttpPost("Login")]
         public async Task<ActionResult<EmpleadoDTO>> Login([FromBody] LoginDTO login)
         {
@@ -305,7 +305,7 @@ namespace Piolax_WebApp.Controllers
             return Ok(empleadoDTO);
         }
 
-        [Authorize(Policy = "AdminOnly")]
+        //[Authorize(Policy = "AdminOnly")]
         [HttpGet("ConsultarPorStatus/{idStatusEmpleado}")]
         public async Task<ActionResult<IEnumerable<Empleado>>> ConsultarPorStatus(int idStatusEmpleado)
         {
@@ -318,7 +318,7 @@ namespace Piolax_WebApp.Controllers
             return Ok(empleados);
         }
 
-        [Authorize(Policy = "AdminOnly")]
+        //[Authorize(Policy = "AdminOnly")]
         [HttpDelete("EliminarAreaYRolEmpleado")]
 
         public async Task EliminarAreaYRol(string numNomina, int idArea, int idRol)

@@ -125,6 +125,13 @@ namespace Piolax_WebApp.Controllers
 
         }
 
+        [HttpGet("ObtenerSolicitudesConPrioridad")]
+        public async Task<ActionResult<IEnumerable<SolicitudesDetalleDTO>>> ObtenerSolicitudesConPrioridad()
+        {
+            var solicitudes = await _service.ObtenerSolicitudesConPrioridadAsync();
+            return Ok(solicitudes);
+        }
+
 
     }
- }
+}

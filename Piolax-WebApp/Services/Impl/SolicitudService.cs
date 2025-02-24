@@ -371,5 +371,52 @@ namespace Piolax_WebApp.Services.Impl
             // Se asume que en el repositorio existe un método para actualizar el estado de la solicitud
             await _repository.ActualizarStatusOrden(idSolicitud, idStatusOrden);
         }
+
+        public async Task<IEnumerable<SolicitudesDetalleDTO>> ObtenerSolicitudesConPrioridadAsync()
+        {
+            var solicitudes = await _repository.ObtenerSolicitudesConPrioridadAsync();
+            var solicitudesDetalleDTO = new List<SolicitudesDetalleDTO>();
+
+            foreach (var solicitud in solicitudes)
+            {
+                var empleado = solicitud.Empleado;
+                var areasRoles = empleado.EmpleadoAreaRol;
+
+                // Filtrar el área y el rol específicos de la solicitud
+                var areaSeleccionada = areasRoles.FirstOrDefault(ar => ar.idArea == solicitud.idAreaSeleccionada);
+                var rolSeleccionado = areasRoles.FirstOrDefault(ar => ar.idRol == solicitud.idRolSeleccionado && ar.idArea == solicitud.idAreaSeleccionada);
+
+                // Obtener detalles adicionales
+                var maquina = await _maquinasService.Consultar(solicitud.idMaquina);
+                var turno = await _turnoService.Consultar(solicitud.idTurno);
+                var statusOrden = await _statusOrdenService.Consultar(solicitud.idStatusOrden);
+                var statusAprobacionSolicitante = await _statusAprobacionSolicitanteService.Consultar(solicitud.idStatusAprobacionSolicitante);
+                var categoriaTicket = await _categoriaTicketService.Consultar(solicitud.idCategoriaTicket);
+
+                var solicitudDetalleDTO = new SolicitudesDetalleDTO
+                {
+                    idSolicitud = solicitud.idSolicitud,
+                    descripcion = solicitud.descripcion,
+                    fechaSolicitud = solicitud.fechaSolicitud,
+                    nombreCompletoEmpleado = $"{empleado.nombre} {empleado.apellidoPaterno} {empleado.apellidoMaterno}",
+                    idMaquina = solicitud.idMaquina,
+                    idTurno = solicitud.idTurno,
+                    idStatusOrden = solicitud.idStatusOrden,
+                    idStatusAprobacionSolicitante = solicitud.idStatusAprobacionSolicitante,
+                    area = areaSeleccionada?.Area?.nombreArea ?? "N/A",
+                    rol = rolSeleccionado?.Rol?.nombreRol ?? "N/A",
+                    idCategoriaTicket = solicitud.idCategoriaTicket,
+                    nombreMaquina = maquina.nombreMaquina,
+                    nombreTurno = turno.descripcion,
+                    nombreStatusOrden = statusOrden.descripcionStatusOrden,
+                    nombreStatusAprobacionSolicitante = statusAprobacionSolicitante.descripcionStatusAprobacionSolicitante,
+                    nombreCategoriaTicket = solicitud.categoriaTicket.descripcionCategoriaTicket
+                };
+
+                solicitudesDetalleDTO.Add(solicitudDetalleDTO);
+            }
+
+            return solicitudesDetalleDTO;
+        }
     }
 }
