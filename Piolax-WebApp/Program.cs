@@ -154,15 +154,15 @@ builder.Services.AddCors(options =>
 );
 
 
-//Conexion con NGROK
+//Conexion para exponer URL a internet  
 
 /*builder.Services.AddCors(options =>
-    options.AddPolicy(name: corsConfiguration,
-        cors => cors.WithOrigins("http://localhost:4200", "https://5105-200-188-149-29.ngrok-free.app")
-        .AllowAnyHeader()
-        .AllowAnyMethod()
-    )
-);*/
+{
+    options.AddPolicy("AllowAll",
+        cors => cors.AllowAnyOrigin()
+                    .AllowAnyHeader()
+                    .AllowAnyMethod());
+});*/
 
 //Configuración de JWT
 
@@ -206,7 +206,11 @@ if (app.Environment.IsDevelopment())
 
 app.UseHttpsRedirection();
 
+//Para conexion con localhost
 app.UseCors(corsConfiguration);
+
+//Para exponer URL publica
+//app.UseCors("AllowAll");
 
 app.UseAuthentication();
 
