@@ -40,5 +40,8 @@ namespace Piolax_WebApp.DTOs
 
         public string nombreCategoriaTicket { get; set; }
 
+        //Atributo para ver el nombre completo tecnico
+        public string nombreCompletoTecnico { get; set; }
+
     }
 }

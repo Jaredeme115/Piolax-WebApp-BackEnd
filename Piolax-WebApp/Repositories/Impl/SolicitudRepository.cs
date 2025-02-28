@@ -134,9 +134,24 @@ namespace Piolax_WebApp.Repositories.Impl
         {
             return await _context.Solicitudes
                 .Where(s => s.idStatusOrden == 1) // Filtra solicitudes "Terminadas"
-                .OrderBy(s => s.fechaSolicitud)   // Ordena de manera ascendente (más antiguas primero)
+                .Include(s => s.Empleado) // 🔹 Incluir relación con Empleado
+                    .ThenInclude(e => e.EmpleadoAreaRol) // 🔹 Incluir roles y áreas del empleado
+                        .ThenInclude(ar => ar.Area)
+                .Include(s => s.Empleado)
+                    .ThenInclude(e => e.EmpleadoAreaRol)
+                        .ThenInclude(ar => ar.Rol)
+                .Include(s => s.Maquina)
+                .Include(s => s.Turno)
+                .Include(s => s.StatusOrden)
+                .Include(s => s.StatusAprobacionSolicitante)
+                .Include(s => s.categoriaTicket)
+                .Include(s => s.Asignaciones) // 🔹 Incluir asignaciones de la solicitud
+                    .ThenInclude(a => a.Asignacion_Tecnico) // 🔹 Incluir los técnicos asignados
+                        .ThenInclude(at => at.Empleado) // 🔹 Incluir detalles del técnico
+                .OrderBy(s => s.fechaSolicitud) // Ordena por fecha
                 .ToListAsync();
         }
+
 
         public async Task ActualizarStatusOrden(int idSolicitud, int idStatusOrden)
         {

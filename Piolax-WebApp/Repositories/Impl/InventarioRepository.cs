@@ -187,5 +187,11 @@ namespace Piolax_WebApp.Repositories.Impl
 
             return await query.ToListAsync();
         }
+
+        public async Task AddRangeAsync(IEnumerable<Inventario> inventario)
+        {
+            await _context.Set<Inventario>().AddRangeAsync(inventario); // Agrega el inventario al contexto.
+            await _context.SaveChangesAsync(); // Guarda los cambios en la base de datos.
+        }
     }
 }

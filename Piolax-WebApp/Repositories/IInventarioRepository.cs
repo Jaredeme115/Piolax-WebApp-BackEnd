@@ -19,5 +19,8 @@ namespace Piolax_WebApp.Repositories
         Task<int> ConsultarCantidadDisponible(int idRefaccion);
         Task<IEnumerable<Inventario>> ConsultarRefaccionesPorFiltros(bool? piezaCritica,bool? inventarioActivoObsoleto);
 
+        //Carga masiva de Inventario
+        Task AddRangeAsync(IEnumerable<Inventario> inventario);
+
     }
 }

@@ -1,4 +1,5 @@
-﻿using Piolax_WebApp.DTOs;
+﻿using IronXL;
+using Piolax_WebApp.DTOs;
 using Piolax_WebApp.Models;
 using Piolax_WebApp.Repositories;
 using Piolax_WebApp.Repositories.Impl;
@@ -179,19 +180,145 @@ namespace Piolax_WebApp.Services.Impl
             return true;
         }
 
-        public string GenerarItem(string nombreProducto, string numParte, int idArea)
-        {
-            // Tomar las iniciales del nombre del producto (las primeras dos palabras)
-            var iniciales = string.Join("", nombreProducto.Split(' ').Take(2).Select(palabra => palabra.Substring(0, 1).ToUpper()));
-
-            // Construir el CURP concatenando los valores
-            return $"{iniciales}-{idArea}-{numParte}";
-        }
 
         public async Task<IEnumerable<Inventario>> ConsultarRefaccionesPorFiltros(bool? piezaCritica, bool? inventarioActivoObsoleto)
         {
             return await _repository.ConsultarRefaccionesPorFiltros(piezaCritica, inventarioActivoObsoleto);
         }
+
+
+        // Método para registrar inventario desde un archivo Excel
+        public async Task<string> RegistrarInventarioDesdeExcel(IFormFile filePath)
+        {
+            if (filePath == null || filePath.Length == 0)
+                throw new ArgumentException("El archivo es inválido.");
+
+            var errores = new List<string>(); // Para registrar errores de procesamiento
+            int productosCargados = 0;
+            var productos = new List<Inventario>();
+
+            try
+            {
+                var workbook = WorkBook.Load(filePath.OpenReadStream()); // Carga el archivo Excel
+                var worksheet = workbook.WorkSheets.First(); // Obtiene la primera hoja del archivo
+
+                for (int row = 2; row <= worksheet.RowCount; row++) // Itera desde la fila 2
+                {
+                    try
+                    {
+                        var inventarioDTO = new InventarioDTO
+                        {
+                            idArea = int.Parse(worksheet[$"A{row}"].StringValue),
+                            idMaquina = int.Parse(worksheet[$"B{row}"].StringValue),
+                            nombreProducto = worksheet[$"C{row}"].StringValue,
+                            numParte = worksheet[$"D{row}"].StringValue,
+                            descripcion = worksheet[$"E{row}"].StringValue,
+                            proveedor = worksheet[$"F{row}"].StringValue,
+                            cantidadMin = string.IsNullOrWhiteSpace(worksheet[$"G{row}"].StringValue) ? 1 : int.Parse(worksheet[$"G{row}"].StringValue),
+                            cantidadMax = string.IsNullOrWhiteSpace(worksheet[$"H{row}"].StringValue) ? 1 : int.Parse(worksheet[$"G{row}"].StringValue),
+                            ubicacion = worksheet[$"B{row}"].StringValue,
+                            idInventarioCategoria = int.Parse(worksheet[$"C{row}"].StringValue),
+                            cantidadActual = int.Parse(worksheet[$"D{row}"].StringValue),
+                            piezaCritica = bool.Parse(worksheet[$"G{row}"].StringValue),
+                            precioUnitario = float.Parse(worksheet[$"K{row}"].StringValue),
+                            proceso = worksheet[$"L{row}"].StringValue,
+                            fechaEntrega = DateTime.Parse(worksheet[$"O{row}"].StringValue),
+                            inventarioActivoObsoleto = bool.Parse(worksheet[$"P{row}"].StringValue),
+                            EstatusInventario = worksheet[$"Q{row}"].StringValue
+                        };
+
+                        // Verificar el contenido de # de parte
+                        if (string.IsNullOrWhiteSpace(inventarioDTO.numParte))
+                        {
+                            inventarioDTO.numParte = "No contiene";
+                        }
+
+                        // Verificar el contenido de descripcion
+                        if (string.IsNullOrWhiteSpace(inventarioDTO.descripcion))
+                        {
+                            inventarioDTO.descripcion = "No contiene";
+                        }
+
+                        // Verificar el contenido de proveedor
+                        if (string.IsNullOrWhiteSpace(inventarioDTO.proveedor))
+                        {
+                            inventarioDTO.descripcion = "No contiene";
+                        }
+
+                        // Verificar si cantidadMin es 0 y asignar 1 en su lugar
+                        if (inventarioDTO.cantidadMin == 0)
+                        {
+                            inventarioDTO.cantidadMin = 1;
+                        }
+
+                        // Verificar si cantidadMax es 0 y asignar # en su lugar
+                        if (inventarioDTO.cantidadMax == 0)
+                        {
+                            inventarioDTO.cantidadMax = 1;
+                        }
+
+                        // Generar el campo `item`
+                        var item = GenerarItem(inventarioDTO.nombreProducto, inventarioDTO.numParte, inventarioDTO.idArea);
+                        inventarioDTO.item = item;
+
+                        // Generar el código QR si `numParte` es válido
+                        string qrCodeBase64 = !string.IsNullOrEmpty(inventarioDTO.numParte) ? GenerateQRCode(inventarioDTO.numParte) : null;
+                        inventarioDTO.codigoQR = qrCodeBase64;
+
+                        // Calcular el precio total
+                        inventarioDTO.precioInventarioTotal = inventarioDTO.precioUnitario * inventarioDTO.cantidadActual;
+
+                        // Transformar DTO a entidad
+                        var inventario = new Inventario
+                        {
+                            item = inventarioDTO.item,
+                            descripcion = inventarioDTO.descripcion,
+                            ubicacion = inventarioDTO.ubicacion,
+                            idInventarioCategoria = inventarioDTO.idInventarioCategoria,
+                            cantidadActual = inventarioDTO.cantidadActual,
+                            cantidadMax = inventarioDTO.cantidadMax,
+                            cantidadMin = inventarioDTO.cantidadMin,
+                            piezaCritica = inventarioDTO.piezaCritica,
+                            nombreProducto = inventarioDTO.nombreProducto,
+                            numParte = inventarioDTO.numParte,
+                            proveedor = inventarioDTO.proveedor,
+                            precioUnitario = inventarioDTO.precioUnitario,
+                            precioInventarioTotal = inventarioDTO.precioInventarioTotal,
+                            codigoQR = inventarioDTO.codigoQR,
+                            proceso = inventarioDTO.proceso,
+                            idArea = inventarioDTO.idArea,
+                            idMaquina = inventarioDTO.idMaquina,
+                            fechaEntrega = inventarioDTO.fechaEntrega,
+                            inventarioActivoObsoleto = inventarioDTO.inventarioActivoObsoleto,
+                            EstatusInventario = Enum.TryParse<EstatusInventario>(inventarioDTO.EstatusInventario, true, out var status) ? status : EstatusInventario.Disponible
+                        };
+
+                        productos.Add(inventario);
+                        productosCargados++;
+                    }
+                    catch (Exception ex)
+                    {
+                        // Agrega detalles del error para la fila actual
+                        errores.Add($"Error en fila {row}: {ex.Message}");
+                    }
+                }
+
+                // Reutiliza el método AddRangeAsync para insertar todos los productos
+                await _repository.AddRangeAsync(productos);
+
+                var resultado = $"{productosCargados} productos cargados correctamente.";
+                if (errores.Any())
+                {
+                    resultado += $" Se encontraron errores en {errores.Count} filas: {string.Join("; ", errores)}";
+                }
+                return resultado;
+            }
+            catch (Exception ex)
+            {
+                throw new ApplicationException("Error al procesar el archivo Excel.", ex);
+            }
+        }
+
 
 
         // Funcionalidad para generar el código QR
@@ -213,6 +340,15 @@ namespace Piolax_WebApp.Services.Impl
                     }
                 }
             }
+        }
+
+        public string GenerarItem(string nombreProducto, string numParte, int idArea)
+        {
+            // Tomar las iniciales del nombre del producto (las primeras dos palabras)
+            var iniciales = string.Join("", nombreProducto.Split(' ').Take(2).Select(palabra => palabra.Substring(0, 1).ToUpper()));
+
+            // Construir el CURP concatenando los valores
+            return $"{iniciales}-{idArea}-{numParte}";
         }
 
     }

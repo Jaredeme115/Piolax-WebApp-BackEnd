@@ -118,7 +118,7 @@ namespace Piolax_WebApp.Controllers
         }
 
         [HttpGet("ConsultarSolicitudesTerminadas")]
-        public async Task<ActionResult<IEnumerable<Solicitudes>>> ConsultarSolicitudesTerminadas()
+        public async Task<ActionResult<IEnumerable<SolicitudesDetalleDTO>>> ConsultarSolicitudesTerminadas()
         {
             var solicitudes = await _service.ConsultarSolicitudesTerminadas();
             return Ok(solicitudes);

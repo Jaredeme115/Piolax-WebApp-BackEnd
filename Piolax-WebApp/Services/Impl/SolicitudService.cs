@@ -355,10 +355,67 @@ namespace Piolax_WebApp.Services.Impl
             return await _repository.ConsultarSolicitudesNoTomadas();
         }
 
-        public async Task<IEnumerable<Solicitudes>> ConsultarSolicitudesTerminadas()
+        public async Task<IEnumerable<SolicitudesDetalleDTO>> ConsultarSolicitudesTerminadas()
         {
-            return await _repository.ConsultarSolicitudesTerminadas();
+            var solicitudes = await _repository.ConsultarSolicitudesTerminadas();
+            var solicitudesDetalleDTO = new List<SolicitudesDetalleDTO>();
+
+            foreach (var solicitud in solicitudes)
+            {
+                var empleado = solicitud.Empleado;
+                if (empleado == null)
+                {
+                    continue;
+                }
+
+                var areasRoles = empleado.EmpleadoAreaRol ?? new List<EmpleadoAreaRol>();
+
+                var areaSeleccionada = areasRoles.FirstOrDefault(ar => ar.idArea == solicitud.idAreaSeleccionada);
+                var rolSeleccionado = areasRoles.FirstOrDefault(ar => ar.idRol == solicitud.idRolSeleccionado && ar.idArea == solicitud.idAreaSeleccionada);
+
+                var maquina = await _maquinasService.Consultar(solicitud.idMaquina);
+                var turno = await _turnoService.Consultar(solicitud.idTurno);
+                var statusOrden = await _statusOrdenService.Consultar(solicitud.idStatusOrden);
+                var statusAprobacionSolicitante = await _statusAprobacionSolicitanteService.Consultar(solicitud.idStatusAprobacionSolicitante);
+                var categoriaTicket = await _categoriaTicketService.Consultar(solicitud.idCategoriaTicket);
+
+                // 🔹 Obtener el técnico que tomó la orden (se asume que hay solo uno aprobado)
+                var tecnico = solicitud.Asignaciones
+                    .SelectMany(a => a.Asignacion_Tecnico)
+                    .FirstOrDefault(t => t.idStatusAprobacionTecnico == 1)?.Empleado; // 🔹 `Tecnico` es un `Empleado`
+
+                var nombreCompletoTecnico = tecnico != null
+                    ? $"{tecnico.nombre} {tecnico.apellidoPaterno} {tecnico.apellidoMaterno}"
+                    : "No asignado";
+
+                var solicitudDetalleDTO = new SolicitudesDetalleDTO
+                {
+                    idSolicitud = solicitud.idSolicitud,
+                    descripcion = solicitud.descripcion,
+                    fechaSolicitud = solicitud.fechaSolicitud,
+                    nombreCompletoEmpleado = $"{empleado.nombre} {empleado.apellidoPaterno} {empleado.apellidoMaterno}",
+                    idMaquina = solicitud.idMaquina,
+                    idTurno = solicitud.idTurno,
+                    idStatusOrden = solicitud.idStatusOrden,
+                    idStatusAprobacionSolicitante = solicitud.idStatusAprobacionSolicitante,
+                    area = areaSeleccionada?.Area?.nombreArea ?? "N/A",
+                    rol = rolSeleccionado?.Rol?.nombreRol ?? "N/A",
+                    idCategoriaTicket = solicitud.idCategoriaTicket,
+                    nombreMaquina = maquina.nombreMaquina,
+                    nombreTurno = turno.descripcion,
+                    nombreStatusOrden = statusOrden.descripcionStatusOrden,
+                    nombreStatusAprobacionSolicitante = statusAprobacionSolicitante.descripcionStatusAprobacionSolicitante,
+                    nombreCategoriaTicket = categoriaTicket.descripcionCategoriaTicket,
+                    nombreCompletoTecnico = nombreCompletoTecnico 
+                };
+
+                solicitudesDetalleDTO.Add(solicitudDetalleDTO);
+            }
+
+            return solicitudesDetalleDTO;
         }
+
+
 
         public async Task ActualizarStatusOrden(int idSolicitud, int idStatusOrden)
         {
