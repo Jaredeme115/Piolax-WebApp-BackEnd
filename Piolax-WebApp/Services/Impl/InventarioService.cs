@@ -6,6 +6,8 @@ using Piolax_WebApp.Repositories.Impl;
 using QRCoder;
 using System.Drawing;
 using System.Drawing.Imaging;
+using OfficeOpenXml;
+
 
 namespace Piolax_WebApp.Services.Impl
 {
@@ -199,111 +201,99 @@ namespace Piolax_WebApp.Services.Impl
 
             try
             {
-                var workbook = WorkBook.Load(filePath.OpenReadStream()); // Carga el archivo Excel
-                var worksheet = workbook.WorkSheets.First(); // Obtiene la primera hoja del archivo
+                ExcelPackage.LicenseContext = LicenseContext.NonCommercial; // Habilitar EPPlus para uso no comercial
 
-                for (int row = 2; row <= worksheet.RowCount; row++) // Itera desde la fila 2
+                using (var package = new ExcelPackage(filePath.OpenReadStream()))
                 {
-                    try
+                    var worksheet = package.Workbook.Worksheets.FirstOrDefault();
+                    if (worksheet == null)
+                        return "El archivo Excel no contiene hojas.";
+
+                    int totalRows = worksheet.Dimension.Rows;
+
+                    for (int row = 2; row <= totalRows; row++) // Itera desde la fila 2 (omitir encabezado)
                     {
-                        var inventarioDTO = new InventarioDTO
+                        try
                         {
-                            idArea = int.Parse(worksheet[$"A{row}"].StringValue),
-                            idMaquina = int.Parse(worksheet[$"B{row}"].StringValue),
-                            nombreProducto = worksheet[$"C{row}"].StringValue,
-                            numParte = worksheet[$"D{row}"].StringValue,
-                            descripcion = worksheet[$"E{row}"].StringValue,
-                            proveedor = worksheet[$"F{row}"].StringValue,
-                            cantidadMin = string.IsNullOrWhiteSpace(worksheet[$"G{row}"].StringValue) ? 1 : int.Parse(worksheet[$"G{row}"].StringValue),
-                            cantidadMax = string.IsNullOrWhiteSpace(worksheet[$"H{row}"].StringValue) ? 1 : int.Parse(worksheet[$"G{row}"].StringValue),
-                            ubicacion = worksheet[$"B{row}"].StringValue,
-                            idInventarioCategoria = int.Parse(worksheet[$"C{row}"].StringValue),
-                            cantidadActual = int.Parse(worksheet[$"D{row}"].StringValue),
-                            piezaCritica = bool.Parse(worksheet[$"G{row}"].StringValue),
-                            precioUnitario = float.Parse(worksheet[$"K{row}"].StringValue),
-                            proceso = worksheet[$"L{row}"].StringValue,
-                            fechaEntrega = DateTime.Parse(worksheet[$"O{row}"].StringValue),
-                            inventarioActivoObsoleto = bool.Parse(worksheet[$"P{row}"].StringValue),
-                            EstatusInventario = worksheet[$"Q{row}"].StringValue
-                        };
+                            var inventarioDTO = new InventarioDTO
+                            {
+                                idArea = int.Parse(worksheet.Cells[row, 1].Text),
+                                idMaquina = int.Parse(worksheet.Cells[row, 2].Text),
+                                nombreProducto = worksheet.Cells[row, 3].Text,
+                                numParte = worksheet.Cells[row, 4].Text,
+                                descripcion = worksheet.Cells[row, 5].Text,
+                                proveedor = worksheet.Cells[row, 6].Text,
+                                cantidadMin = string.IsNullOrWhiteSpace(worksheet.Cells[row, 7].Text) ? 1 : int.Parse(worksheet.Cells[row, 7].Text),
+                                cantidadActual = string.IsNullOrWhiteSpace(worksheet.Cells[row, 9].Text) ? 0 : int.Parse(worksheet.Cells[row, 9].Text),
+                                cantidadMax = string.IsNullOrWhiteSpace(worksheet.Cells[row, 8].Text) ? Math.Max(1, int.Parse(worksheet.Cells[row, 9].Text) + 1) : int.Parse(worksheet.Cells[row, 8].Text),
+                                precioUnitario = string.IsNullOrWhiteSpace(worksheet.Cells[row, 10].Text) ? 0.0f : float.Parse(worksheet.Cells[row, 10].Text),
+                                proceso = worksheet.Cells[row, 11].Text,
+                                ubicacion = worksheet.Cells[row, 12].Text,
+                                piezaCritica = !string.IsNullOrWhiteSpace(worksheet.Cells[row, 13].Text) && bool.Parse(worksheet.Cells[row, 13].Text),
+                                inventarioActivoObsoleto = string.IsNullOrWhiteSpace(worksheet.Cells[row, 14].Text) || bool.Parse(worksheet.Cells[row, 14].Text),
+                                fechaEntrega = string.IsNullOrWhiteSpace(worksheet.Cells[row, 15].Text) ? DateTime.Today.AddMonths(1) : DateTime.Parse(worksheet.Cells[row, 15].Text),
+                            };
 
-                        // Verificar el contenido de # de parte
-                        if (string.IsNullOrWhiteSpace(inventarioDTO.numParte))
-                        {
-                            inventarioDTO.numParte = "No contiene";
+                            // Validaciones y asignaciones por defecto
+                            inventarioDTO.numParte = string.IsNullOrWhiteSpace(inventarioDTO.numParte) ? "No contiene" : inventarioDTO.numParte;
+                            inventarioDTO.descripcion = string.IsNullOrWhiteSpace(inventarioDTO.descripcion) ? "No contiene" : inventarioDTO.descripcion;
+                            inventarioDTO.proveedor = string.IsNullOrWhiteSpace(inventarioDTO.proveedor) ? "No contiene" : inventarioDTO.proveedor;
+                            inventarioDTO.proceso = string.IsNullOrWhiteSpace(inventarioDTO.proceso) ? "No contiene" : inventarioDTO.proceso;
+                            inventarioDTO.ubicacion = string.IsNullOrWhiteSpace(inventarioDTO.ubicacion) ? "No contiene" : inventarioDTO.ubicacion;
+
+                            // Ajuste de valores mínimos
+                            inventarioDTO.cantidadMin = Math.Max(1, inventarioDTO.cantidadMin);
+                            inventarioDTO.cantidadMax = Math.Max(1, inventarioDTO.cantidadMax);
+
+                            // Generación de campos adicionales
+                            inventarioDTO.idInventarioCategoria = inventarioDTO.idArea;
+                            inventarioDTO.EstatusInventario = "Disponible";
+
+                            // Generar el campo `item`
+                            inventarioDTO.item = GenerarItem(inventarioDTO.nombreProducto, inventarioDTO.numParte, inventarioDTO.idArea);
+
+                            // Generar código QR
+                            inventarioDTO.codigoQR = !string.IsNullOrEmpty(inventarioDTO.numParte) ? GenerateQRCode(inventarioDTO.numParte) : null;
+
+                            // Calcular el precio total
+                            inventarioDTO.precioInventarioTotal = inventarioDTO.precioUnitario * inventarioDTO.cantidadActual;
+
+                            // Transformar DTO a entidad
+                            var inventario = new Inventario
+                            {
+                                item = inventarioDTO.item,
+                                descripcion = inventarioDTO.descripcion,
+                                ubicacion = inventarioDTO.ubicacion,
+                                idInventarioCategoria = inventarioDTO.idInventarioCategoria,
+                                cantidadActual = inventarioDTO.cantidadActual,
+                                cantidadMax = inventarioDTO.cantidadMax,
+                                cantidadMin = inventarioDTO.cantidadMin,
+                                piezaCritica = inventarioDTO.piezaCritica,
+                                nombreProducto = inventarioDTO.nombreProducto,
+                                numParte = inventarioDTO.numParte,
+                                proveedor = inventarioDTO.proveedor,
+                                precioUnitario = inventarioDTO.precioUnitario,
+                                precioInventarioTotal = inventarioDTO.precioInventarioTotal,
+                                codigoQR = inventarioDTO.codigoQR,
+                                proceso = inventarioDTO.proceso,
+                                idArea = inventarioDTO.idArea,
+                                idMaquina = inventarioDTO.idMaquina,
+                                fechaEntrega = inventarioDTO.fechaEntrega,
+                                inventarioActivoObsoleto = inventarioDTO.inventarioActivoObsoleto,
+                                EstatusInventario = Enum.TryParse<EstatusInventario>(inventarioDTO.EstatusInventario, true, out var status) ? status : EstatusInventario.Disponible
+                            };
+
+                            productos.Add(inventario);
+                            productosCargados++;
                         }
-
-                        // Verificar el contenido de descripcion
-                        if (string.IsNullOrWhiteSpace(inventarioDTO.descripcion))
+                        catch (Exception ex)
                         {
-                            inventarioDTO.descripcion = "No contiene";
+                            errores.Add($"Error en fila {row}: {ex.Message}");
                         }
-
-                        // Verificar el contenido de proveedor
-                        if (string.IsNullOrWhiteSpace(inventarioDTO.proveedor))
-                        {
-                            inventarioDTO.descripcion = "No contiene";
-                        }
-
-                        // Verificar si cantidadMin es 0 y asignar 1 en su lugar
-                        if (inventarioDTO.cantidadMin == 0)
-                        {
-                            inventarioDTO.cantidadMin = 1;
-                        }
-
-                        // Verificar si cantidadMax es 0 y asignar # en su lugar
-                        if (inventarioDTO.cantidadMax == 0)
-                        {
-                            inventarioDTO.cantidadMax = 1;
-                        }
-
-                        // Generar el campo `item`
-                        var item = GenerarItem(inventarioDTO.nombreProducto, inventarioDTO.numParte, inventarioDTO.idArea);
-                        inventarioDTO.item = item;
-
-                        // Generar el código QR si `numParte` es válido
-                        string qrCodeBase64 = !string.IsNullOrEmpty(inventarioDTO.numParte) ? GenerateQRCode(inventarioDTO.numParte) : null;
-                        inventarioDTO.codigoQR = qrCodeBase64;
-
-                        // Calcular el precio total
-                        inventarioDTO.precioInventarioTotal = inventarioDTO.precioUnitario * inventarioDTO.cantidadActual;
-
-                        // Transformar DTO a entidad
-                        var inventario = new Inventario
-                        {
-                            item = inventarioDTO.item,
-                            descripcion = inventarioDTO.descripcion,
-                            ubicacion = inventarioDTO.ubicacion,
-                            idInventarioCategoria = inventarioDTO.idInventarioCategoria,
-                            cantidadActual = inventarioDTO.cantidadActual,
-                            cantidadMax = inventarioDTO.cantidadMax,
-                            cantidadMin = inventarioDTO.cantidadMin,
-                            piezaCritica = inventarioDTO.piezaCritica,
-                            nombreProducto = inventarioDTO.nombreProducto,
-                            numParte = inventarioDTO.numParte,
-                            proveedor = inventarioDTO.proveedor,
-                            precioUnitario = inventarioDTO.precioUnitario,
-                            precioInventarioTotal = inventarioDTO.precioInventarioTotal,
-                            codigoQR = inventarioDTO.codigoQR,
-                            proceso = inventarioDTO.proceso,
-                            idArea = inventarioDTO.idArea,
-                            idMaquina = inventarioDTO.idMaquina,
-                            fechaEntrega = inventarioDTO.fechaEntrega,
-                            inventarioActivoObsoleto = inventarioDTO.inventarioActivoObsoleto,
-                            EstatusInventario = Enum.TryParse<EstatusInventario>(inventarioDTO.EstatusInventario, true, out var status) ? status : EstatusInventario.Disponible
-                        };
-
-                        productos.Add(inventario);
-                        productosCargados++;
-                    }
-                    catch (Exception ex)
-                    {
-                        // Agrega detalles del error para la fila actual
-                        errores.Add($"Error en fila {row}: {ex.Message}");
                     }
                 }
 
-                // Reutiliza el método AddRangeAsync para insertar todos los productos
+                // Guardar en base de datos
                 await _repository.AddRangeAsync(productos);
 
                 var resultado = $"{productosCargados} productos cargados correctamente.";
@@ -318,8 +308,6 @@ namespace Piolax_WebApp.Services.Impl
                 throw new ApplicationException("Error al procesar el archivo Excel.", ex);
             }
         }
-
-
 
         // Funcionalidad para generar el código QR
         private string GenerateQRCode(string text)

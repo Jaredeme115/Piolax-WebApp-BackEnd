@@ -10,6 +10,7 @@ using Piolax_WebApp.Repositories.Impl;
 using System.Collections.Specialized;
 using Piolax_WebApp.BackgroundServices; 
 using Piolax_WebApp.Hubs;
+using Piolax_WebApp.Utilities;
 
 
 
@@ -137,6 +138,8 @@ builder.Services.AddSwaggerGen(options =>
             new List<string>()
         }
     });
+
+    //options.OperationFilter<FileUploadOperation>();
 });
 
 string corsConfiguration = "_corsConfiguration";

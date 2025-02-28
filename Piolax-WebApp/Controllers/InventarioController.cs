@@ -9,6 +9,7 @@ using System.Drawing;
 using System.Drawing.Imaging;
 using System.IO;
 using BarcodeStandard;
+using OfficeOpenXml;
 
 namespace Piolax_WebApp.Controllers
 {
@@ -171,6 +172,29 @@ namespace Piolax_WebApp.Controllers
             // Devolver la imagen como archivo descargable
             return File(qrCodeBytes, "image/png", $"QRCode_{producto.numParte}.png");
         }
+
+        // Metodo para cargar refacciones desde un archivo Excel
+       [HttpPost("CargarRefaccionesDesdeExcel")]
+       [Consumes("multipart/form-data")] // Indica que acepta archivos
+        public async Task<IActionResult> SubirInventarioDesdeExcel(IFormFile file)
+        {
+            try
+            {
+                // Validar que se haya recibido un archivo
+                if (file == null || file.Length == 0)
+                {
+                    return BadRequest(new { error = "Debe proporcionar un archivo Excel válido." });
+                }
+
+                string resultado = await _service.RegistrarInventarioDesdeExcel(file);
+                return Ok(new { mensaje = resultado });
+            }
+            catch (Exception ex)
+            {
+                return StatusCode(500, new { error = "Ocurrió un error al procesar el archivo.", detalle = ex.Message });
+            }
+        }
+
 
 
     }

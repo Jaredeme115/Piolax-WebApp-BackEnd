@@ -21,5 +21,6 @@ namespace Piolax_WebApp.Services
         Task ActualizarCantidadInventario(int idRefaccion, int cantidadADescontar);
         Task<int> ConsultarCantidadDisponible(int idRefaccion);
         Task<IEnumerable<Inventario>> ConsultarRefaccionesPorFiltros(bool? piezaCritica, bool? inventarioActivoObsoleto);
+        Task<string> RegistrarInventarioDesdeExcel(IFormFile filePath);
     }
 }
