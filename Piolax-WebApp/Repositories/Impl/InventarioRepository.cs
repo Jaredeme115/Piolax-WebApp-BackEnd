@@ -88,32 +88,6 @@ namespace Piolax_WebApp.Repositories.Impl
             return inventario;
         }
 
-        /*public async Task<Inventario?> ConsultarInventarioConDetalles(int idRefaccion)
-        {
-
-            return await _context.Inventario
-                .Include(i => i.descripcion)
-                .Include(i => i.ubicacion)
-                .Include(i => i.idInventarioCategoria)
-                .Include(i => i.cantidadActual)
-                .Include(i => i.cantidadMin)
-                .Include(i => i.cantidadMax)
-                .Include(i => i.piezaCritica)
-                .Include(i => i.nombreProducto)
-                .Include(i => i.numParte)
-                .Include(i => i.proveedor)
-                .Include(i => i.precioUnitario)
-                .Include(i => i.precioInventarioTotal)
-                .Include(i => i.codigoBarras)
-                .Include(i => i.codigoQR)
-                .Include(i => i.proceso)
-                .Include(i => i.idArea)
-                .Include(i => i.idMaquina)
-                .Include(i => i.fechaEntrega)
-                .Include(i => i.inventarioActivoObsoleto)
-                .FirstOrDefaultAsync(i => i.idRefaccion == idRefaccion);
-        }*/
-
         public async Task<Inventario?> ConsultarInventarioPorNombre(string nombreProducto)
         {
             return await _context.Inventario.Where(p => p.nombreProducto == nombreProducto).FirstOrDefaultAsync();
@@ -186,6 +160,15 @@ namespace Piolax_WebApp.Repositories.Impl
                 query = query.Where(x => x.inventarioActivoObsoleto == inventarioActivoObsoleto.Value);
 
             return await query.ToListAsync();
+        }
+
+        public async Task<IEnumerable<Inventario>> ConsultarInventarioConDetalles()
+        {
+            return await _context.Inventario
+                .Include(i => i.InventarioCategorias) // Para obtener el nombre de la categoría
+                .Include(i => i.Areas) // Para obtener el nombre del área
+                .Include(i => i.Maquinas) // Para obtener el nombre de la máquina
+                .ToListAsync();
         }
 
         public async Task AddRangeAsync(IEnumerable<Inventario> inventario)

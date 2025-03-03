@@ -66,8 +66,9 @@ namespace Piolax_WebApp.Repositories.Impl
 
         public async Task<IEnumerable<InventarioCategorias>> ConsultarTodasCategorias()
         {
-            var inventarioCategoria = await _context.InventarioCategorias.ToListAsync();
-            return inventarioCategoria;
+            return await _context.InventarioCategorias
+             .Include(ic => ic.Inventario) // Incluir las piezas asociadas a la categoría
+             .ToListAsync();
         }
 
         public async Task<InventarioCategorias?> ConsultarCategoriaPorNombre(string nombreInventarioCategoria)

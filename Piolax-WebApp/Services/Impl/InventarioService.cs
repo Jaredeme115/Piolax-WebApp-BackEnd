@@ -182,6 +182,42 @@ namespace Piolax_WebApp.Services.Impl
             return true;
         }
 
+        public async Task<IEnumerable<InventarioDetalleDTO>> ObtenerInventarioConDetalles()
+        {
+            var inventario = await _repository.ConsultarInventarioConDetalles();
+
+            var inventarioDTOs = inventario.Select(i => new InventarioDetalleDTO
+            {
+                descripcion = i.descripcion,
+                ubicacion = i.ubicacion,
+                idInventarioCategoria = i.idInventarioCategoria,
+                nombreInventarioCategoria = i.InventarioCategorias?.nombreInventarioCategoria ?? "Sin categoría",
+                cantidadActual = i.cantidadActual,
+                cantidadMax = i.cantidadMax,
+                cantidadMin = i.cantidadMin,
+                piezaCritica = i.piezaCritica,
+                nombreProducto = i.nombreProducto,
+                numParte = i.numParte,
+                proveedor = i.proveedor,
+                precioUnitario = i.precioUnitario,
+                precioInventarioTotal = i.precioInventarioTotal,
+                codigoQR = i.codigoQR,
+                proceso = i.proceso,
+                idArea = i.idArea,
+                nombreArea = i.Areas?.nombreArea ?? "Sin área asignada",
+                idMaquina = i.idMaquina,
+                nombreMaquina = i.Maquinas?.nombreMaquina ?? "Sin máquina asignada",
+                fechaEntrega = i.fechaEntrega,
+                inventarioActivoObsoleto = i.inventarioActivoObsoleto,
+                item = i.item,
+                fechaActualizacion = i.fechaActualizacion,
+                EstatusInventario = i.EstatusInventario.ToString()
+            }).ToList();
+
+            return inventarioDTOs;
+        }
+
+
 
         public async Task<IEnumerable<Inventario>> ConsultarRefaccionesPorFiltros(bool? piezaCritica, bool? inventarioActivoObsoleto)
         {
@@ -224,8 +260,8 @@ namespace Piolax_WebApp.Services.Impl
                                 descripcion = worksheet.Cells[row, 5].Text,
                                 proveedor = worksheet.Cells[row, 6].Text,
                                 cantidadMin = string.IsNullOrWhiteSpace(worksheet.Cells[row, 7].Text) ? 1 : int.Parse(worksheet.Cells[row, 7].Text),
-                                cantidadActual = string.IsNullOrWhiteSpace(worksheet.Cells[row, 9].Text) ? 0 : int.Parse(worksheet.Cells[row, 9].Text),
                                 cantidadMax = string.IsNullOrWhiteSpace(worksheet.Cells[row, 8].Text) ? Math.Max(1, int.Parse(worksheet.Cells[row, 9].Text) + 1) : int.Parse(worksheet.Cells[row, 8].Text),
+                                cantidadActual = string.IsNullOrWhiteSpace(worksheet.Cells[row, 9].Text) ? 0 : int.Parse(worksheet.Cells[row, 9].Text),
                                 precioUnitario = string.IsNullOrWhiteSpace(worksheet.Cells[row, 10].Text) ? 0.0f : float.Parse(worksheet.Cells[row, 10].Text),
                                 proceso = worksheet.Cells[row, 11].Text,
                                 ubicacion = worksheet.Cells[row, 12].Text,
