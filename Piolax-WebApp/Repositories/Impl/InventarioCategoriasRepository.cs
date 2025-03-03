@@ -64,10 +64,24 @@ namespace Piolax_WebApp.Repositories.Impl
             }
         }
 
-        public async Task<IEnumerable<InventarioCategorias>> ConsultarTodasCategorias()
+        /*public async Task<IEnumerable<InventarioCategorias>> ConsultarTodasCategorias()
         {
             return await _context.InventarioCategorias
              .Include(ic => ic.Inventario) // Incluir las piezas asociadas a la categoría
+             .ToListAsync();
+        }*/
+
+        public async Task<IEnumerable<string>> ConsultarNombresCategorias()
+        {
+            return await _context.InventarioCategorias
+                .Select(c => c.nombreInventarioCategoria)
+                .ToListAsync();
+        }
+
+        public async Task<IEnumerable<string>> ConsultarTodasCategorias()
+        {
+            return await _context.InventarioCategorias
+             .Select(cn => cn.nombreInventarioCategoria ) 
              .ToListAsync();
         }
 

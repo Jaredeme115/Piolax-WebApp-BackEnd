@@ -87,11 +87,24 @@ namespace Piolax_WebApp.Controllers
         }
 
         //[Authorize(Policy = "AdminOnly")]
-        [HttpGet("ConsultarTodasCategorias")]
+        /*[HttpGet("ConsultarTodasCategorias")]
 
         public async Task<IEnumerable<InventarioCategorias>> ConsultarTodasCategorias()
         {
             return await _service.ConsultarTodasCategorias();
+        }*/
+
+        [HttpGet("InventarioCategoriasNombres")]
+        public async Task<ActionResult<IEnumerable<string>>> ObtenerNombresCategorias()
+        {
+            var categorias = await _service.ObtenerNombresCategorias();
+
+            if (!categorias.Any())
+            {
+                return NotFound("No hay categorías registradas.");
+            }
+
+            return Ok(categorias);
         }
 
         [Authorize(Policy = "AdminOnly")]

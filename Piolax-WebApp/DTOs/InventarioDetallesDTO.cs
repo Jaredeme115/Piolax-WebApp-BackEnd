@@ -4,6 +4,8 @@ namespace Piolax_WebApp.DTOs
 {
     public class InventarioDetalleDTO
     {
+        public int idRefaccion { get; set; }
+
         [Required]
         public string descripcion { get; set; }
 

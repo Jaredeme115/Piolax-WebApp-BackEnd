@@ -162,12 +162,51 @@ namespace Piolax_WebApp.Repositories.Impl
             return await query.ToListAsync();
         }
 
-        public async Task<IEnumerable<Inventario>> ConsultarInventarioConDetalles()
+        public async Task<InventarioDetalleDTO?> ConsultarRefaccionDetalle(int idInventario)
+        {
+            var refaccion = await _context.Inventario
+                .Include(i => i.InventarioCategorias)
+                .Include(i => i.Areas)
+                .Include(i => i.Maquinas)
+                .FirstOrDefaultAsync(i => i.idRefaccion == idInventario);
+
+            if (refaccion == null) return null;
+
+            return new InventarioDetalleDTO
+            {
+                descripcion = refaccion.descripcion,
+                ubicacion = refaccion.ubicacion,
+                idInventarioCategoria = refaccion.idInventarioCategoria,
+                nombreInventarioCategoria = refaccion.InventarioCategorias?.nombreInventarioCategoria ?? "Sin categoría",
+                cantidadActual = refaccion.cantidadActual,
+                cantidadMax = refaccion.cantidadMax,
+                cantidadMin = refaccion.cantidadMin,
+                piezaCritica = refaccion.piezaCritica,
+                nombreProducto = refaccion.nombreProducto,
+                numParte = refaccion.numParte,
+                proveedor = refaccion.proveedor,
+                precioUnitario = refaccion.precioUnitario,
+                precioInventarioTotal = refaccion.precioInventarioTotal,
+                codigoQR = refaccion.codigoQR,
+                proceso = refaccion.proceso,
+                idArea = refaccion.idArea,
+                nombreArea = refaccion.Areas?.nombreArea ?? "Sin área asignada",
+                idMaquina = refaccion.idMaquina,
+                nombreMaquina = refaccion.Maquinas?.nombreMaquina ?? "Sin máquina asignada",
+                fechaEntrega = refaccion.fechaEntrega,
+                inventarioActivoObsoleto = refaccion.inventarioActivoObsoleto,
+                item = refaccion.item,
+                fechaActualizacion = refaccion.fechaActualizacion,
+                EstatusInventario = refaccion.EstatusInventario.ToString()
+            };
+        }
+
+
+        public async Task<IEnumerable<string>> ConsultarNombresRefaccionesPorCategoria(int idCategoria)
         {
             return await _context.Inventario
-                .Include(i => i.InventarioCategorias) // Para obtener el nombre de la categoría
-                .Include(i => i.Areas) // Para obtener el nombre del área
-                .Include(i => i.Maquinas) // Para obtener el nombre de la máquina
+                .Where(i => i.idInventarioCategoria == idCategoria)
+                .Select(i => i.nombreProducto)
                 .ToListAsync();
         }
 

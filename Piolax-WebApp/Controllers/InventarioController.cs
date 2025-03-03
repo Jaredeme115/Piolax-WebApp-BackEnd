@@ -45,29 +45,21 @@ namespace Piolax_WebApp.Controllers
 
         //[Authorize(Policy = "AdminOnly")]
         [HttpPut("Modificar/{idRefaccion}")]
-
-        public async Task<ActionResult<Inventario>> Modificar(int idRefaccion, [FromBody] InventarioDTO inventarioDTO)
+        public async Task<ActionResult<InventarioDetalleDTO>> ModificarRefaccion(int idRefaccion, [FromBody] InventarioModificarDTO inventarioDTO)
         {
-
-            if (idRefaccion <= 0)
+            if (!ModelState.IsValid)
             {
-                return BadRequest("ID de refacción inválido.");
-            }
-
-            var existeProducto = await _service.ExisteProductoInventario(idRefaccion);
-            if (!existeProducto)
-            {
-                return NotFound("El producto no existe en el inventario.");
+                return BadRequest(ModelState);
             }
 
             try
             {
-                var resultado = await _service.Modificar(idRefaccion, inventarioDTO);
-                return Ok(resultado);
+                var refaccionModificada = await _service.Modificar(idRefaccion, inventarioDTO);
+                return Ok(refaccionModificada);
             }
-            catch (Exception ex)
+            catch (InvalidOperationException ex)
             {
-                return StatusCode(500, "Error interno del servidor: " + ex.Message);
+                return BadRequest(ex.Message);
             }
         }
 
@@ -115,12 +107,6 @@ namespace Piolax_WebApp.Controllers
             return await _service.ConsultarInventarioPorCategoria(idInventarioCategoria);
         }
 
-        /*[Authorize(Policy = "AdminOnly")]
-        [HttpGet("ConsultarInventarioConDetalles")]
-        public async Task<ActionResult<Inventario>> ConsultarInventarioConDetalles(int idRefaccion)
-        {
-            return await _service.ConsultarInventarioConDetalles(idRefaccion);
-        }*/
 
         //[Authorize(Policy = "AdminOnly")]
         [HttpGet("ConsultarInventarioPorID")]
@@ -146,6 +132,30 @@ namespace Piolax_WebApp.Controllers
             return Ok(result);
         }
 
+
+        [HttpGet("detalle/{idInventario}")]
+        public async Task<ActionResult<InventarioDetalleDTO>> ObtenerRefaccionDetalle(int idInventario)
+        {
+            var refaccion = await _service.ObtenerRefaccionDetalle(idInventario);
+
+            if (refaccion == null)
+            {
+                return NotFound($"No se encontró la refacción con ID: {idInventario}");
+            }
+
+            return Ok(refaccion);
+        }
+
+        [HttpGet("ConsultarNombresRefaccionesPorCategoria/{idCategoria}")]
+        public async Task<ActionResult<IEnumerable<string>>> ConsultarNombresRefaccionesPorCategoria(int idCategoria)
+        {
+            var nombresRefacciones = await _service.ConsultarNombresRefaccionesPorCategoria(idCategoria);
+            if (nombresRefacciones == null || !nombresRefacciones.Any())
+            {
+                return NotFound("No se encontraron refacciones para la categoría especificada.");
+            }
+            return Ok(nombresRefacciones);
+        }
 
         //[Authorize(Policy = "AdminOnly")]
         [HttpGet("DescargarQRCode/{idRefaccion}")]

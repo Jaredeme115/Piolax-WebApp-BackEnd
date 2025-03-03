@@ -6,7 +6,7 @@ namespace Piolax_WebApp.Services
     public interface IInventarioService
     {
         Task<Inventario> RegistrarInventario(InventarioDTO inventarioDTO);
-        Task<Inventario> Modificar(int idRefaccion, InventarioDTO inventarioDTO);
+        Task<InventarioDetalleDTO> Modificar(int idRefaccion, InventarioModificarDTO inventarioModificarDTO);
         Task<bool> Eliminar(int idRefaccion);
         Task<IEnumerable<Inventario>> ConsultarTodoInventario();
 
@@ -23,7 +23,10 @@ namespace Piolax_WebApp.Services
         Task<IEnumerable<Inventario>> ConsultarRefaccionesPorFiltros(bool? piezaCritica, bool? inventarioActivoObsoleto);
 
         //Consultar Inventario con Detalles
-        Task<IEnumerable<InventarioDetalleDTO>> ObtenerInventarioConDetalles();
+        Task<InventarioDetalleDTO?> ObtenerRefaccionDetalle(int idInventario);
+
+        Task<IEnumerable<string>> ConsultarNombresRefaccionesPorCategoria(int idCategoria);
+
         Task<string> RegistrarInventarioDesdeExcel(IFormFile filePath);
     }
 }

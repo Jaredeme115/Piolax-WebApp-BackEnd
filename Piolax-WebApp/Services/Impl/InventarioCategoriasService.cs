@@ -59,10 +59,15 @@ namespace Piolax_WebApp.Services.Impl
             return await _repository.Eliminar(idInventarioCategoria);
         }
 
-        public async Task<IEnumerable<InventarioCategorias>> ConsultarTodasCategorias()
+        public async Task<IEnumerable<string>> ObtenerNombresCategorias()
+        {
+            return await _repository.ConsultarNombresCategorias();
+        }
+
+        /*public async Task<IEnumerable<InventarioCategorias>> ConsultarTodasCategorias()
         {
             return await _repository.ConsultarTodasCategorias();
-        }
+        }*/
 
         public async Task<InventarioCategorias> ConsultarCategoriaPorID(int idInventarioCategoria) 
         {

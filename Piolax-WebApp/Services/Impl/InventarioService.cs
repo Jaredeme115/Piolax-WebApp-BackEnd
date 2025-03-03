@@ -11,9 +11,10 @@ using OfficeOpenXml;
 
 namespace Piolax_WebApp.Services.Impl
 {
-    public class InventarioService(IInventarioRepository repository) : IInventarioService
+    public class InventarioService(IInventarioRepository repository, IMaquinasService maquinasService) : IInventarioService
     {
         private readonly IInventarioRepository _repository = repository;
+        private readonly IMaquinasService _maquinasService = maquinasService;
 
 
         public async Task<Inventario> ConsultarInventarioPorCategoria(int idInventarioCategoria)
@@ -111,7 +112,7 @@ namespace Piolax_WebApp.Services.Impl
         }
 
 
-        public async Task<Inventario> Modificar(int idRefaccion, InventarioDTO inventarioDTO)
+        public async Task<InventarioDetalleDTO> Modificar(int idRefaccion, InventarioModificarDTO inventarioDTO)
         {
             var productoExistente = await _repository.ConsultarInventarioPorID(idRefaccion);
             if (productoExistente == null)
@@ -119,41 +120,68 @@ namespace Piolax_WebApp.Services.Impl
                 throw new InvalidOperationException("El producto no existe.");
             }
 
-            // Si cambia el número de parte, generar nuevo código QR
-            if (productoExistente.numParte != inventarioDTO.numParte)
+            // Obtener lista de máquinas del área actual
+            var maquinasDisponibles = await _maquinasService.ConsultarPorArea(productoExistente.idArea);
+
+            // Verificar que la máquina seleccionada pertenece al área
+            if (!maquinasDisponibles.Any(m => m.idMaquina == inventarioDTO.idMaquina))
             {
-                string qrCodeBase64 = GenerateQRCode(inventarioDTO.numParte);
-                inventarioDTO.codigoQR = qrCodeBase64;
-            }
-            else
-            {
-                inventarioDTO.codigoQR = productoExistente.codigoQR; // Mantener el QR actual
+                throw new InvalidOperationException("La máquina seleccionada no pertenece al área asignada.");
             }
 
             // Recalcular el precio total
-            inventarioDTO.precioInventarioTotal = inventarioDTO.precioUnitario * inventarioDTO.cantidadActual;
+            var nuevoPrecioInventarioTotal = inventarioDTO.precioUnitario * inventarioDTO.cantidadActual;
 
-            // Mapear los cambios
+            // Mapear solo los campos modificables
             productoExistente.descripcion = inventarioDTO.descripcion;
             productoExistente.ubicacion = inventarioDTO.ubicacion;
-            productoExistente.idInventarioCategoria = inventarioDTO.idInventarioCategoria;
             productoExistente.cantidadActual = inventarioDTO.cantidadActual;
             productoExistente.cantidadMax = inventarioDTO.cantidadMax;
             productoExistente.cantidadMin = inventarioDTO.cantidadMin;
             productoExistente.piezaCritica = inventarioDTO.piezaCritica;
-            productoExistente.nombreProducto = inventarioDTO.nombreProducto;
-            productoExistente.numParte = inventarioDTO.numParte;
             productoExistente.proveedor = inventarioDTO.proveedor;
             productoExistente.precioUnitario = inventarioDTO.precioUnitario;
-            productoExistente.precioInventarioTotal = inventarioDTO.precioInventarioTotal;
+            productoExistente.precioInventarioTotal = nuevoPrecioInventarioTotal;
             productoExistente.proceso = inventarioDTO.proceso;
             productoExistente.idMaquina = inventarioDTO.idMaquina;
             productoExistente.fechaEntrega = inventarioDTO.fechaEntrega;
             productoExistente.inventarioActivoObsoleto = inventarioDTO.inventarioActivoObsoleto;
+            productoExistente.fechaActualizacion = DateTime.UtcNow;
 
-            return await _repository.Modificar(productoExistente);
+            // Guardar cambios en el repositorio
+            var refaccionModificada = await _repository.Modificar(productoExistente);
 
+            // Retornar la refacción modificada en formato DTO
+            return new InventarioDetalleDTO
+            {
+                idRefaccion = refaccionModificada.idRefaccion,
+                descripcion = refaccionModificada.descripcion,
+                ubicacion = refaccionModificada.ubicacion,
+                idInventarioCategoria = refaccionModificada.idInventarioCategoria,
+                nombreInventarioCategoria = refaccionModificada.InventarioCategorias?.nombreInventarioCategoria ?? "Sin categoría",
+                cantidadActual = refaccionModificada.cantidadActual,
+                cantidadMax = refaccionModificada.cantidadMax,
+                cantidadMin = refaccionModificada.cantidadMin,
+                piezaCritica = refaccionModificada.piezaCritica,
+                nombreProducto = refaccionModificada.nombreProducto,
+                numParte = refaccionModificada.numParte,
+                proveedor = refaccionModificada.proveedor,
+                precioUnitario = refaccionModificada.precioUnitario,
+                precioInventarioTotal = refaccionModificada.precioInventarioTotal,
+                codigoQR = refaccionModificada.codigoQR,
+                proceso = refaccionModificada.proceso,
+                idArea = refaccionModificada.idArea,
+                nombreArea = refaccionModificada.Areas?.nombreArea ?? "Sin área asignada",
+                idMaquina = refaccionModificada.idMaquina,
+                nombreMaquina = refaccionModificada.Maquinas?.nombreMaquina ?? "Sin máquina asignada",
+                fechaEntrega = refaccionModificada.fechaEntrega,
+                inventarioActivoObsoleto = refaccionModificada.inventarioActivoObsoleto,
+                item = refaccionModificada.item,
+                fechaActualizacion = refaccionModificada.fechaActualizacion,
+                EstatusInventario = refaccionModificada.EstatusInventario.ToString()
+            };
         }
+
 
         public async Task ActualizarCantidadInventario(int idRefaccion, int cantidadADescontar)
         {
@@ -182,46 +210,20 @@ namespace Piolax_WebApp.Services.Impl
             return true;
         }
 
-        public async Task<IEnumerable<InventarioDetalleDTO>> ObtenerInventarioConDetalles()
+        public async Task<InventarioDetalleDTO?> ObtenerRefaccionDetalle(int idInventario)
         {
-            var inventario = await _repository.ConsultarInventarioConDetalles();
-
-            var inventarioDTOs = inventario.Select(i => new InventarioDetalleDTO
-            {
-                descripcion = i.descripcion,
-                ubicacion = i.ubicacion,
-                idInventarioCategoria = i.idInventarioCategoria,
-                nombreInventarioCategoria = i.InventarioCategorias?.nombreInventarioCategoria ?? "Sin categoría",
-                cantidadActual = i.cantidadActual,
-                cantidadMax = i.cantidadMax,
-                cantidadMin = i.cantidadMin,
-                piezaCritica = i.piezaCritica,
-                nombreProducto = i.nombreProducto,
-                numParte = i.numParte,
-                proveedor = i.proveedor,
-                precioUnitario = i.precioUnitario,
-                precioInventarioTotal = i.precioInventarioTotal,
-                codigoQR = i.codigoQR,
-                proceso = i.proceso,
-                idArea = i.idArea,
-                nombreArea = i.Areas?.nombreArea ?? "Sin área asignada",
-                idMaquina = i.idMaquina,
-                nombreMaquina = i.Maquinas?.nombreMaquina ?? "Sin máquina asignada",
-                fechaEntrega = i.fechaEntrega,
-                inventarioActivoObsoleto = i.inventarioActivoObsoleto,
-                item = i.item,
-                fechaActualizacion = i.fechaActualizacion,
-                EstatusInventario = i.EstatusInventario.ToString()
-            }).ToList();
-
-            return inventarioDTOs;
+            return await _repository.ConsultarRefaccionDetalle(idInventario);
         }
-
 
 
         public async Task<IEnumerable<Inventario>> ConsultarRefaccionesPorFiltros(bool? piezaCritica, bool? inventarioActivoObsoleto)
         {
             return await _repository.ConsultarRefaccionesPorFiltros(piezaCritica, inventarioActivoObsoleto);
+        }
+
+        public async Task<IEnumerable<string>> ConsultarNombresRefaccionesPorCategoria(int idCategoria)
+        {
+            return await _repository.ConsultarNombresRefaccionesPorCategoria(idCategoria);
         }
 
 

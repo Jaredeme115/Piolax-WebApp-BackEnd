@@ -7,7 +7,9 @@ namespace Piolax_WebApp.Repositories
         Task<InventarioCategorias> RegistrarInventarioCategoria(InventarioCategorias inventarioCategoria);
         Task<InventarioCategorias> Modificar(int idInventarioCategoria, InventarioCategorias inventarioCategoria);
         Task<InventarioCategorias> Eliminar(int idInventarioCategoria);
-        Task<IEnumerable<InventarioCategorias>> ConsultarTodasCategorias();
+
+        Task<IEnumerable<string>> ConsultarNombresCategorias();
+        //Task<IEnumerable<InventarioCategorias>> ConsultarTodasCategorias();
         Task<InventarioCategorias> ConsultarCategoriaPorNombre(string nombreInventarioCategoria);
         Task<InventarioCategorias> ConsultarCategoriaPorID(int idInventarioCategoria);
         Task<bool> CategoriaExistePorNombre(string nombreInventarioCategoria);
