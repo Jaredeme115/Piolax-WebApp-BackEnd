@@ -42,21 +42,25 @@ namespace Piolax_WebApp.Repositories.Impl
 
             try
             {
-                var existeProducto = await _context.Inventario.AnyAsync(p => p.numParte == inventario.numParte);
-                if (existeProducto)
+                var productoExistente = await _context.Inventario.FirstOrDefaultAsync(p => p.idRefaccion == inventario.idRefaccion);
+
+                if (productoExistente == null)
                 {
-                    throw new InvalidOperationException("El producto ya está registrado en el inventario.");
+                    throw new InvalidOperationException("El producto no existe en el inventario.");
                 }
 
-                _context.Add(inventario);
+                // Actualizar los valores del producto existente
+                _context.Entry(productoExistente).CurrentValues.SetValues(inventario);
+
                 await _context.SaveChangesAsync();
-                return inventario;
+                return productoExistente;
             }
             catch (DbUpdateException ex)
             {
-                throw new InvalidOperationException("Error al registrar en la base de datos.", ex);
+                throw new InvalidOperationException("Error al actualizar en la base de datos.", ex);
             }
         }
+
 
         public async Task<Inventario?> Eliminar(int idRefaccion)
         {
@@ -88,9 +92,45 @@ namespace Piolax_WebApp.Repositories.Impl
             return inventario;
         }
 
-        public async Task<Inventario?> ConsultarInventarioPorNombre(string nombreProducto)
+        //Metodo modificado para mostrar los detalles de la refaccion en base al nombre de la misma
+        public async Task<InventarioDetalleDTO?> ConsultarRefaccionPorNombre(string nombreProducto)
         {
-            return await _context.Inventario.Where(p => p.nombreProducto == nombreProducto).FirstOrDefaultAsync();
+            var refaccion = await _context.Inventario
+                .Include(i => i.InventarioCategorias)
+                .Include(i => i.Areas)
+                .Include(i => i.Maquinas)
+                .FirstOrDefaultAsync(i => i.nombreProducto == nombreProducto);
+
+            if (refaccion == null) return null;
+
+            return new InventarioDetalleDTO
+            {
+                idRefaccion = refaccion.idRefaccion,
+                descripcion = refaccion.descripcion,
+                ubicacion = refaccion.ubicacion,
+                idInventarioCategoria = refaccion.idInventarioCategoria,
+                nombreInventarioCategoria = refaccion.InventarioCategorias?.nombreInventarioCategoria ?? "Sin categoría",
+                cantidadActual = refaccion.cantidadActual,
+                cantidadMax = refaccion.cantidadMax,
+                cantidadMin = refaccion.cantidadMin,
+                piezaCritica = refaccion.piezaCritica,
+                nombreProducto = refaccion.nombreProducto,
+                numParte = refaccion.numParte,
+                proveedor = refaccion.proveedor,
+                precioUnitario = refaccion.precioUnitario,
+                precioInventarioTotal = refaccion.precioInventarioTotal,
+                codigoQR = refaccion.codigoQR,
+                proceso = refaccion.proceso,
+                idArea = refaccion.idArea,
+                nombreArea = refaccion.Areas?.nombreArea ?? "Sin área asignada",
+                idMaquina = refaccion.idMaquina,
+                nombreMaquina = refaccion.Maquinas?.nombreMaquina ?? "Sin máquina asignada",
+                fechaEntrega = refaccion.fechaEntrega,
+                inventarioActivoObsoleto = refaccion.inventarioActivoObsoleto,
+                item = refaccion.item,
+                fechaActualizacion = refaccion.fechaActualizacion,
+                EstatusInventario = refaccion.EstatusInventario.ToString()
+            };
         }
 
         public async Task<Inventario?> ConsultarInventarioPorCategoria(int idInventarioCategoria)

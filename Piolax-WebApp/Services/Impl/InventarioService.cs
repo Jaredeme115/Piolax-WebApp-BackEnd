@@ -23,9 +23,11 @@ namespace Piolax_WebApp.Services.Impl
             return await _repository.ConsultarInventarioPorCategoria(idInventarioCategoria);
         }
 
-        public async Task<Inventario> ConsultarInventarioPorNombre(string nombreProducto)
+
+        //Metodo modificado para mostrar los detalles de la refaccion en base al nombre de la misma
+        public async Task<InventarioDetalleDTO?> ConsultarRefaccionPorNombre(string nombreProducto)
         {
-            return await _repository.ConsultarInventarioPorNombre(nombreProducto);
+            return await _repository.ConsultarRefaccionPorNombre(nombreProducto);
         }
 
         public Task<IEnumerable<Inventario>> ConsultarTodoInventario()

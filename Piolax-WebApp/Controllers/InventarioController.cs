@@ -93,11 +93,19 @@ namespace Piolax_WebApp.Controllers
             return Ok(await _service.ConsultarTodoInventario());
         }
 
+        //Metodo modificado para mostrar los detalles de la refaccion en base al nombre de la misma
         //[Authorize(Policy = "AdminOnly")]
-        [HttpGet("ConsultarInventarioPorNombre")]
-        public async Task<ActionResult<Inventario>> ConsultarInventarioPorNombre(string nombreProducto)
+        [HttpGet("detalle/nombre/{nombreProducto}")]
+        public async Task<ActionResult<InventarioDetalleDTO>> ConsultarRefaccionPorNombre(string nombreProducto)
         {
-            return await _service.ConsultarInventarioPorNombre(nombreProducto);
+            var refaccion = await _service.ConsultarRefaccionPorNombre(nombreProducto);
+
+            if (refaccion == null)
+            {
+                return NotFound($"No se encontró la refacción con nombre: {nombreProducto}");
+            }
+
+            return Ok(refaccion);
         }
 
         //[Authorize(Policy = "AdminOnly")]
@@ -152,7 +160,7 @@ namespace Piolax_WebApp.Controllers
             var nombresRefacciones = await _service.ConsultarNombresRefaccionesPorCategoria(idCategoria);
             if (nombresRefacciones == null || !nombresRefacciones.Any())
             {
-                return NotFound("No se encontraron refacciones para la categoría especificada.");
+                return Ok(new List<string>()); // Devuelve una lista vacía en lugar de un error
             }
             return Ok(nombresRefacciones);
         }

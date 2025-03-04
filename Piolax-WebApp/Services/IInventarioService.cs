@@ -12,7 +12,9 @@ namespace Piolax_WebApp.Services
 
         //Task<Inventario> ConsultarInventarioConDetalles(int idRefaccion);
 
-        Task<Inventario> ConsultarInventarioPorNombre(string nombreProducto);
+        //Metodo modificado para mostrar los detalles de la refaccion en base al nombre de la misma
+        Task<InventarioDetalleDTO?> ConsultarRefaccionPorNombre(string nombreProducto);
+
         Task<Inventario> ConsultarInventarioPorCategoria(int idInventarioCategoria);
         Task<Inventario> ConsultarInventarioPorID(int idRefaccion);
         Task<IEnumerable<Inventario>> ConsultarTodosLosProductosPorCategoria(int idInventarioCategoria);

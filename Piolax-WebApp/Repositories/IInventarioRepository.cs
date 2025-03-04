@@ -9,7 +9,10 @@ namespace Piolax_WebApp.Repositories
         Task<Inventario> Modificar(Inventario inventario);
         Task<Inventario> Eliminar(int idRefaccion);
         Task<IEnumerable<Inventario>> ConsultarTodoInventario();
-        Task<Inventario> ConsultarInventarioPorNombre(string nombreProducto);
+
+        //Metodo modificado para mostrar los detalles de la refaccion en base al nombre de la misma
+        Task<InventarioDetalleDTO?> ConsultarRefaccionPorNombre(string nombreProducto);
+
         Task<Inventario> ConsultarInventarioPorCategoria(int idInventarioCategoria);
         Task<Inventario> ConsultarInventarioPorID(int idRefaccion);
         Task<IEnumerable<Inventario>> ConsultarTodosLosProductosPorCategoria(int idInventarioCategoria);
