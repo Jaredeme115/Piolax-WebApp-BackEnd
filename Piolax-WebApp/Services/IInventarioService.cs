@@ -21,6 +21,7 @@ namespace Piolax_WebApp.Services
         Task<bool> ExisteProductoInventario(int idRefaccion);
         Task<bool> ExisteNumParte(string numParte);
         Task ActualizarCantidadInventario(int idRefaccion, int cantidadADescontar);
+        Task DescontarInventario(int idRefaccion, int cantidadADescontar);
         Task<int> ConsultarCantidadDisponible(int idRefaccion);
         Task<IEnumerable<Inventario>> ConsultarRefaccionesPorFiltros(bool? piezaCritica, bool? inventarioActivoObsoleto);
 
@@ -30,5 +31,9 @@ namespace Piolax_WebApp.Services
         Task<IEnumerable<string>> ConsultarNombresRefaccionesPorCategoria(int idCategoria);
 
         Task<string> RegistrarInventarioDesdeExcel(IFormFile filePath);
+
+        //Descargar QR
+        byte[] GenerateQRCodeBytes(string text);
+
     }
 }

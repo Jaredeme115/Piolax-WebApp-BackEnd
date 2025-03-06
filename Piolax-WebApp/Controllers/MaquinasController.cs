@@ -117,22 +117,25 @@ namespace Piolax_WebApp.Controllers
                 return NotFound("La máquina no existe.");
             }
 
-            string qrCodeText = maquina.codigoQR;
+            // Usamos el nombre de la máquina para generar el QR en tiempo real
+
+            string qrCodeText = maquina.nombreMaquina;
             if (string.IsNullOrEmpty(qrCodeText))
             {
-                return BadRequest("La máquina no tiene un código QR.");
+                return BadRequest("La máquina no tiene un código QR / El codigo QR esta vacio.");
             }
 
             try
             {
-                byte[] qrCodeBytes = _service.GenerateQRCodeBytes(qrCodeText); // Usa el método del servicio
+                byte[] qrCodeBytes = _service.GenerateQRCodeBytes(qrCodeText); // Generar el QR en el momento
 
+                // Evita caracteres no válidos en el nombre del archivo
                 string sanitizedFileName = string.Join("_", maquina.nombreMaquina.Split(Path.GetInvalidFileNameChars()));
                 string fileName = !string.IsNullOrWhiteSpace(sanitizedFileName)
                     ? $"QRCode_{sanitizedFileName}.png"
                     : "QRCode.png";
 
-                return File(qrCodeBytes, "image/png", fileName);
+                return File(qrCodeBytes, "image/png", fileName); // Descarga el QR con el nombre correcto
             }
             catch (Exception ex)
             {

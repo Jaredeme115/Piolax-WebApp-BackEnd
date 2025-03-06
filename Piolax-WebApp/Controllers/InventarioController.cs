@@ -165,11 +165,34 @@ namespace Piolax_WebApp.Controllers
             return Ok(nombresRefacciones);
         }
 
+        [HttpPost("DescontarInventario")]
+        public async Task<IActionResult> DescontarInventario([FromBody] DescontarInventarioDTO descontarInventarioDTO)
+        {
+            if (descontarInventarioDTO == null)
+            {
+                return BadRequest(new { error = "Los datos de la refacción son inválidos." });
+            }
+
+            // Llamar al servicio para descontar inventario
+            try
+            {
+                await _service.DescontarInventario(descontarInventarioDTO.idRefaccion, descontarInventarioDTO.cantidadADescontar);
+                return Ok(new { mensaje = "Cantidad descontada correctamente del inventario." });
+            }
+
+            catch (Exception ex)
+            {
+                // Si ocurre algún error, devolver una respuesta adecuada
+                return BadRequest(new { error = $"Error al descontar el inventario: {ex.Message}" });
+            }
+        }
+
         //[Authorize(Policy = "AdminOnly")]
         [HttpGet("DescargarQRCode/{idRefaccion}")]
 
         public async Task<IActionResult> DescargarQRCode(int idRefaccion)
         {
+            // Consultar el producto en el inventario
             // Consultar el producto en el inventario
             var producto = await _service.ConsultarInventarioPorID(idRefaccion);
             if (producto == null)
@@ -177,19 +200,29 @@ namespace Piolax_WebApp.Controllers
                 return NotFound("El producto no existe.");
             }
 
-            // Obtener el código QR en formato Base64 desde el producto
-            string codigoQRBase64 = producto.codigoQR;
-            if (string.IsNullOrEmpty(codigoQRBase64))
+            // ✅ Generar el texto del código QR con nombreProducto, idArea y idMaquina
+            string qrCodeText = $"{producto.nombreProducto} | Área: {producto.idArea} | Máquina: {producto.idMaquina}";
+
+            try
             {
-                return BadRequest("El producto no tiene un código QR.");
+                // ✅ Generar el QR en bytes en tiempo real
+                byte[] qrCodeBytes = _service.GenerateQRCodeBytes(qrCodeText);
+
+                // ✅ Formatear el nombre del archivo de manera segura
+                string sanitizedFileName = string.Join("_", producto.nombreProducto.Split(Path.GetInvalidFileNameChars()));
+                string fileName = !string.IsNullOrWhiteSpace(sanitizedFileName)
+                    ? $"QRCode_{sanitizedFileName}.png"
+                    : "QRCode.png";
+
+                return File(qrCodeBytes, "image/png", fileName);
             }
-
-            // Decodificar el string Base64 a una imagen en bytes
-            byte[] qrCodeBytes = Convert.FromBase64String(codigoQRBase64);
-
-            // Devolver la imagen como archivo descargable
-            return File(qrCodeBytes, "image/png", $"QRCode_{producto.numParte}.png");
+            catch (Exception ex)
+            {
+                Console.Error.WriteLine($"Error al generar el QR: {ex.Message}");
+                return StatusCode(500, "Ocurrió un error inesperado al generar el código QR.");
+            }
         }
+
 
         // Metodo para cargar refacciones desde un archivo Excel
        [HttpPost("CargarRefaccionesDesdeExcel")]

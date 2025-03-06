@@ -79,8 +79,11 @@ namespace Piolax_WebApp.Services.Impl
             inventarioDTO.item = item;
 
             // Generar el código QR si `numParte` es válido
-            string qrCodeBase64 = !string.IsNullOrEmpty(inventarioDTO.numParte) ? GenerateQRCode(inventarioDTO.numParte) : null;
-            inventarioDTO.codigoQR = qrCodeBase64;
+            /*string qrCodeBase64 = !string.IsNullOrEmpty(inventarioDTO.numParte) ? GenerateQRCode(inventarioDTO.numParte) : null;
+            inventarioDTO.codigoQR = qrCodeBase64;*/
+
+            //Almacenar el código QR en la base de datos pero ya no es necesario porque se genera de forma dinamica
+            inventarioDTO.codigoQR = inventarioDTO.numParte;
 
             // Calcular el precio total
             inventarioDTO.precioInventarioTotal = inventarioDTO.precioUnitario * inventarioDTO.cantidadActual;
@@ -184,8 +187,12 @@ namespace Piolax_WebApp.Services.Impl
             };
         }
 
-
         public async Task ActualizarCantidadInventario(int idRefaccion, int cantidadADescontar)
+        {
+            await _repository.ActualizarCantidadInventario(idRefaccion, cantidadADescontar);
+        }
+
+        public async Task DescontarInventario(int idRefaccion, int cantidadADescontar)
         {
             await _repository.ActualizarCantidadInventario(idRefaccion, cantidadADescontar);
         }
@@ -293,7 +300,10 @@ namespace Piolax_WebApp.Services.Impl
                             inventarioDTO.item = GenerarItem(inventarioDTO.nombreProducto, inventarioDTO.numParte, inventarioDTO.idArea);
 
                             // Generar código QR
-                            inventarioDTO.codigoQR = !string.IsNullOrEmpty(inventarioDTO.numParte) ? GenerateQRCode(inventarioDTO.numParte) : null;
+                            //inventarioDTO.codigoQR = !string.IsNullOrEmpty(inventarioDTO.numParte) ? GenerateQRCode(inventarioDTO.numParte) : null;
+
+                            //Almacenar el código QR en la base de datos pero ya no es necesario porque se genera de forma dinamica
+                            inventarioDTO.codigoQR = inventarioDTO.numParte;
 
                             // Calcular el precio total
                             inventarioDTO.precioInventarioTotal = inventarioDTO.precioUnitario * inventarioDTO.cantidadActual;
@@ -350,8 +360,11 @@ namespace Piolax_WebApp.Services.Impl
         }
 
         // Funcionalidad para generar el código QR
-        private string GenerateQRCode(string text)
+        public byte[] GenerateQRCodeBytes(string text)
         {
+            if (string.IsNullOrWhiteSpace(text))
+                throw new ArgumentException("El texto para generar el código QR no puede estar vacío.");
+
             using (QRCodeGenerator qrGenerator = new QRCodeGenerator())
             {
                 QRCodeData qrCodeData = qrGenerator.CreateQrCode(text, QRCodeGenerator.ECCLevel.Q);
@@ -362,13 +375,13 @@ namespace Piolax_WebApp.Services.Impl
                         using (MemoryStream ms = new MemoryStream())
                         {
                             qrCodeImage.Save(ms, ImageFormat.Png);
-                            byte[] byteImage = ms.ToArray();
-                            return Convert.ToBase64String(byteImage);
+                            return ms.ToArray(); // Devuelve los bytes de la imagen
                         }
                     }
                 }
             }
         }
+
 
         public string GenerarItem(string nombreProducto, string numParte, int idArea)
         {
