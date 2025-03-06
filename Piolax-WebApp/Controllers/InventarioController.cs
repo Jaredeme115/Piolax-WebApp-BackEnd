@@ -10,6 +10,7 @@ using System.Drawing.Imaging;
 using System.IO;
 using BarcodeStandard;
 using OfficeOpenXml;
+using System.Web;
 
 namespace Piolax_WebApp.Controllers
 {
@@ -98,7 +99,8 @@ namespace Piolax_WebApp.Controllers
         [HttpGet("detalle/nombre/{nombreProducto}")]
         public async Task<ActionResult<InventarioDetalleDTO>> ConsultarRefaccionPorNombre(string nombreProducto)
         {
-            var refaccion = await _service.ConsultarRefaccionPorNombre(nombreProducto);
+            string decodedNombreProducto = HttpUtility.UrlDecode(nombreProducto);
+            var refaccion = await _service.ConsultarRefaccionPorNombre(decodedNombreProducto); //Antes tenia nombreProducto
 
             if (refaccion == null)
             {
