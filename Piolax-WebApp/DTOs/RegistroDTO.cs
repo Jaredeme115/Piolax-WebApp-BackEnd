@@ -29,6 +29,7 @@ namespace Piolax_WebApp.DTOs
 
         //[Required(ErrorMessage = "El password es requerido")]
         public string password { get; set; }
+        public string passwordNuevo { get; set; } //  Agrega esta línea
 
         //[Required(ErrorMessage = "El status es requerido")]
 

@@ -24,6 +24,7 @@ namespace Piolax_WebApp.Services.Impl
             return _repository.ConsultarTodos();
         }
 
+
         public async Task<Empleado> Registro(RegistroDTO registroDTO)
         {
             using var hmac = new HMACSHA512();
@@ -65,19 +66,36 @@ namespace Piolax_WebApp.Services.Impl
             empleadoExistente.telefono = registroDTO.telefono;
             empleadoExistente.email = registroDTO.email;
             empleadoExistente.fechaIngreso = registroDTO.fechaIngreso;
-            //empleadoExistente.idStatusEmpleado = registroDTO.idStatusEmpleado;
+            empleadoExistente.idStatusEmpleado = registroDTO.idStatusEmpleado;
 
-
-            // Si el password ha cambiado, recalculamos el hash y el salt
-            if (!string.IsNullOrWhiteSpace(registroDTO.password))
+            //🔑 Validación de contraseña
+            if (!string.IsNullOrWhiteSpace(registroDTO.passwordNuevo))
             {
-                using var hmac = new HMACSHA512();
-                empleadoExistente.passwordHasH = hmac.ComputeHash(Encoding.UTF8.GetBytes(registroDTO.password));
-                empleadoExistente.passwordSalt = hmac.Key;
+                // Verifica que se haya proporcionado la contraseña actual
+                if (string.IsNullOrWhiteSpace(registroDTO.password))
+                    throw new InvalidOperationException("Debes proporcionar tu contraseña actual para cambiarla.");
+
+                // Valida contraseña actual
+                using var hmacActual = new HMACSHA512(empleadoExistente.passwordSalt);
+                var hashActual = hmacActual.ComputeHash(Encoding.UTF8.GetBytes(registroDTO.password));
+
+                if (!hashActual.SequenceEqual(empleadoExistente.passwordHasH))
+                    throw new InvalidOperationException("La contraseña actual es incorrecta.");
+
+                // Evita que la nueva contraseña sea igual a la anterior
+                var nuevoHashTemporal = hmacActual.ComputeHash(Encoding.UTF8.GetBytes(registroDTO.passwordNuevo));
+                if (nuevoHashTemporal.SequenceEqual(empleadoExistente.passwordHasH))
+                    throw new InvalidOperationException("La nueva contraseña no puede ser igual a la contraseña actual.");
+
+                // Si pasa las validaciones, actualiza claramente la contraseña nueva
+                using var nuevoHmac = new HMACSHA512();
+                empleadoExistente.passwordSalt = nuevoHmac.Key;
+                empleadoExistente.passwordHasH = nuevoHmac.ComputeHash(Encoding.UTF8.GetBytes(registroDTO.passwordNuevo));
             }
 
             return await _repository.Modificar(empleadoExistente);
         }
+
 
         public async Task<Empleado?> Eliminar(string numNomina)
         {
