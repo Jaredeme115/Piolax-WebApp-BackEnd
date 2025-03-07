@@ -32,6 +32,8 @@ namespace Piolax_WebApp.Services
 
         Task<string> RegistrarInventarioDesdeExcel(IFormFile filePath);
 
+        //Task<byte[]> ExportarInventarioExcel();
+
         //Descargar QR
         byte[] GenerateQRCodeBytes(string text);
 

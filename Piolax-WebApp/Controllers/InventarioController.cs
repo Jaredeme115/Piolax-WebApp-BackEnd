@@ -248,6 +248,14 @@ namespace Piolax_WebApp.Controllers
             }
         }
 
+        /*[HttpGet("ExportarInventario")]
+        public async Task<IActionResult> ExportarInventario()
+        {
+            var excelBytes = await _service.ExportarInventarioExcel();
+
+            return File(excelBytes, "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet", "Inventario.xlsx");
+        }*/
+
 
 
     }
