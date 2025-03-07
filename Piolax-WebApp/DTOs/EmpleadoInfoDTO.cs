@@ -10,7 +10,10 @@
         public string email { get; set; }
         public DateOnly fechaIngreso { get; set; }
         public int idStatusEmpleado { get; set; }
-        public AreaRolDTO areaPrincipal { get; set; }
 
+        public int? idArea { get; set; }  // ✅ Agregar ID del área
+        public int? idRol { get; set; }  // ✅ Agregar ID del rol
+
+        public AreaRolDTO areaPrincipal { get; set; }
     }
 }
