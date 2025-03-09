@@ -18,6 +18,9 @@ namespace Piolax_WebApp.Repositories
         //Metodo para obtener el rol de un empleado en un area
         Task<IEnumerable<Roles>> ObtenerRolPorEmpleadoYArea(string numNomina, int idArea);
 
+        //Metodo para obtener los roles de un empleado
+        Task<IEnumerable<Roles>> ObtenerRolesPorEmpleado(string numNomina);
+
         //Metodo para validar que un empleado no tenga mas de un rol en un area
         Task<bool> ValidarRolPorEmpleadoYArea(string numNomina, int idArea);
 

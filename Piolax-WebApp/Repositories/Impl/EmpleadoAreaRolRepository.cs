@@ -110,6 +110,15 @@ namespace Piolax_WebApp.Repositories.Impl
 
         }
 
+        public async Task<IEnumerable<Roles>> ObtenerRolesPorEmpleado(string numNomina)
+        {
+            return await _context.EmpleadoAreaRol
+                .Where(e => e.Empleado.numNomina == numNomina) // Filtra por número de nómina
+                .Select(e => e.Rol) // Selecciona solo los roles
+                .Distinct() // Evita duplicados si un empleado tiene el mismo rol en distintas áreas
+                .ToListAsync();
+        }
+
         public async Task<bool> ValidarRolPorEmpleadoYArea(string numNomina, int idArea)
         {
             var empleadoAreaRol = await _context.EmpleadoAreaRol

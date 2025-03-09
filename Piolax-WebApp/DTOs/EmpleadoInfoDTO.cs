@@ -10,6 +10,8 @@
         public string email { get; set; }
         public DateOnly fechaIngreso { get; set; }
         public int idStatusEmpleado { get; set; }
+        public int? idArea { get; set; }
+        public int? idRol { get; set; }
         public AreaRolDTO areaPrincipal { get; set; }
 
     }

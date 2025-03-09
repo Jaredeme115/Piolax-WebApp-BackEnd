@@ -127,6 +127,12 @@ namespace Piolax_WebApp.Services.Impl
             return await _repository.ObtenerRolPorEmpleadoYArea(numNomina, idArea);
         }
 
+        public async Task<IEnumerable<Roles>> ObtenerRolesPorEmpleado(string numNomina)
+        {
+            return await _repository.ObtenerRolesPorEmpleado(numNomina);
+        }
+
+
         public async Task<bool> ValidarRolPorEmpleadoYArea(string numNomina, int idArea)
         {
             return await _repository.ValidarRolPorEmpleadoYArea(numNomina, idArea);
@@ -147,6 +153,7 @@ namespace Piolax_WebApp.Services.Impl
         {
             return await _repository.ConsultarTodosConDetalles();
         }
+
 
     }
 }
