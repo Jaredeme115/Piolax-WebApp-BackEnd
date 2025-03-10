@@ -132,6 +132,25 @@ namespace Piolax_WebApp.Controllers
             return Ok(solicitudes);
         }
 
+        //[Authorize(Policy = "AdminOnly")]
+        [HttpDelete("EliminarSolicitud/{idSolicitud}")]
+        public async Task<IActionResult> EliminarSolicitud(int idSolicitud)
+        {
+            try
+            {
+                var eliminada = await _service.EliminarSolicitud(idSolicitud);
+                if (!eliminada)
+                {
+                    return NotFound(new { mensaje = "No se encontró la solicitud para eliminar." });
+                }
+
+                return Ok(new { mensaje = "Solicitud eliminada exitosamente." });
+            }
+            catch (Exception ex)
+            {
+                return StatusCode(500, new { mensaje = "Error al eliminar la solicitud.", error = ex.Message });
+            }
+        }
 
     }
 }

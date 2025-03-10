@@ -14,6 +14,7 @@ namespace Piolax_WebApp.Services
         Task<IEnumerable<SolicitudesDetalleDTO>> ConsultarSolicitudesTerminadas();
         Task ActualizarStatusOrden(int idSolicitud, int idStatusOrden);
         Task<IEnumerable<SolicitudesDetalleDTO>> ObtenerSolicitudesConPrioridadAsync();
+        Task<bool> EliminarSolicitud(int idSolicitud);
 
 
     }

@@ -45,20 +45,19 @@ namespace Piolax_WebApp.Services.Impl
         public async Task ModificarEmpleadoAreaRol(string numNomina, RegistroDTO registroDTO)
         {
             var empleadoExistente = await _empleadoRepository.Consultar(numNomina);
-
             if (empleadoExistente == null)
                 throw new Exception("El empleado no existe.");
 
-            // Actualizar los datos del empleado
-            empleadoExistente.nombre = registroDTO.nombre;
-            empleadoExistente.apellidoPaterno = registroDTO.apellidoPaterno;
-            empleadoExistente.apellidoMaterno = registroDTO.apellidoMaterno;
-            empleadoExistente.telefono = registroDTO.telefono;
-            empleadoExistente.email = registroDTO.email;
-            empleadoExistente.fechaIngreso = registroDTO.fechaIngreso;
-            //empleadoExistente.idStatusEmpleado = registroDTO.idStatusEmpleado;
+            // 🔹 Actualizar solo los campos que NO sean nulos o vacíos en el DTO
+            empleadoExistente.nombre = !string.IsNullOrWhiteSpace(registroDTO.nombre) ? registroDTO.nombre : empleadoExistente.nombre;
+            empleadoExistente.apellidoPaterno = !string.IsNullOrWhiteSpace(registroDTO.apellidoPaterno) ? registroDTO.apellidoPaterno : empleadoExistente.apellidoPaterno;
+            empleadoExistente.apellidoMaterno = !string.IsNullOrWhiteSpace(registroDTO.apellidoMaterno) ? registroDTO.apellidoMaterno : empleadoExistente.apellidoMaterno;
+            empleadoExistente.telefono = !string.IsNullOrWhiteSpace(registroDTO.telefono) ? registroDTO.telefono : empleadoExistente.telefono;
+            empleadoExistente.email = !string.IsNullOrWhiteSpace(registroDTO.email) ? registroDTO.email : empleadoExistente.email;
+            empleadoExistente.fechaIngreso = registroDTO.fechaIngreso != default ? registroDTO.fechaIngreso : empleadoExistente.fechaIngreso;
+            empleadoExistente.idStatusEmpleado = registroDTO.idStatusEmpleado != 0 ? registroDTO.idStatusEmpleado : empleadoExistente.idStatusEmpleado;
 
-            // Si hay un cambio de contraseña
+            // 🔹 Si hay un cambio de contraseña, actualizarla
             if (!string.IsNullOrWhiteSpace(registroDTO.password))
             {
                 using var hmac = new HMACSHA512();
@@ -66,45 +65,41 @@ namespace Piolax_WebApp.Services.Impl
                 empleadoExistente.passwordSalt = hmac.Key;
             }
 
-            // Obtener las áreas y roles actuales del empleado
+            // 🔹 Obtener todas las áreas actuales del empleado
             var areasRolesActuales = await _repository.ObtenerAreasRolesPorEmpleado(numNomina);
-
-            // Verificar si el empleado ya tiene un área principal
             var areaPrincipalActual = areasRolesActuales.FirstOrDefault(ar => ar.esAreaPrincipal);
 
-            if (areaPrincipalActual != null)
+            if (registroDTO.idArea != 0 && registroDTO.idRol != 0)
             {
-                // Cambiar el área principal actual a secundaria
-                areaPrincipalActual.esAreaPrincipal = false;
-                await _repository.ModificarEmpleadoAreaRol(areaPrincipalActual.Empleado, areaPrincipalActual);
-            }
-
-            // Verificar si la nueva área ya está en el listado de áreas secundarias
-            var nuevaAreaRol = areasRolesActuales.FirstOrDefault(ar => ar.idArea == registroDTO.idArea);
-
-            if (nuevaAreaRol != null)
-            {
-                // Actualizar el área secundaria a principal
-                nuevaAreaRol.esAreaPrincipal = true;
-                nuevaAreaRol.idRol = registroDTO.idRol;
-                await _repository.ModificarEmpleadoAreaRol(nuevaAreaRol.Empleado, nuevaAreaRol);
-            }
-            else
-            {
-                // Agregar la nueva área como principal
-                var nuevoEmpleadoAreaRol = new EmpleadoAreaRol
+                // 🔹 Eliminar completamente el área y rol anterior
+                if (areaPrincipalActual != null)
                 {
-                    idEmpleado = empleadoExistente.idEmpleado,
-                    idArea = registroDTO.idArea,
-                    idRol = registroDTO.idRol,
-                    esAreaPrincipal = true
-                };
-                await _repository.AgregarAreaYRol(numNomina, registroDTO.idArea, registroDTO.idRol, true);
+                    await _repository.EliminarAreaYRol(numNomina, areaPrincipalActual.idArea, areaPrincipalActual.idRol);
+                }
+
+                // 🔹 Verificar si la nueva área y rol ya están asignados al empleado
+                var nuevaAreaRol = areasRolesActuales.FirstOrDefault(ar => ar.idArea == registroDTO.idArea && ar.idRol == registroDTO.idRol);
+
+                if (nuevaAreaRol == null)
+                {
+                    // ✅ Si la nueva área y rol NO existen, agregarlos como principal
+                    var nuevoEmpleadoAreaRol = new EmpleadoAreaRol
+                    {
+                        idEmpleado = empleadoExistente.idEmpleado,
+                        idArea = registroDTO.idArea,
+                        idRol = registroDTO.idRol,
+                        esAreaPrincipal = true
+                    };
+                    await _repository.AgregarAreaYRol(numNomina, registroDTO.idArea, registroDTO.idRol, true);
+                }
             }
 
-            // Actualizar los datos del empleado en el repositorio
+            // 🔹 Guardar cambios en el empleado
             await _empleadoRepository.Modificar(empleadoExistente);
         }
+
+
+
 
         public async Task AsignarAreaRol(string numNomina, int idArea, int idRol, bool esAreaPrincipal)
         {

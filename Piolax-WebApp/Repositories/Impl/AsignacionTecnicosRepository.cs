@@ -1,4 +1,5 @@
 ﻿using Microsoft.EntityFrameworkCore;
+using Piolax_WebApp.DTOs;
 using Piolax_WebApp.Models;
 
 namespace Piolax_WebApp.Repositories.Impl
@@ -94,19 +95,51 @@ namespace Piolax_WebApp.Repositories.Impl
             return true;
         }
 
-        public async Task<IEnumerable<Asignacion_Tecnico>> ConsultarOrdenesEnPausaDelTecnico(int idEmpleado)
+        public async Task<IEnumerable<Asignaciones>> ObtenerAsignacionesPausadasPorTecnico(int idTecnico)
         {
-            // Ajusta los valores 3 y 5 según tu base de datos
-            return await _context.Asignacion_Tecnico
-                .Include(at => at.Asignacion)  // Para poder mapear después a un DTO que incluya datos de la asignación
-                .Where(at =>
-                    at.idEmpleado == idEmpleado
-                    && !string.IsNullOrEmpty(at.comentarioPausa) // El técnico pausó
-                    && at.idStatusAprobacionTecnico != 3         // No está “Completada”
-                    && at.idStatusAprobacionTecnico != 5         // No está “Esperando validación”
-                )
+            return await _context.Asignaciones
+                .Include(a => a.Solicitud)
+                .ThenInclude(s => s.Empleado)
+                .Include(a => a.Solicitud.Maquina)
+                .Include(a => a.Solicitud.Turno)
+                .Include(a => a.Solicitud.StatusOrden)
+                .Include(a => a.Solicitud.StatusAprobacionSolicitante)
+                .Include(a => a.Solicitud.categoriaTicket)
+                .Where(a => a.Asignacion_Tecnico.Any(at => at.idEmpleado == idTecnico && at.comentarioPausa != "N/A"))
                 .ToListAsync();
         }
+
+        public async Task<bool> RetomarAsignacion(int idAsignacion, int idEmpleado)
+        {
+            var asignacionTecnico = await _context.Asignacion_Tecnico
+                .Include(at => at.Asignacion)
+                .FirstOrDefaultAsync(at => at.idAsignacion == idAsignacion && at.idEmpleado == idEmpleado);
+
+            if (asignacionTecnico == null || string.IsNullOrEmpty(asignacionTecnico.comentarioPausa))
+                return false; // No existe o no fue pausada por este técnico
+
+            // Verificar si otro técnico ya retomó la asignación
+            bool otroTecnicoActivo = await _context.Asignacion_Tecnico
+                .AnyAsync(at => at.idAsignacion == idAsignacion && at.esTecnicoActivo && at.idEmpleado != idEmpleado);
+
+            if (otroTecnicoActivo)
+                return false; // Otro técnico ya está en la asignación
+
+            // Reactivar al técnico
+            asignacionTecnico.esTecnicoActivo = true;
+            asignacionTecnico.horaInicio = DateTime.Now;
+            asignacionTecnico.comentarioPausa = "N/A"; // Eliminar comentario de pausa
+
+            // Si la asignación estaba en "Pausada", cambiarla a "En proceso"
+            if (asignacionTecnico.Asignacion.idStatusAsignacion == 2) // 2 = Pausada
+            {
+                asignacionTecnico.Asignacion.idStatusAsignacion = 1; // 1 = En proceso
+            }
+
+            await _context.SaveChangesAsync();
+            return true;
+        }
+
 
     }
 }

@@ -1,4 +1,5 @@
-﻿using System.ComponentModel.DataAnnotations;
+﻿using Piolax_WebApp.Models;
+using System.ComponentModel.DataAnnotations;
 
 namespace Piolax_WebApp.DTOs
 {
@@ -34,7 +35,10 @@ namespace Piolax_WebApp.DTOs
         [Required]
         public bool esTecnicoActivo { get; set; }
 
-
+        //Agreados
+        public string nombreMaquina { get; set; } = "No disponible"; // Se asigna un valor por defecto
+        public string nombreStatusAsignacion { get; set; } = "No disponible";
+        public string nombreStatusOrden { get; set; }
 
         // Refacciones relacionados con el Tecnico
         public List<Asignacion_RefaccionesDetallesDTO> Refacciones { get; set; } = new List<Asignacion_RefaccionesDetallesDTO>();

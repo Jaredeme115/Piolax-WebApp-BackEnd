@@ -173,16 +173,24 @@ namespace Piolax_WebApp.Repositories.Impl
                     fechaIngreso = e.fechaIngreso,
                     idStatusEmpleado = e.idStatusEmpleado,
                     areaPrincipal = e.EmpleadoAreaRol
-                        .Where(ear => ear.esAreaPrincipal) // Filtra solo el área principal
+                        .Where(ear => ear.esAreaPrincipal)
                         .Select(ear => new AreaRolDTO
                         {
+                            idArea = ear.idArea,
                             Area = ear.Area.nombreArea,
+                            idRol = ear.idRol,
                             Rol = ear.Rol.nombreRol
-                        }).FirstOrDefault() // Toma el primer (y único) resultado
+                        }).FirstOrDefault()
                 }).FirstOrDefaultAsync();
+
+            if (empleado != null)
+            {
+                empleado.SetIdAreaRol(); // ✅ Llama a la función para asignar idArea e idRol
+            }
 
             return empleado;
         }
+
 
     }
 }

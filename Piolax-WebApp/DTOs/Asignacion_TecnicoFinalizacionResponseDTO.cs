@@ -1,4 +1,6 @@
-﻿namespace Piolax_WebApp.DTOs
+﻿using Piolax_WebApp.Models;
+
+namespace Piolax_WebApp.DTOs
 {
     public class Asignacion_TecnicoFinalizacionResponseDTO
     {
@@ -12,5 +14,6 @@
         public int idStatusAprobacionTecnico { get; set; }
         public string nombreStatusAprobacionTecnico { get; set; } // Descripción del estado de aprobación
         public bool esTecnicoActivo { get; set; }
+
     }
 }

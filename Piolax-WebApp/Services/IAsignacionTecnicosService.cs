@@ -6,6 +6,7 @@ namespace Piolax_WebApp.Services
     public interface IAsignacionTecnicosService
     {
         Task<IEnumerable<Asignacion_TecnicoDetallesDTO>> ConsultarTecnicosPorAsignacion(int idAsignacion);
+        Task<Asignacion_Tecnico?> ConsultarTecnicoPorAsignacionYEmpleado(int idAsignacion, int idEmpleado);
         Task<Asignacion_TecnicoResponseDTO?> CrearAsignacionTecnico(Asignacion_TecnicoDTO asignacionTecnicoDTO);
         Task<IEnumerable<Asignacion_Tecnico>> ConsultarTodosLosTecnicos();
         Task<bool> EliminarTecnicoDeAsignacion(int idAsignacionTecnico);
@@ -14,8 +15,7 @@ namespace Piolax_WebApp.Services
         Task<bool> PausarAsignacion(int idAsignacion, int idTecnicoQuePausa, string comentarioPausa);
         Task<bool> RetirarTecnicoDeApoyo(int idAsignacion, int idTecnicoQueSeRetira, string comentarioRetiro);
         Task<IEnumerable<Asignacion_TecnicoDetallesDTO>> ConsultarTecnicosConDetallesPorAsignacion(int idAsignacion);
-        Task<IEnumerable<Asignacion_TecnicoDetallesDTO>> ConsultarOrdenesEnPausaPorTecnico(int idEmpleado);
-
-
+        Task<IEnumerable<SolicitudesDetalleDTO>> ConsultarSolicitudesPausadasPorTecnico(int idTecnico);
+        Task<bool> RetomarAsignacion(int idAsignacion, int idEmpleado);
     }
 }

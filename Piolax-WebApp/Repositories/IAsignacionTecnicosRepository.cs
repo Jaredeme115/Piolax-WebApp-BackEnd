@@ -12,7 +12,9 @@ namespace Piolax_WebApp.Repositories
         Task<bool> EliminarTecnicoDeAsignacion(int idAsignacionTecnico);
         Task<bool> ActualizarTecnicoEnAsignacion(Asignacion_Tecnico asignacionTecnico);
         Task<bool> ConsultarTecnicosActivosPorAsignacion(int idAsignacion);
-        Task<IEnumerable<Asignacion_Tecnico>> ConsultarOrdenesEnPausaDelTecnico(int idEmpleado);
+        Task<IEnumerable<Asignaciones>> ObtenerAsignacionesPausadasPorTecnico(int idTecnico);
+        Task<bool> RetomarAsignacion(int idAsignacion, int idEmpleado);
+
     }
 
 }

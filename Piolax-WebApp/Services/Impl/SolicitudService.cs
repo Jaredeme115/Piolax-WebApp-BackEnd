@@ -119,25 +119,32 @@ namespace Piolax_WebApp.Services.Impl
             var empleado = solicitud.Empleado;
             var areasRoles = empleado.EmpleadoAreaRol;
 
-            // Filtrar el área y el rol específicos de la solicitud
-            var areaSeleccionada = areasRoles.FirstOrDefault(ar => ar.idArea == solicitud.idAreaSeleccionada);
-            var rolSeleccionado = areasRoles.FirstOrDefault(ar => ar.idRol == solicitud.idRolSeleccionado && ar.idArea == solicitud.idAreaSeleccionada);
+            string nombreArea = "N/A";
+            string nombreRol = "N/A";
 
-            //Se recurre a llamar a Maquina Service para obtener el nombre de la maquina en base al id de la maquina
+            // 🟢 EXCEPCIÓN PARA idArea = 19 (Área especial)
+            if (solicitud.idAreaSeleccionada == 19)
+            {
+                nombreArea = "Servicios Generales";  // 🔹 Puedes cambiarlo si tiene un nombre específico
+                var rolPrincipal = areasRoles.FirstOrDefault(ar => ar.esAreaPrincipal);
+                nombreRol = rolPrincipal?.Rol?.nombreRol ?? "N/A";
+            }
+            else
+            {
+                // 🔹 CASO NORMAL: SE OBTIENE EL ÁREA Y EL ROL ASIGNADO EN LA SOLICITUD
+                var areaSeleccionada = areasRoles.FirstOrDefault(ar => ar.idArea == solicitud.idAreaSeleccionada);
+                var rolSeleccionado = areasRoles.FirstOrDefault(ar => ar.idRol == solicitud.idRolSeleccionado && ar.idArea == solicitud.idAreaSeleccionada);
 
-            var maquina = await _maquinasService.Consultar(solicitud.idMaquina); // Obtener la máquina por ID
+                nombreArea = areaSeleccionada?.Area?.nombreArea ?? "N/A";
+                nombreRol = rolSeleccionado?.Rol?.nombreRol ?? "N/A";
+            }
 
-            //Se recurre a llamar a Turno Service para obtener el nombre del turno en base al id del turno
-
-            var turno = await _turnoService.Consultar(solicitud.idTurno); // Obtener el turno por ID
-
-            //Se recurre a llamar a StatusOrden Service para obtener el nombre del status de la orden en base al id del status de la orden
-            var statusOrden = await _statusOrdenService.Consultar(solicitud.idStatusOrden); // Obtener el status de la orden por ID
-
-            //Se recurre a llamar a StatusAprobacionSolicitante Service para obtener el nombre del status de aprobación del solicitante en base al id del status de aprobación del solicitante
-            var statusAprobacionSolicitante = await _statusAprobacionSolicitanteService.Consultar(solicitud.idStatusAprobacionSolicitante); // Obtener el status de aprobación del solicitante por ID
-
-            var categoriaTicket = await _categoriaTicketService.Consultar(solicitud.idCategoriaTicket); // Obtener la categoría del ticket por ID
+            // 📌 OBTENER DETALLES ADICIONALES
+            var maquina = await _maquinasService.Consultar(solicitud.idMaquina);
+            var turno = await _turnoService.Consultar(solicitud.idTurno);
+            var statusOrden = await _statusOrdenService.Consultar(solicitud.idStatusOrden);
+            var statusAprobacionSolicitante = await _statusAprobacionSolicitanteService.Consultar(solicitud.idStatusAprobacionSolicitante);
+            var categoriaTicket = await _categoriaTicketService.Consultar(solicitud.idCategoriaTicket);
 
             var solicitudesDetalleDTO = new SolicitudesDetalleDTO
             {
@@ -149,8 +156,8 @@ namespace Piolax_WebApp.Services.Impl
                 idTurno = solicitud.idTurno,
                 idStatusOrden = solicitud.idStatusOrden,
                 idStatusAprobacionSolicitante = solicitud.idStatusAprobacionSolicitante,
-                area = areaSeleccionada.Area.nombreArea,
-                rol = rolSeleccionado.Rol.nombreRol,
+                area = nombreArea, // 🔥 SE USA EL NOMBRE DEL ÁREA CORRECTO
+                rol = nombreRol,   // 🔥 SE USA EL NOMBRE DEL ROL CORRECTO
                 idCategoriaTicket = solicitud.idCategoriaTicket,
                 nombreMaquina = maquina.nombreMaquina,
                 nombreTurno = turno.descripcion,
@@ -161,6 +168,7 @@ namespace Piolax_WebApp.Services.Impl
 
             return solicitudesDetalleDTO;
         }
+
 
         public async Task<IEnumerable<SolicitudesDetalleDTO>> ObtenerSolicitudes()
         {
@@ -282,76 +290,63 @@ namespace Piolax_WebApp.Services.Impl
                 throw new Exception($"No se encontró la solicitud con ID: {idSolicitud}");
             }
 
+            // ✅ Verificar que al menos un técnico haya aprobado antes de que el usuario pueda aprobar/rechazar
+            bool tecnicoAprobado = solicitud.Asignaciones != null &&
+                                   solicitud.Asignaciones.Any(a => a.Asignacion_Tecnico != null &&
+                                                                    a.Asignacion_Tecnico.Any(t => t.idStatusAprobacionTecnico == 1));
+
+            if (!tecnicoAprobado)
+            {
+                throw new Exception("No se puede aprobar/rechazar porque ningún técnico ha aprobado el mantenimiento.");
+            }
+
+            // ✅ Verificar que el status de aprobación del solicitante sea válido
             var statusAprobacionSolicitante = await _statusAprobacionSolicitanteService.Consultar(idStatusAprobacionSolicitante);
             if (statusAprobacionSolicitante == null)
             {
                 throw new Exception($"No se encontró el status de aprobación del solicitante con ID: {idStatusAprobacionSolicitante}");
             }
 
-            // Actualizamos el status de aprobación del solicitante
+            // 🟢 Actualizamos el status de aprobación del solicitante
             solicitud.idStatusAprobacionSolicitante = idStatusAprobacionSolicitante;
             await _repository.ModificarEstatusAprobacionSolicitante(idSolicitud, idStatusAprobacionSolicitante);
 
-            // Si el solicitante aprueba (idStatusAprobacionSolicitante == 1)
-            if (idStatusAprobacionSolicitante == 1)
+            if (idStatusAprobacionSolicitante == 1) // ✅ Aprobado por el usuario
             {
-                // Verificar si la asignación asociada ya tiene la aprobación del técnico.
-                // Aquí se asume que la solicitud trae consigo la información de la asignación y de los técnicos.
-                // Por ejemplo, podrías tener en la solicitud una colección de asignaciones y en cada asignación la lista de técnicos:
-                bool tecnicoAprobado = solicitud.Asignaciones != null &&
-                                       solicitud.Asignaciones.Any(a => a.Asignacion_Tecnico != null &&
-                                                                        a.Asignacion_Tecnico.Any(t => t.idStatusAprobacionTecnico == 1));
-                if (tecnicoAprobado)
+                solicitud.idStatusOrden = 1; // "Realizado"
+                await _repository.ActualizarStatusOrden(idSolicitud, 1);
+
+                foreach (var asignacion in solicitud.Asignaciones)
                 {
-                    // Actualizamos el status de la orden a 1 ("Realizado")
-                    solicitud.idStatusOrden = 1;
-                    await _repository.ActualizarStatusOrden(idSolicitud, 1);
-
-                    // Aquí podrías actualizar el statusAsignacion
-                    foreach (var asignacion in solicitud.Asignaciones)  // Se asume que la solicitud tiene una colección de asignaciones.
-                    {
-                        asignacion.idStatusAsignacion = 3;
-                        await _asignacionRepository.ActualizarAsignacion(asignacion.idAsignacion, asignacion);
-                    }
-
+                    asignacion.idStatusAsignacion = 3; // Se asume que 3 es el estado "Cerrada/Finalizada"
+                    await _asignacionRepository.ActualizarAsignacion(asignacion.idAsignacion, asignacion);
                 }
             }
-            // Si el solicitante rechaza (idStatusAprobacionSolicitante == 2)
-            else if (idStatusAprobacionSolicitante == 2)
+            else if (idStatusAprobacionSolicitante == 2) // ❌ Rechazado por el usuario
             {
+                solicitud.idStatusOrden = 6; // "Rechazada"
+                await _repository.ActualizarStatusOrden(idSolicitud, 6);
 
-                bool tecnicoAprobado = solicitud.Asignaciones != null &&
-                                      solicitud.Asignaciones.Any(a => a.Asignacion_Tecnico != null &&
-                                                                       a.Asignacion_Tecnico.Any(t => t.idStatusAprobacionTecnico == 1));
-
-                if (tecnicoAprobado)
+                foreach (var asignacion in solicitud.Asignaciones)
                 {
-                    solicitud.idStatusOrden = 6; // Actualizamos el status de la orden a 6 ("Rechazada")
-                    await _repository.ActualizarStatusOrden(idSolicitud, 6);
-
-                    // Aquí podrías actualizar el statusAsignacion
-                    foreach (var asignacion in solicitud.Asignaciones)
-                    {
-                        asignacion.idStatusAsignacion = 4; // Se asume que el status 4 es "No tomada"
-                        await _asignacionRepository.ActualizarAsignacion(asignacion.idAsignacion, asignacion);
-                    }
-
+                    asignacion.idStatusAsignacion = 4; // Se asume que 4 es "No tomada/Rechazada"
+                    await _asignacionRepository.ActualizarAsignacion(asignacion.idAsignacion, asignacion);
                 }
             }
 
-            // Mapear la solicitud actualizada a un DTO para retornarlo (ejemplo simplificado)
+            // ✅ Retornar el DTO con los datos actualizados
             var solicitudDetalleDTO = new SolicitudesDetalleDTO
             {
                 idSolicitud = solicitud.idSolicitud,
                 descripcion = solicitud.descripcion,
                 fechaSolicitud = solicitud.fechaSolicitud,
-                // ... mapear el resto de propiedades necesarias
                 idStatusOrden = solicitud.idStatusOrden,
                 idStatusAprobacionSolicitante = solicitud.idStatusAprobacionSolicitante
             };
 
             return solicitudDetalleDTO;
         }
+
 
 
         public async Task<IEnumerable<Solicitudes>> ConsultarSolicitudesNoTomadas()
@@ -377,20 +372,33 @@ namespace Piolax_WebApp.Services.Impl
                 var areaSeleccionada = areasRoles.FirstOrDefault(ar => ar.idArea == solicitud.idAreaSeleccionada);
                 var rolSeleccionado = areasRoles.FirstOrDefault(ar => ar.idRol == solicitud.idRolSeleccionado && ar.idArea == solicitud.idAreaSeleccionada);
 
-                var maquina = await _maquinasService.Consultar(solicitud.idMaquina);
-                var turno = await _turnoService.Consultar(solicitud.idTurno);
-                var statusOrden = await _statusOrdenService.Consultar(solicitud.idStatusOrden);
-                var statusAprobacionSolicitante = await _statusAprobacionSolicitanteService.Consultar(solicitud.idStatusAprobacionSolicitante);
-                var categoriaTicket = await _categoriaTicketService.Consultar(solicitud.idCategoriaTicket);
-
-                // 🔹 Obtener el técnico que tomó la orden (se asume que hay solo uno aprobado)
+                // Obtener el técnico aprobado
                 var tecnico = solicitud.Asignaciones
                     .SelectMany(a => a.Asignacion_Tecnico)
-                    .FirstOrDefault(t => t.idStatusAprobacionTecnico == 1)?.Empleado; // 🔹 `Tecnico` es un `Empleado`
+                    .Where(t => t.idStatusAprobacionTecnico == 1)
+                    .Select(t => t.Empleado)
+                    .FirstOrDefault();
 
                 var nombreCompletoTecnico = tecnico != null
                     ? $"{tecnico.nombre} {tecnico.apellidoPaterno} {tecnico.apellidoMaterno}"
                     : "No asignado";
+
+                // Obtener la solución aplicada
+                var solucion = solicitud.Asignaciones
+                    .SelectMany(a => a.Asignacion_Tecnico)
+                    .Where(s => !string.IsNullOrEmpty(s.solucion))
+                    .Select(s => s.solucion)
+                    .FirstOrDefault();
+
+                // Obtener las refacciones utilizadas
+                var refacciones = solicitud.Asignaciones
+                    .SelectMany(a => a.Asignacion_Tecnico)
+                    .SelectMany(at => at.Asignacion_Refacciones)
+                    .Select(ar => new RefaccionesDTO
+                    {
+                        NombreRefaccion = ar.Inventario.nombreProducto,
+                        Cantidad = ar.cantidad
+                    }).ToList();
 
                 var solicitudDetalleDTO = new SolicitudesDetalleDTO
                 {
@@ -405,12 +413,14 @@ namespace Piolax_WebApp.Services.Impl
                     area = areaSeleccionada?.Area?.nombreArea ?? "N/A",
                     rol = rolSeleccionado?.Rol?.nombreRol ?? "N/A",
                     idCategoriaTicket = solicitud.idCategoriaTicket,
-                    nombreMaquina = maquina.nombreMaquina,
-                    nombreTurno = turno.descripcion,
-                    nombreStatusOrden = statusOrden.descripcionStatusOrden,
-                    nombreStatusAprobacionSolicitante = statusAprobacionSolicitante.descripcionStatusAprobacionSolicitante,
-                    nombreCategoriaTicket = categoriaTicket.descripcionCategoriaTicket,
-                    nombreCompletoTecnico = nombreCompletoTecnico 
+                    nombreMaquina = solicitud.Maquina?.nombreMaquina ?? "No disponible",
+                    nombreTurno = solicitud.Turno?.descripcion ?? "No disponible",
+                    nombreStatusOrden = solicitud.StatusOrden?.descripcionStatusOrden ?? "No disponible",
+                    nombreStatusAprobacionSolicitante = solicitud.StatusAprobacionSolicitante?.descripcionStatusAprobacionSolicitante ?? "No disponible",
+                    nombreCategoriaTicket = solicitud.categoriaTicket?.descripcionCategoriaTicket ?? "No disponible",
+                    nombreCompletoTecnico = nombreCompletoTecnico,
+                    solucion = solucion,
+                    Refacciones = refacciones
                 };
 
                 solicitudesDetalleDTO.Add(solicitudDetalleDTO);
@@ -418,7 +428,6 @@ namespace Piolax_WebApp.Services.Impl
 
             return solicitudesDetalleDTO;
         }
-
 
 
         public async Task ActualizarStatusOrden(int idSolicitud, int idStatusOrden)
@@ -429,7 +438,7 @@ namespace Piolax_WebApp.Services.Impl
                 throw new Exception($"No se encontró la solicitud con ID: {idSolicitud}");
             }
             solicitud.idStatusOrden = idStatusOrden;
-            // Se asume que en el repositorio existe un método para actualizar el estado de la solicitud
+            
             await _repository.ActualizarStatusOrden(idSolicitud, idStatusOrden);
         }
 
@@ -443,11 +452,27 @@ namespace Piolax_WebApp.Services.Impl
                 var empleado = solicitud.Empleado;
                 var areasRoles = empleado.EmpleadoAreaRol;
 
-                // Filtrar el área y el rol específicos de la solicitud
-                var areaSeleccionada = areasRoles.FirstOrDefault(ar => ar.idArea == solicitud.idAreaSeleccionada);
-                var rolSeleccionado = areasRoles.FirstOrDefault(ar => ar.idRol == solicitud.idRolSeleccionado && ar.idArea == solicitud.idAreaSeleccionada);
+                string nombreArea = "N/A";
+                string nombreRol = "N/A";
 
-                // Obtener detalles adicionales
+                // 🟢 CASO EXCEPCIÓN: SI EL ÁREA ES 19, SE SELECCIONA EL ÁREA 19 Y EL ROL PRINCIPAL
+                if (solicitud.idAreaSeleccionada == 19)
+                {
+                    nombreArea = "Servicios Generales";  
+                    var rolPrincipal = areasRoles.FirstOrDefault(ar => ar.esAreaPrincipal);
+                    nombreRol = rolPrincipal?.Rol?.nombreRol ?? "N/A";
+                }
+                else
+                {
+                    // 🔹 CASO NORMAL: SE OBTIENE EL ÁREA Y EL ROL ASIGNADO EN LA SOLICITUD
+                    var areaSeleccionada = areasRoles.FirstOrDefault(ar => ar.idArea == solicitud.idAreaSeleccionada);
+                    var rolSeleccionado = areasRoles.FirstOrDefault(ar => ar.idRol == solicitud.idRolSeleccionado && ar.idArea == solicitud.idAreaSeleccionada);
+
+                    nombreArea = areaSeleccionada?.Area?.nombreArea ?? "N/A";
+                    nombreRol = rolSeleccionado?.Rol?.nombreRol ?? "N/A";
+                }
+
+                // 📌 OBTENER DETALLES ADICIONALES
                 var maquina = await _maquinasService.Consultar(solicitud.idMaquina);
                 var turno = await _turnoService.Consultar(solicitud.idTurno);
                 var statusOrden = await _statusOrdenService.Consultar(solicitud.idStatusOrden);
@@ -464,8 +489,8 @@ namespace Piolax_WebApp.Services.Impl
                     idTurno = solicitud.idTurno,
                     idStatusOrden = solicitud.idStatusOrden,
                     idStatusAprobacionSolicitante = solicitud.idStatusAprobacionSolicitante,
-                    area = areaSeleccionada?.Area?.nombreArea ?? "N/A",
-                    rol = rolSeleccionado?.Rol?.nombreRol ?? "N/A",
+                    area = nombreArea, // 🔥 AHORA ASIGNA EL ÁREA CORRECTA
+                    rol = nombreRol,   // 🔥 AHORA ASIGNA EL ROL CORRECTO
                     idCategoriaTicket = solicitud.idCategoriaTicket,
                     nombreMaquina = maquina.nombreMaquina,
                     nombreTurno = turno.descripcion,
@@ -479,5 +504,19 @@ namespace Piolax_WebApp.Services.Impl
 
             return solicitudesDetalleDTO;
         }
+
+        public async Task<bool> EliminarSolicitud(int idSolicitud)
+        {
+            // 🔹 Verificar si la solicitud existe antes de eliminar
+            var existe = await _repository.ExisteSolicitud(idSolicitud);
+            if (!existe)
+            {
+                throw new Exception($"No se encontró la solicitud con ID: {idSolicitud}");
+            }
+
+            // 🔹 Intentar eliminar la solicitud
+            return await _repository.EliminarSolicitud(idSolicitud);
+        }
+
     }
 }

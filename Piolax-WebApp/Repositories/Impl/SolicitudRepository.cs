@@ -134,6 +134,34 @@ namespace Piolax_WebApp.Repositories.Impl
         {
             return await _context.Solicitudes
                 .Where(s => s.idStatusOrden == 1) // Filtra solicitudes "Terminadas"
+                .Include(s => s.Empleado)
+                    .ThenInclude(e => e.EmpleadoAreaRol)
+                        .ThenInclude(ar => ar.Area)
+                .Include(s => s.Empleado)
+                    .ThenInclude(e => e.EmpleadoAreaRol)
+                        .ThenInclude(ar => ar.Rol)
+                .Include(s => s.Maquina)
+                .Include(s => s.Turno)
+                .Include(s => s.StatusOrden)
+                .Include(s => s.StatusAprobacionSolicitante)
+                .Include(s => s.categoriaTicket)
+                .Include(s => s.Asignaciones)
+                    .ThenInclude(a => a.Asignacion_Tecnico)
+                        .ThenInclude(at => at.Empleado) // Incluir detalles del técnico
+                .Include(s => s.Asignaciones)
+                    .ThenInclude(a => a.Asignacion_Tecnico)
+                        .ThenInclude(at => at.Asignacion_Refacciones) // Incluir refacciones utilizadas
+                            .ThenInclude(ar => ar.Inventario) // Incluir detalles del inventario
+                .OrderBy(s => s.fechaSolicitud)
+                .ToListAsync();
+        }
+
+
+
+        /*public async Task<IEnumerable<Solicitudes>> ConsultarSolicitudesTerminadas()
+        {
+            return await _context.Solicitudes
+                .Where(s => s.idStatusOrden == 1) // Filtra solicitudes "Terminadas"
                 .Include(s => s.Empleado) // 🔹 Incluir relación con Empleado
                     .ThenInclude(e => e.EmpleadoAreaRol) // 🔹 Incluir roles y áreas del empleado
                         .ThenInclude(ar => ar.Area)
@@ -150,7 +178,7 @@ namespace Piolax_WebApp.Repositories.Impl
                         .ThenInclude(at => at.Empleado) // 🔹 Incluir detalles del técnico
                 .OrderBy(s => s.fechaSolicitud) // Ordena por fecha
                 .ToListAsync();
-        }
+        }*/
 
 
         public async Task ActualizarStatusOrden(int idSolicitud, int idStatusOrden)
@@ -186,6 +214,27 @@ namespace Piolax_WebApp.Repositories.Impl
                 .ToListAsync();
         }
 
+        public async Task<bool> EliminarSolicitud(int idSolicitud)
+        {
+            var solicitud = await _context.Solicitudes
+                .Include(s => s.Asignaciones) // 🔹 Incluir asignaciones si existen
+                .FirstOrDefaultAsync(s => s.idSolicitud == idSolicitud);
+
+            if (solicitud == null)
+            {
+                return false; // No existe la solicitud
+            }
+
+            // 🔹 Eliminar asignaciones asociadas antes de eliminar la solicitud (si aplica)
+            if (solicitud.Asignaciones != null && solicitud.Asignaciones.Any())
+            {
+                _context.Asignaciones.RemoveRange(solicitud.Asignaciones);
+            }
+
+            _context.Solicitudes.Remove(solicitud);
+            await _context.SaveChangesAsync();
+            return true; // Eliminación exitosa
+        }
 
 
     }

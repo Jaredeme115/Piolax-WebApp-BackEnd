@@ -1,6 +1,7 @@
 ﻿using Piolax_WebApp.DTOs;
 using Piolax_WebApp.Models;
 using System.Globalization;
+using System.Threading.Tasks;
 
 namespace Piolax_WebApp.Repositories
 {
@@ -19,6 +20,7 @@ namespace Piolax_WebApp.Repositories
         Task<IEnumerable<Solicitudes>> ConsultarSolicitudesTerminadas();
         Task ActualizarStatusOrden(int idSolicitud, int idStatusOrden);
         Task<IEnumerable<Solicitudes>> ObtenerSolicitudesConPrioridadAsync();
+        Task<bool> EliminarSolicitud(int idSolicitud);
 
     }
 }

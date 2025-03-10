@@ -43,5 +43,10 @@ namespace Piolax_WebApp.DTOs
         //Atributo para ver el nombre completo tecnico
         public string nombreCompletoTecnico { get; set; }
 
+        //Agregado
+        public string solucion { get; set; }
+        public int idAsignacion { get; set; }
+        public List<RefaccionesDTO> Refacciones { get; set; }
+
     }
 }

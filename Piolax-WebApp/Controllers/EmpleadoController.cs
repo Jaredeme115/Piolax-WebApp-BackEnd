@@ -57,7 +57,7 @@ namespace Piolax_WebApp.Controllers
             return Ok(usuariosConAreasRoles);
         }
 
-        [Authorize]
+        //[Authorize]
         [HttpGet("ConsultarEmpleadoConDetalles/{numNomina}")]
         public async Task<ActionResult<EmpleadoInfoDTO>> ConsultarEmpleadoConDetalles(string numNomina)
         {
@@ -160,91 +160,35 @@ namespace Piolax_WebApp.Controllers
 
         //[Authorize(Policy = "AdminOnly")]
         [HttpPut("ModificarEmpleadoConAreaYRol/{numNomina}")]
-        public async Task<ActionResult> ModificarEmpleadoAreaRol(string numNomina, [FromBody] RegistroDTO registro)
+        public async Task<IActionResult> ModificarEmpleadoAreaRol(string numNomina, [FromBody] RegistroDTO registro)
         {
             try
             {
-                // Verifica si el empleado existe
                 var empleadoExistente = await _service.Consultar(numNomina);
                 if (empleadoExistente == null)
                 {
-                    return NotFound("El empleado no existe");
+                    return NotFound(new { mensaje = "El empleado no existe." });
                 }
 
-                // Obtener las áreas y roles actuales del empleado
-                var areasRoles = await _empleadoAreaRolService.ObtenerAreasRolesPorEmpleado(numNomina);
-                var areaPrincipalActual = areasRoles.FirstOrDefault(ar => ar.esAreaPrincipal);
+                // 🔹 Llamar directamente al Service sin manejar lógica aquí
+                await _empleadoAreaRolService.ModificarEmpleadoAreaRol(numNomina, registro);
 
-                // Asignar valores actuales si están en blanco en el RegistroDTO
-                if (string.IsNullOrEmpty(registro.idArea.ToString()) && areaPrincipalActual != null)
-                {
-                    registro.idArea = areaPrincipalActual.idArea;
-                }
-
-                if (string.IsNullOrEmpty(registro.idRol.ToString()) && areaPrincipalActual != null)
-                {
-                    registro.idRol = areaPrincipalActual.idRol;
-                }
-
-                // Verificar si la contraseña está en blanco
-                if (string.IsNullOrEmpty(registro.password))
-                {
-                    // Mantener la contraseña existente (sin cambios)
-                    registro.password = null; // No se modifica
-                }
-                else
-                {
-                    // Generar nuevo hash y salt para la contraseña
-                    using (var hmac = new System.Security.Cryptography.HMACSHA512())
-                    {
-                        empleadoExistente.passwordSalt = hmac.Key;
-                        empleadoExistente.passwordHasH = hmac.ComputeHash(System.Text.Encoding.UTF8.GetBytes(registro.password));
-                    }
-                }
-
-                // Verifica si el empleado ya tiene un área principal
-                if (areaPrincipalActual != null)
-                {
-                    // Actualiza el área principal actual a no principal si el área o rol cambian
-                    if (registro.idArea != areaPrincipalActual.idArea || registro.idRol != areaPrincipalActual.idRol)
-                    {
-                        areaPrincipalActual.esAreaPrincipal = false;
-                        await _empleadoAreaRolService.ModificarEmpleadoAreaRol(numNomina, new RegistroDTO
-                        {
-                            numNomina = numNomina,
-                            idArea = areaPrincipalActual.idArea,
-                            idRol = areaPrincipalActual.idRol,
-                            esAreaPrincipal = false
-                        });
-                    }
-                }
-
-                // Asigna la nueva área como principal
-                await _empleadoAreaRolService.AsignarAreaRol(numNomina, registro.idArea, registro.idRol, true);
-
-                // Modifica el empleado en la base de datos
-                await _service.Modificar(numNomina, registro);
-
-                return Ok("Empleado modificado exitosamente junto con su área y rol.");
+                return Ok(new { mensaje = "Empleado modificado exitosamente.", numNomina = numNomina });
             }
             catch (DbUpdateException dbEx)
             {
-                // Manejo específico para errores de la base de datos
-                var innerMessage = dbEx.InnerException?.Message ?? dbEx.Message;
-                return StatusCode(500, $"Error al guardar los cambios en la base de datos: {innerMessage}");
+                return StatusCode(500, new { mensaje = "Error al guardar los cambios en la base de datos.", error = dbEx.InnerException?.Message ?? dbEx.Message });
             }
             catch (InvalidOperationException invEx)
             {
-                // Manejo específico para errores de operaciones inválidas
-                return BadRequest($"Operación no válida: {invEx.Message}");
+                return BadRequest(new { mensaje = "Operación no válida.", error = invEx.Message });
             }
             catch (Exception ex)
             {
-                // Manejo general para otras excepciones
-                var innerMessage = ex.InnerException?.Message ?? ex.Message;
-                return StatusCode(500, $"Error al modificar el empleado: {innerMessage}");
+                return StatusCode(500, new { mensaje = "Error al modificar el empleado.", error = ex.InnerException?.Message ?? ex.Message });
             }
         }
+
 
         /*[Authorize(Policy = "AdminOnly")]
         [HttpPut("ModificarEmpleadoConAreaYRol/{numNomina}")]

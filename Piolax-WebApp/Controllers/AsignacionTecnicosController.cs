@@ -64,15 +64,45 @@ namespace Piolax_WebApp.Controllers
             return Ok(await _service.ConsultarTecnicosConDetallesPorAsignacion(idAsignacion));
         }
 
-        [HttpGet("OrdenesPausadasPorTecnico")]
-        public async Task<ActionResult<IEnumerable<Asignacion_TecnicoDetallesDTO>>> OrdenesPausadasPorTecnico(int idEmpleado)
-        {
-            var ordenesPausadas = await _service.ConsultarOrdenesEnPausaPorTecnico(idEmpleado);
 
-            if (!ordenesPausadas.Any())
+        [HttpGet("OrdenesPausadasPorTecnico/{idEmpleado}")]
+        public async Task<ActionResult<IEnumerable<SolicitudesDetalleDTO>>> ConsultarSolicitudesPausadasPorTecnico(int idEmpleado)
+        {
+            var ordenes = await _service.ConsultarSolicitudesPausadasPorTecnico(idEmpleado);
+
+            if (ordenes == null || !ordenes.Any())
                 return NotFound("No se encontraron órdenes pausadas para este técnico.");
 
-            return Ok(ordenesPausadas);
+            return Ok(ordenes);
         }
+
+
+        [HttpPut("RetomarAsignacion/{idAsignacion}/{idEmpleado}")]
+        public async Task<IActionResult> RetomarAsignacion(int idAsignacion, int idEmpleado)
+        {
+            var resultado = await _service.RetomarAsignacion(idAsignacion, idEmpleado);
+            if (!resultado)
+            {
+                return BadRequest(new { error = "No se pudo retomar la asignación." });
+            }
+
+            return Ok(true);
+        }
+
+        [HttpGet("ObtenerAsignacionTecnico/{idAsignacion}/{idEmpleado}")]
+        public async Task<IActionResult> ObtenerAsignacionTecnico(int idAsignacion, int idEmpleado)
+        {
+            var asignacionTecnico = await _service.ConsultarTecnicoPorAsignacionYEmpleado(idAsignacion, idEmpleado);
+
+            if (asignacionTecnico == null)
+            {
+                return NotFound(new { error = "No se encontró la asignación del técnico." });
+            }
+
+            return Ok(new { idAsignacionTecnico = asignacionTecnico.idAsignacionTecnico });
+        }
+
+
+
     }
 }

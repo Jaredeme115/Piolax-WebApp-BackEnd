@@ -14,5 +14,15 @@
         public int? idRol { get; set; }
         public AreaRolDTO areaPrincipal { get; set; }
 
+        // ✅ Nueva propiedad para asignar idArea e idRol automáticamente
+        public void SetIdAreaRol()
+        {
+            if (areaPrincipal != null)
+            {
+                idArea = areaPrincipal.idArea;
+                idRol = areaPrincipal.idRol;
+            }
+        }
+
     }
 }

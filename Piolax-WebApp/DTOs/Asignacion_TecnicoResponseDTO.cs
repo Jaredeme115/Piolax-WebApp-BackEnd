@@ -1,4 +1,6 @@
-﻿namespace Piolax_WebApp.DTOs
+﻿using Piolax_WebApp.Models;
+
+namespace Piolax_WebApp.DTOs
 {
     public class Asignacion_TecnicoResponseDTO
     {
@@ -12,5 +14,6 @@
         public string comentarioPausa { get; set; }
         public bool esTecnicoActivo { get; set; }
         public double tiempoAcumuladoMinutos { get; set; }
+
     }
 }

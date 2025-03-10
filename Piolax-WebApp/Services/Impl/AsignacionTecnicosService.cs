@@ -4,6 +4,7 @@ using Piolax_WebApp.Models;
 using Piolax_WebApp.Repositories;
 using Piolax_WebApp.Repositories.Impl;
 using System.Configuration;
+using static Piolax_WebApp.Services.Impl.AsignacionTecnicosService;
 
 namespace Piolax_WebApp.Services.Impl
 {
@@ -44,6 +45,12 @@ namespace Piolax_WebApp.Services.Impl
                 esTecnicoActivo = tecnico.esTecnicoActivo
             });
         }
+
+        public async Task<Asignacion_Tecnico?> ConsultarTecnicoPorAsignacionYEmpleado(int idAsignacion, int idEmpleado)
+        {
+            return await _repository.ConsultarTecnicoPorAsignacionYEmpleado(idAsignacion, idEmpleado);
+        }
+
 
         public async Task<Asignacion_TecnicoResponseDTO?> CrearAsignacionTecnico(Asignacion_TecnicoDTO asignacionTecnicoDTO)
         {
@@ -449,35 +456,53 @@ namespace Piolax_WebApp.Services.Impl
                     cantidad = refaccion.cantidad
                 }).ToList() ?? new List<Asignacion_RefaccionesDetallesDTO>()
             });
-
             return tecnicoDetalles;
-
-           
         }
 
-        public async Task<IEnumerable<Asignacion_TecnicoDetallesDTO>> ConsultarOrdenesEnPausaPorTecnico(int idEmpleado)
+        public async Task<IEnumerable<SolicitudesDetalleDTO>> ConsultarSolicitudesPausadasPorTecnico(int idTecnico)
         {
-            var asignacionesPausadas = await _repository.ConsultarOrdenesEnPausaDelTecnico(idEmpleado);
+            var asignacionesPausadas = await _repository.ObtenerAsignacionesPausadasPorTecnico(idTecnico);
+            var solicitudesDetalleDTO = new List<SolicitudesDetalleDTO>();
 
-            // Luego mapeas a DTO. Probablemente muy similar a tu método ConsultarTecnicosPorAsignacion,
-            // pero en lugar de recibir un idAsignacion, estás filtrando por idEmpleado y su estado pausado:
-            var resultado = asignacionesPausadas.Select(at => new Asignacion_TecnicoDetallesDTO
+            foreach (var asignacion in asignacionesPausadas)
             {
-                idAsignacionTecnico = at.idAsignacionTecnico,
-                idAsignacion = at.idAsignacion,
-                idEmpleado = at.idEmpleado,
-                nombreCompletoTecnico = $"{at.Empleado?.nombre} {at.Empleado?.apellidoPaterno} {at.Empleado?.apellidoMaterno}",
-                horaInicio = at.horaInicio,
-                horaTermino = at.horaTermino,
-                solucion = at.solucion,
-                idStatusAprobacionTecnico = at.idStatusAprobacionTecnico,
-                nombreStatusAprobacionTecnico = at.StatusAprobacionTecnico?.descripcionStatusAprobacionTecnico,
-                comentarioPausa = at.comentarioPausa,
-                esTecnicoActivo = at.esTecnicoActivo,
-                // Otras propiedades que te interesen (Refacciones, etc.)
-            });
+                var solicitud = asignacion.Solicitud;
+                var empleado = solicitud.Empleado;
 
-            return resultado;
+                var solicitudDetalleDTO = new SolicitudesDetalleDTO
+                {
+                    idSolicitud = solicitud.idSolicitud,
+                    idAsignacion = asignacion.idAsignacion, // 🔥 Asignamos el ID de la asignación aquí
+                    descripcion = solicitud.descripcion,
+                    fechaSolicitud = solicitud.fechaSolicitud,
+                    nombreCompletoEmpleado = $"{empleado.nombre} {empleado.apellidoPaterno} {empleado.apellidoMaterno}",
+                    idMaquina = solicitud.idMaquina,
+                    idTurno = solicitud.idTurno,
+                    idStatusOrden = solicitud.idStatusOrden,
+                    idStatusAprobacionSolicitante = solicitud.idStatusAprobacionSolicitante,
+                    area = solicitud.idAreaSeleccionada.ToString(), // Ajustar según sea necesario
+                    rol = solicitud.idRolSeleccionado.ToString(), // Ajustar según sea necesario
+                    idCategoriaTicket = solicitud.idCategoriaTicket,
+                    nombreMaquina = solicitud.Maquina?.nombreMaquina ?? "No disponible",
+                    nombreTurno = solicitud.Turno?.descripcion ?? "No disponible",
+                    nombreStatusOrden = solicitud.StatusOrden?.descripcionStatusOrden ?? "No disponible",
+                    nombreStatusAprobacionSolicitante = solicitud.StatusAprobacionSolicitante?.descripcionStatusAprobacionSolicitante ?? "No disponible",
+                    nombreCategoriaTicket = solicitud.categoriaTicket?.descripcionCategoriaTicket ?? "No disponible"
+                };
+
+                solicitudesDetalleDTO.Add(solicitudDetalleDTO);
+            }
+
+            return solicitudesDetalleDTO;
         }
+
+
+
+
+        public async Task<bool> RetomarAsignacion(int idAsignacion, int idEmpleado)
+        {
+            return await _repository.RetomarAsignacion(idAsignacion, idEmpleado);
+        }
+
     }
 }

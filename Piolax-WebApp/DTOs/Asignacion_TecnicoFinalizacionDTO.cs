@@ -1,4 +1,5 @@
-﻿using System.ComponentModel.DataAnnotations;
+﻿using Piolax_WebApp.Models;
+using System.ComponentModel.DataAnnotations;
 
 namespace Piolax_WebApp.DTOs
 {
