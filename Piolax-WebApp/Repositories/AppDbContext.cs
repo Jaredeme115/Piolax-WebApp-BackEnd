@@ -44,6 +44,11 @@ namespace Piolax_WebApp.Repositories
         public DbSet<Asignacion_Tecnico> Asignacion_Tecnico { get; set; } = default!;
         public DbSet<StatusAsignacion> StatusAsignacion { get; set; } = default!;
 
+        //Matenimientos Preventivos
+        public DbSet<MantenimientoPreventivo> MantenimientoPreventivo { get; set; } = default!;
+        public DbSet<EstatusPreventivo> EstatusPreventivo { get; set; } = default!;
+        public DbSet<FrecuenciaMP> FrecuenciaMP { get; set; } = default!;
+
         //KPI´s Mantenimiento
         public DbSet<KpisMantenimiento> KpisMantenimiento { get; set; } = default!;
         public DbSet<KpisDetalle> KpisDetalle { get; set; } = default!;
@@ -197,6 +202,38 @@ namespace Piolax_WebApp.Repositories
                 .HasColumnType("DATETIME")
                 .HasDefaultValueSql("CURRENT_TIMESTAMP")
                 .ValueGeneratedOnAddOrUpdate(); // Indica que se genera tanto al crear como al actualizar
+
+            //Convertir Unidad de Tiempo a String
+            modelBuilder.Entity<FrecuenciaMP>()
+               .Property(f => f.unidadTiempo)
+               .HasConversion<string>() // Almacena el ENUM como texto en la BD
+               .HasColumnType("ENUM('Semana', 'Mes', 'Año')");
+
+            // Configurar la relación entre MantenimientoPreventivo y Areas, Maquinas, EstatusPreventivo, FrecuenciaMP
+            modelBuilder.Entity<MantenimientoPreventivo>()
+                .HasOne(mp => mp.Area)
+                .WithMany(a => a.MantenimientosPreventivos)
+                .HasForeignKey(mp => mp.idArea);
+
+            modelBuilder.Entity<MantenimientoPreventivo>()
+                .HasOne(mp => mp.Maquina)
+                .WithMany(m => m.MantenimientosPreventivos)
+                .HasForeignKey(mp => mp.idMaquina);
+
+            modelBuilder.Entity<MantenimientoPreventivo>()
+                .HasOne(mp => mp.EstatusPreventivo)
+                .WithMany(ep => ep.MantenimientosPreventivos)
+                .HasForeignKey(mp => mp.idEstatusPreventivo);
+
+            modelBuilder.Entity<MantenimientoPreventivo>()
+                .HasOne(mp => mp.FrecuenciaMP)
+                .WithMany(fmp => fmp.MantenimientosPreventivos)
+                .HasForeignKey(mp => mp.idFrecuenciaPreventivo);
+
+            modelBuilder.Entity<MantenimientoPreventivo>()
+               .HasOne(mp => mp.Empleado)
+               .WithMany(e => e.MantenimientosPreventivos)
+               .HasForeignKey(mp => mp.idEmpleado);
 
             // Configurar la relacion entre KpisMantenimiento y Empleados
             modelBuilder.Entity<KpisMantenimiento>()

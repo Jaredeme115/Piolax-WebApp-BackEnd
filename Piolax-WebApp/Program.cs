@@ -101,6 +101,14 @@ builder.Services.AddScoped<IAsignacionTecnicosService, AsignacionTecnicosService
 builder.Services.AddScoped<IAsignacionRefaccionesRepository, AsignacionRefaccionesRepository>();
 builder.Services.AddScoped<IAsignacionRefaccionesService, AsignacionRefaccionesService>();
 
+//MantenimientoPreventivo
+builder.Services.AddScoped<IMantenimientoPreventivoRepository, MantenimientoPreventivoRepository>();
+builder.Services.AddScoped<IMantenimientoPreventivoService, MantenimientoPreventivoService>();
+
+//Frecuencia y Estatus de Mantenimiento Preventivo (Solo Repository)
+builder.Services.AddScoped<IFrecuenciaMPRepository, FrecuenciaMPRepository>();
+builder.Services.AddScoped<IEstatusPreventivoRepository, EstatusPreventivoRepository>();
+
 //KPI's 
 builder.Services.AddScoped<IKPIRepository, KPIRepository>();
 
