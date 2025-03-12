@@ -21,7 +21,7 @@ namespace Piolax_WebApp.Services.Impl
         private readonly IEstatusPreventivoRepository _estatusRepository = estatusPreventivoRepository;
 
         // Método para crear un mantenimiento preventivo
-        public async Task<MantenimientoPreventivoDTO> CrearMantenimientoPreventivo(MantenimientoPreventivoDTO mantenimientoPreventivoDTO)
+        public async Task<MantenimientoPreventivoDTO> CrearMantenimientoPreventivo(MantenimientoPreventivoCreateDTO mantenimientoPreventivoDTO)
         {
             // Obtener la semana actual del año
             int semanaActual = GetWeekOfYear(DateTime.Now); // Semana actual del año
@@ -37,7 +37,7 @@ namespace Piolax_WebApp.Services.Impl
                 idEmpleado = mantenimientoPreventivoDTO.idEmpleado,
                 rutaPDF = mantenimientoPreventivoDTO.rutaPDF,
                 ultimaEjecucion = null, // La última ejecución es null para un nuevo mantenimiento
-                fechaEjecucion = null // No asignamos fecha de ejecución para un mantenimiento nuevo
+                fechaEjecucion = null   // No asignamos fecha de ejecución para un mantenimiento nuevo
             };
 
             // Asignar el idEstatusPreventivo dependiendo de la semana
@@ -61,27 +61,22 @@ namespace Piolax_WebApp.Services.Impl
             switch (mantenimientoPreventivo.idFrecuenciaPreventivo)
             {
                 case 1: // Frecuencia Mensual
-                        // Sumar 1 mes a la fecha de ejecución
                     proximaEjecucion = fechaEjecucion.AddMonths(1);
                     break;
 
                 case 2: // Frecuencia Bimestral
-                        // Sumar 2 meses a la fecha de ejecución
                     proximaEjecucion = fechaEjecucion.AddMonths(2);
                     break;
 
                 case 3: // Frecuencia Trimestral
-                        // Sumar 3 meses a la fecha de ejecución
                     proximaEjecucion = fechaEjecucion.AddMonths(3);
                     break;
 
                 case 4: // Frecuencia Anual
-                        // Sumar 1 año a la fecha de ejecución
                     proximaEjecucion = fechaEjecucion.AddYears(1);
                     break;
 
                 default:
-                    // Si no se encuentra la frecuencia, asignar una fecha por defecto
                     proximaEjecucion = DateTime.Now;
                     break;
             }
@@ -95,21 +90,6 @@ namespace Piolax_WebApp.Services.Impl
 
             // Asignar la fecha de última ejecución, si aplica, de manera similar a la fecha de ejecución.
             mantenimientoPreventivo.ultimaEjecucion = fechaEjecucion;
-
-            // Verificar si la fecha de ejecución está dentro del rango de la semana (lunes a domingo)
-            DateTime endOfWeek = GetEndOfWeek(fechaEjecucion); // Domingo de la semana
-
-            // Si la fechaEjecucion está dentro del rango, se marca como "Realizado" y no como "No realizado"
-            if (mantenimientoPreventivo.fechaEjecucion >= fechaEjecucion && mantenimientoPreventivo.fechaEjecucion <= endOfWeek)
-            {
-                // Se marca como Realizado si está dentro del rango
-                mantenimientoPreventivo.idEstatusPreventivo = 3; // "Realizado" (id = 3)
-            }
-            else
-            {
-                // Si no está dentro del rango de la semana, se marca como "No realizado"
-                mantenimientoPreventivo.idEstatusPreventivo = 2; // "No Realizado" (id = 2)
-            }
 
             // Llamar al repositorio para crear el mantenimiento preventivo
             var mantenimientoCreado = await _repository.CrearMantenimientoPreventico(mantenimientoPreventivo);
@@ -132,6 +112,8 @@ namespace Piolax_WebApp.Services.Impl
 
             return mantenimientoPreventivoDTOResult;
         }
+
+
 
         //Consultar un mantenimiento preventivo con detalles
         public async Task<MantenimientoPreventivoDetallesDTO> ConsultarMPConDetalles(int idMP)

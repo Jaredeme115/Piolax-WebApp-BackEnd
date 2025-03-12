@@ -1,6 +1,7 @@
 ﻿using Microsoft.AspNetCore.Mvc;
 using Piolax_WebApp.DTOs;
 using Piolax_WebApp.Services;
+using Piolax_WebApp.Services.Impl;
 
 namespace Piolax_WebApp.Controllers
 {
@@ -9,21 +10,24 @@ namespace Piolax_WebApp.Controllers
         private readonly IMantenimientoPreventivoService _service = service;
 
         // Método HTTP POST para crear un mantenimiento preventivo
-        [HttpPost]
-        public async Task<IActionResult> CrearMantenimientoPreventivo(MantenimientoPreventivoDTO mantenimientoPreventivoDTO)
+        [HttpPost("CrearMantenimientoPreventivo")]
+        public async Task<ActionResult<MantenimientoPreventivoDTO>> CrearMantenimientoPreventivo(MantenimientoPreventivoCreateDTO mantenimientoPreventivoCreateDTO)
         {
-            var mantenimientoDetalles = await _service.CrearMantenimientoPreventivo(mantenimientoPreventivoDTO);
-
-            if (mantenimientoDetalles == null)
+            // Verificar que los datos sean correctos (validación de entrada)
+            if (!ModelState.IsValid)
             {
-                return BadRequest("No se pudo crear el mantenimiento preventivo."); // Si algo sale mal
+                return BadRequest(ModelState);
             }
 
-            return Ok(new { mensaje = "Mantenimiento Preventivo creado con éxito" });
+            // Llamar al servicio para crear el mantenimiento preventivo
+            var mantenimientoPreventivoCreado = await _service.CrearMantenimientoPreventivo(mantenimientoPreventivoCreateDTO);
+
+            // Si la creación es exitosa, devolver el DTO con los detalles del mantenimiento creado
+            return CreatedAtAction(nameof(CrearMantenimientoPreventivo), new { id = mantenimientoPreventivoCreado.idArea }, mantenimientoPreventivoCreado);
         }
 
         // Método HTTP GET para consultar un mantenimiento preventivo con detalles
-        [HttpGet("{idMP}")]
+        [HttpGet("ConsultarMP/{idMP}")]
         public async Task<IActionResult> ConsultarMantenimientoPreventivo(int idMP)
         {
             var mantenimientoDetalles = await _service.ConsultarMPConDetalles(idMP);
@@ -37,7 +41,7 @@ namespace Piolax_WebApp.Controllers
         }
 
         // Método HTTP PUT para modificar un mantenimiento preventivo
-        [HttpPut("{idMP}")]
+        [HttpPut("ModificarMP/{idMP}")]
         public async Task<IActionResult> ModificarMantenimientoPreventivo(int idMP, MantenimientoPreventivoModificarDTO mantenimientoPreventivoModificarDTO)
         {
             var mantenimientoDetalles = await _service.ModificarMantenimientoPreventivo(idMP, mantenimientoPreventivoModificarDTO);
@@ -51,7 +55,7 @@ namespace Piolax_WebApp.Controllers
         }
 
         // Método HTTP DELETE para eliminar un mantenimiento preventivo
-        [HttpDelete("{idMP}")]
+        [HttpDelete("EliminarMP/{idMP}")]
         public async Task<IActionResult> EliminarMantenimientoPreventivo(int idMP)
         {
             var resultado = await _service.EliminarMantenimientoPreventivo(idMP);

@@ -5,7 +5,7 @@ namespace Piolax_WebApp.Services
 {
     public interface IMantenimientoPreventivoService
     {
-        Task<MantenimientoPreventivoDTO> CrearMantenimientoPreventivo(MantenimientoPreventivoDTO mantenimientoPreventivoDTO);
+        Task<MantenimientoPreventivoDTO> CrearMantenimientoPreventivo(MantenimientoPreventivoCreateDTO mantenimientoPreventivoDTO);
         Task<MantenimientoPreventivoDetallesDTO> ConsultarMPConDetalles(int idMP);
         Task<MantenimientoPreventivoDTO> ModificarMantenimientoPreventivo(int idMP, MantenimientoPreventivoModificarDTO mantenimientoPreventivoModificarDTO);
         Task<bool> EliminarMantenimientoPreventivo(int idMP);
