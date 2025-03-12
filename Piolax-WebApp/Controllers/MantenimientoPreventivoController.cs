@@ -67,5 +67,20 @@ namespace Piolax_WebApp.Controllers
 
             return NoContent(); // El mantenimiento ha sido eliminado exitosamente
         }
+
+        // Endpoint para marcar como realizado
+        [HttpPut("MarcarRealizadoMP/{idMP}")]
+        public async Task<IActionResult> MarcarComoRealizado(int idMP)
+        {
+            // Llamar al servicio para marcar como realizado
+            var resultado = await _service.MarcarComoRealizado(idMP);
+
+            if (!resultado)
+            {
+                return NotFound(new { success = false, message = "Mantenimiento no encontrado" });
+            }
+
+            return Ok(new { success = true, message = "Mantenimiento marcado como Realizado" });
+        }
     }
 }

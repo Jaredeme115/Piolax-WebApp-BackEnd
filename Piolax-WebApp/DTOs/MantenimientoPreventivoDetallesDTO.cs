@@ -20,5 +20,5 @@
         public DateTime? proximaEjecucion { get; set; }
         public DateTime? fechaEjecucion { get; set; }
 
-}
+    }
 }

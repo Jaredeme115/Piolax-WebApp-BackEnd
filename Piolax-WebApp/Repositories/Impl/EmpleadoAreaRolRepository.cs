@@ -191,6 +191,22 @@ namespace Piolax_WebApp.Repositories.Impl
             return empleado;
         }
 
+        public async Task<IEnumerable<EmpleadoNombreCompletoDTO>> ObtenerEmpleadosPorArea(int idArea)
+        {
+            return await _context.EmpleadoAreaRol
+            .Include(ear => ear.Empleado) // Incluye datos del empleado
+            .Where(ear => ear.idArea == idArea) // Filtra por id de área
+            .Select(ear => new EmpleadoNombreCompletoDTO
+            {
+                idEmpleado = ear.Empleado.idEmpleado,
+                nombre = ear.Empleado.nombre,
+                apellidoPaterno = ear.Empleado.apellidoPaterno,
+                apellidoMaterno = ear.Empleado.apellidoMaterno
+            })
+            .ToListAsync();
+        }
+
+
 
     }
 }

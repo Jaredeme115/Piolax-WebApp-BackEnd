@@ -11,5 +11,11 @@ namespace Piolax_WebApp.Repositories.Impl
         {
             return await _context.FrecuenciaMP.Where(p => p.idFrecuenciaPreventivo == idFrecuenciaPreventivo).FirstOrDefaultAsync();
         }
+
+        public async Task<IEnumerable<FrecuenciaMP>> ConsultarTodasFrecuenciasPreventivo()
+        {
+            return await _context.FrecuenciaMP.ToListAsync();
+        }
+
     }
 }

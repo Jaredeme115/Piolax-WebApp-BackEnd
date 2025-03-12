@@ -116,11 +116,11 @@ namespace Piolax_WebApp.Controllers
                 registro.esAreaPrincipal = true;
             }
 
-                // Registrar el empleado junto con área y rol
-                try
+            // Registrar el empleado junto con área y rol
+            try
             {
                 await _empleadoAreaRolService.RegistrarEmpleadoConAreaYRol(registro);
-                
+
                 return Ok(new { message = "Empleado registrado exitosamente con área y rol asignados." });
             }
             catch (Exception ex)
@@ -229,12 +229,12 @@ namespace Piolax_WebApp.Controllers
         public async Task<ActionResult<EmpleadoDTO>> Login([FromBody] LoginDTO login)
         {
             if (!await _service.EmpleadoExiste(login.numNomina))
-                return Unauthorized("El Empleado no existe" );
+                return Unauthorized("El Empleado no existe");
 
             var resultado = _service.EmpleadoExisteLogin(login);
 
             if (!resultado.esLoginExitoso)
-                return Unauthorized("El Password es invalido" );
+                return Unauthorized("El Password es invalido");
 
             var token = _tokenService.CrearToken(resultado.empleado);
             var refreshToken = await _refreshTokensService.GenerateRefreshToken(resultado.empleado.idEmpleado);
@@ -270,7 +270,7 @@ namespace Piolax_WebApp.Controllers
             await _empleadoAreaRolService.EliminarAreaRol(numNomina, idArea, idRol);
         }
 
-       
+
         [HttpPost("RefreshToken")]
         public async Task<IActionResult> RefreshToken([FromBody] RefreshTokenDTO refreshTokenDTO)
         {
@@ -389,17 +389,18 @@ namespace Piolax_WebApp.Controllers
 
                         if (await _service.EmpleadoExiste(numNomina))
                         {
-                            
+
                             if (await _empleadoAreaRolService.ValidarRolPorEmpleadoYArea(numNomina, idArea))
                             {
                                 empleadosNoRegistrados.Add($"Fila {row}: El empleado con número de nómina {numNomina} ya existe y cuenta con un rol en el area {idArea}.");
-                            } else
+                            }
+                            else
                             {
                                 await _empleadoAreaRolService.AsignarAreaRol(numNomina, idArea, idRol, esAreaPrincipal);
                                 empleadosRegistrados.Add($"Fila {row}: Área y rol asignados correctamente al empleado con número de nómina {numNomina}.");
                             }
 
-                        }     
+                        }
                         else
                         {
 
@@ -440,6 +441,33 @@ namespace Piolax_WebApp.Controllers
                 return BadRequest($"Error al procesar el archivo Excel: {ex.Message}");
             }
         }
+
+        //Método para consultar lista de empleados en base a un area
+
+        [HttpGet("ObtenerEmpleadosPorArea/{idArea}")]
+        public async Task<ActionResult<IEnumerable<EmpleadoNombreCompletoDTO>>> ObtenerEmpleadosPorArea(int idArea)
+        {
+            var empleados = await _empleadoAreaRolService.ObtenerEmpleadosPorArea(idArea);
+
+            if (empleados == null || !empleados.Any())
+            {
+                return NotFound("No se encontraron empleados en el área especificada.");
+            }
+
+            // Transformar Empleado a EmpleadoNombreCompletoDTO
+            var empleadosDTO = empleados.Select(emp => new EmpleadoNombreCompletoDTO
+            {
+                idEmpleado = emp.idEmpleado,
+                nombre = emp.nombre,
+                apellidoPaterno = emp.apellidoPaterno,
+                apellidoMaterno = emp.apellidoMaterno,
+                nombreCompleto = $"{emp.nombre} {emp.apellidoPaterno} {emp.apellidoMaterno}".Trim()
+            }).ToList();
+
+            return Ok(empleadosDTO);
+        }
+
+
 
     }
 }

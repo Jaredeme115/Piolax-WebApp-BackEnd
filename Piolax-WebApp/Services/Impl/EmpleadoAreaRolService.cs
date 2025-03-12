@@ -149,6 +149,11 @@ namespace Piolax_WebApp.Services.Impl
             return await _repository.ConsultarTodosConDetalles();
         }
 
+        public async Task<IEnumerable<EmpleadoNombreCompletoDTO>> ObtenerEmpleadosPorArea(int idArea)
+        {
+            return await _repository.ObtenerEmpleadosPorArea(idArea);
+        }
+
 
     }
 }

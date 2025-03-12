@@ -105,9 +105,11 @@ builder.Services.AddScoped<IAsignacionRefaccionesService, AsignacionRefaccionesS
 builder.Services.AddScoped<IMantenimientoPreventivoRepository, MantenimientoPreventivoRepository>();
 builder.Services.AddScoped<IMantenimientoPreventivoService, MantenimientoPreventivoService>();
 
-//Frecuencia y Estatus de Mantenimiento Preventivo (Solo Repository)
+//Frecuencia y Estatus de Mantenimiento Preventivo 
 builder.Services.AddScoped<IFrecuenciaMPRepository, FrecuenciaMPRepository>();
+builder.Services.AddScoped<IFrecuenciaMPService, FrecuenciaMPService>();
 builder.Services.AddScoped<IEstatusPreventivoRepository, EstatusPreventivoRepository>();
+builder.Services.AddScoped<IEstatusPreventivoService, EstatusPreventivoService>();
 
 //KPI's 
 builder.Services.AddScoped<IKPIRepository, KPIRepository>();

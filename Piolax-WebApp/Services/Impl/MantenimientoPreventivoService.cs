@@ -21,7 +21,7 @@ namespace Piolax_WebApp.Services.Impl
         private readonly IEstatusPreventivoRepository _estatusRepository = estatusPreventivoRepository;
 
         // Método para crear un mantenimiento preventivo
-        public async Task<MantenimientoPreventivoDTO> CrearMantenimientoPreventivo(MantenimientoPreventivoCreateDTO mantenimientoPreventivoDTO)
+        public async Task<MantenimientoPreventivoDTO> CrearMantenimientoPreventivo(MantenimientoPreventivoCreateDTO mantenimientoPreventivoCreateDTO)
         {
             // Obtener la semana actual del año
             int semanaActual = GetWeekOfYear(DateTime.Now); // Semana actual del año
@@ -29,13 +29,13 @@ namespace Piolax_WebApp.Services.Impl
             // Crear el objeto de MantenimientoPreventivo
             var mantenimientoPreventivo = new MantenimientoPreventivo
             {
-                idArea = mantenimientoPreventivoDTO.idArea,
-                idMaquina = mantenimientoPreventivoDTO.idMaquina,
-                idFrecuenciaPreventivo = mantenimientoPreventivoDTO.idFrecuenciaPreventivo,
-                semanaPreventivo = mantenimientoPreventivoDTO.semanaPreventivo,
-                Activo = mantenimientoPreventivoDTO.Activo,
-                idEmpleado = mantenimientoPreventivoDTO.idEmpleado,
-                rutaPDF = mantenimientoPreventivoDTO.rutaPDF,
+                idArea = mantenimientoPreventivoCreateDTO.idArea,
+                idMaquina = mantenimientoPreventivoCreateDTO.idMaquina,
+                idFrecuenciaPreventivo = mantenimientoPreventivoCreateDTO.idFrecuenciaPreventivo,
+                semanaPreventivo = mantenimientoPreventivoCreateDTO.semanaPreventivo,
+                Activo = mantenimientoPreventivoCreateDTO.Activo,
+                idEmpleado = mantenimientoPreventivoCreateDTO.idEmpleado,
+                rutaPDF = mantenimientoPreventivoCreateDTO.rutaPDF,
                 ultimaEjecucion = null, // La última ejecución es null para un nuevo mantenimiento
                 fechaEjecucion = null   // No asignamos fecha de ejecución para un mantenimiento nuevo
             };
@@ -112,6 +112,7 @@ namespace Piolax_WebApp.Services.Impl
 
             return mantenimientoPreventivoDTOResult;
         }
+
 
 
 
@@ -213,7 +214,8 @@ namespace Piolax_WebApp.Services.Impl
                 mantenimientoExistente.semanaPreventivo = GetWeekOfYear(nuevaFechaEjecucion);
             }
 
-            // Actualizar otros campos del DTO
+            // Asignamos los demás campos que pueden haberse actualizado
+            mantenimientoExistente.semanaPreventivo = mantenimientoPreventivoModificarDTO.semanaPreventivo;
             mantenimientoExistente.Activo = mantenimientoPreventivoModificarDTO.Activo;
 
             // Verificamos si el técnico ha cambiado, y si es así, actualizamos
@@ -222,10 +224,9 @@ namespace Piolax_WebApp.Services.Impl
                 mantenimientoExistente.idEmpleado = mantenimientoPreventivoModificarDTO.idEmpleado;
             }
 
-            // Actualizar la `proximaEjecucion` según la nueva frecuencia
+            // Actualizar la `proximaEjecucion` según la frecuencia
             DateTime nuevaProximaEjecucion;
 
-            // Verificamos si fechaEjecucion tiene un valor y si no lo tiene, asignamos una fecha predeterminada
             if (mantenimientoExistente.fechaEjecucion.HasValue)
             {
                 // Dependiendo de la frecuencia, sumamos el número de meses o años a la fecha de ejecución
@@ -275,7 +276,7 @@ namespace Piolax_WebApp.Services.Impl
                 ultimaEjecucion = mantenimientoExistente.ultimaEjecucion,
                 proximaEjecucion = mantenimientoExistente.proximaEjecucion,
                 fechaEjecucion = mantenimientoExistente.fechaEjecucion,
-                idEstatusPreventivo = mantenimientoExistente.idEstatusPreventivo // Incluir el estatus en el DTO
+                idEstatusPreventivo = mantenimientoExistente.idEstatusPreventivo
             };
 
             return mantenimientoPreventivoDTOResult;
@@ -297,6 +298,30 @@ namespace Piolax_WebApp.Services.Impl
 
             // Si se elimina con éxito, devolver true
             return true;
+        }
+
+        // Método para marcar como realizado
+        public async Task<bool> MarcarComoRealizado(int idMP)
+        {
+            // Buscar el mantenimiento preventivo por ID
+            var mantenimiento = await _repository.ConsultarMP(idMP);
+
+            // Si no se encuentra el mantenimiento, retornar false
+            if (mantenimiento == null)
+            {
+                return false; // Mantenimiento no encontrado
+            }
+
+            // Cambiar el estatus a "Realizado"
+            mantenimiento.idEstatusPreventivo = 3; // "Realizado"
+
+            // Marcar la fecha de ejecución como la fecha actual
+            mantenimiento.fechaEjecucion = DateTime.Now;
+
+            // Guardar los cambios en la base de datos
+            await _repository.Modificar(idMP, mantenimiento);
+
+            return true; // Mantenimiento marcado como Realizado exitosamente
         }
 
 

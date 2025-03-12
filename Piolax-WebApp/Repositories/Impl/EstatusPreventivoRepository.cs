@@ -11,5 +11,11 @@ namespace Piolax_WebApp.Repositories.Impl
         {
             return await _context.EstatusPreventivo.Where(p => p.idEstatusPreventivo == idEstatusPreventivo).FirstOrDefaultAsync();
         }
+        public async Task<IEnumerable<EstatusPreventivo>> ConsultarTodosEstatusPreventivo()
+        {
+            return await _context.EstatusPreventivo.ToListAsync();
+        }
+
+
     }
 }

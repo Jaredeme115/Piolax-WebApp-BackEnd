@@ -9,5 +9,6 @@ namespace Piolax_WebApp.Services
         Task<MantenimientoPreventivoDetallesDTO> ConsultarMPConDetalles(int idMP);
         Task<MantenimientoPreventivoDTO> ModificarMantenimientoPreventivo(int idMP, MantenimientoPreventivoModificarDTO mantenimientoPreventivoModificarDTO);
         Task<bool> EliminarMantenimientoPreventivo(int idMP);
+        Task<bool> MarcarComoRealizado(int idMP);
     }
 }
