@@ -48,6 +48,7 @@ namespace Piolax_WebApp.Repositories
         public DbSet<MantenimientoPreventivo> MantenimientoPreventivo { get; set; } = default!;
         public DbSet<EstatusPreventivo> EstatusPreventivo { get; set; } = default!;
         public DbSet<FrecuenciaMP> FrecuenciaMP { get; set; } = default!;
+        public DbSet<MantenimientoPreventivoPDFs> MantenimientoPreventivoPDFs { get; set; } = default!;
 
         //KPI´s Mantenimiento
         public DbSet<KpisMantenimiento> KpisMantenimiento { get; set; } = default!;
@@ -234,6 +235,13 @@ namespace Piolax_WebApp.Repositories
                .HasOne(mp => mp.Empleado)
                .WithMany(e => e.MantenimientosPreventivos)
                .HasForeignKey(mp => mp.idEmpleado);
+
+            //
+
+            modelBuilder.Entity<MantenimientoPreventivoPDFs>()
+                .HasOne(mp => mp.MantenimientoPreventivos)
+                .WithMany(mpp => mpp.MantenimientoPreventivoPDFs)
+                .HasForeignKey(mp => mp.idMP);
 
             // Configurar la relacion entre KpisMantenimiento y Empleados
             modelBuilder.Entity<KpisMantenimiento>()

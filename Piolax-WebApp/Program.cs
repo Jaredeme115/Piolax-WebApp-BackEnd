@@ -111,6 +111,10 @@ builder.Services.AddScoped<IFrecuenciaMPService, FrecuenciaMPService>();
 builder.Services.AddScoped<IEstatusPreventivoRepository, EstatusPreventivoRepository>();
 builder.Services.AddScoped<IEstatusPreventivoService, EstatusPreventivoService>();
 
+//MantenimientoPreventivoPDFs
+builder.Services.AddScoped<IMantenimientoPreventivoPDFsRepository, MantenimientoPreventivoPDFsRepository>();
+builder.Services.AddScoped<IMantenimientoPreventivoPDFsService, MantenimientoPreventivoPDFsService>();
+
 //KPI's 
 builder.Services.AddScoped<IKPIRepository, KPIRepository>();
 

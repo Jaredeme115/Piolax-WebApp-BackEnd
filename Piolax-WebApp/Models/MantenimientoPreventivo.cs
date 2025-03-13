@@ -32,12 +32,11 @@ namespace Piolax_WebApp.Models
 
         public bool Activo { get; set; } = true;
 
-        [Required]
-        [StringLength(255)]
-        public string rutaPDF { get; set; } = string.Empty;
         public DateTime? ultimaEjecucion { get; set; }
         public DateTime? proximaEjecucion { get; set; }
         public DateTime? fechaEjecucion { get; set; }
+
+        public virtual ICollection<MantenimientoPreventivoPDFs> MantenimientoPreventivoPDFs { get; set; } = new List<MantenimientoPreventivoPDFs>(); // Lista de MantenimientoPreventivoPDFs asociados a Mantenimiento Preventivo
 
     }
 }

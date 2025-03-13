@@ -15,7 +15,6 @@
         public int idEmpleado { get; set; }
         public string nombreCompletoTecnicoMP { get; set; }
         public bool Activo { get; set; } = true;
-        public string rutPDF { get; set; }
         public DateTime? ultimaEjecucion { get; set; }
         public DateTime? proximaEjecucion { get; set; }
         public DateTime? fechaEjecucion { get; set; }

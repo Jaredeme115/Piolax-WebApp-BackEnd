@@ -35,61 +35,52 @@ namespace Piolax_WebApp.Services.Impl
                 semanaPreventivo = mantenimientoPreventivoCreateDTO.semanaPreventivo,
                 Activo = mantenimientoPreventivoCreateDTO.Activo,
                 idEmpleado = mantenimientoPreventivoCreateDTO.idEmpleado,
-                rutaPDF = mantenimientoPreventivoCreateDTO.rutaPDF,
+
+                // No asignamos fecha de ejecución / pró para un mantenimiento nuevo
                 ultimaEjecucion = null, // La última ejecución es null para un nuevo mantenimiento
-                fechaEjecucion = null   // No asignamos fecha de ejecución para un mantenimiento nuevo
+                fechaEjecucion = null,  // No asignamos fecha de ejecución para un mantenimiento nuevo
+                proximaEjecucion = null  // No asignamos próxima ejecución para un mantenimiento nuevo
+
             };
 
-            // Asignar el idEstatusPreventivo dependiendo de la semana
-            if (mantenimientoPreventivo.semanaPreventivo >= semanaActual)
+            if (mantenimientoPreventivoCreateDTO.idEstatusPreventivo == 3)
             {
-                mantenimientoPreventivo.idEstatusPreventivo = 1; // "Pendiente"
+                // Si el usuario marca "Realizado" desde el comienzo
+                mantenimientoPreventivo.idEstatusPreventivo = 3;
+                mantenimientoPreventivo.fechaEjecucion = DateTime.Now;
+
+                DateTime fechaActual = GetStartOfWeek(DateTime.Now.Year, mantenimientoPreventivo.semanaPreventivo);
+                // La "ejecución" se hace en la semana ingresada, sumamos la frecuencia para la próxima
+                switch (mantenimientoPreventivo.idFrecuenciaPreventivo)
+                {
+                    case 1: // Mensual
+                        fechaActual = fechaActual.AddMonths(1);
+                        break;
+                    case 2: // Bimestral
+                        fechaActual = fechaActual.AddMonths(2);
+                        break;
+                    case 3: // Trimestral
+                        fechaActual = fechaActual.AddMonths(3);
+                        break;
+                    case 4: // Anual
+                        fechaActual = fechaActual.AddYears(1);
+                        break;
+                }
+                // Actualizar la nueva semana y proximaEjecucion
+                mantenimientoPreventivo.proximaEjecucion = fechaActual;
+                mantenimientoPreventivo.semanaPreventivo = GetWeekOfYear(fechaActual);
+
+                // Asignar la última ejecución a la fecha actual
+                mantenimientoPreventivo.ultimaEjecucion = DateTime.Now;
             }
             else
             {
-                mantenimientoPreventivo.idEstatusPreventivo = 2; // "No realizado"
+                // Mantener la lógica actual para Pendiente o No realizado
+                if (mantenimientoPreventivo.semanaPreventivo >= semanaActual)
+                    mantenimientoPreventivo.idEstatusPreventivo = 1; // Pendiente
+                else
+                    mantenimientoPreventivo.idEstatusPreventivo = 2; // No realizado
             }
-
-            // Calcular la fecha de la ejecución (lunes de la semana)
-            DateTime fechaEjecucion = GetStartOfWeek(DateTime.Now.Year, mantenimientoPreventivo.semanaPreventivo);
-            mantenimientoPreventivo.fechaEjecucion = fechaEjecucion; // Asignamos la fecha de ejecución
-
-            // Calcular la proximaEjecucion en base a la frecuencia
-            DateTime proximaEjecucion = fechaEjecucion; // Inicializamos proximaEjecucion con la fecha de ejecución
-            int nuevaSemanaPreventivo = mantenimientoPreventivo.semanaPreventivo; // Inicializamos nueva semana con la actual
-
-            switch (mantenimientoPreventivo.idFrecuenciaPreventivo)
-            {
-                case 1: // Frecuencia Mensual
-                    proximaEjecucion = fechaEjecucion.AddMonths(1);
-                    break;
-
-                case 2: // Frecuencia Bimestral
-                    proximaEjecucion = fechaEjecucion.AddMonths(2);
-                    break;
-
-                case 3: // Frecuencia Trimestral
-                    proximaEjecucion = fechaEjecucion.AddMonths(3);
-                    break;
-
-                case 4: // Frecuencia Anual
-                    proximaEjecucion = fechaEjecucion.AddYears(1);
-                    break;
-
-                default:
-                    proximaEjecucion = DateTime.Now;
-                    break;
-            }
-
-            // Recalcular semana para la próxima ejecución
-            nuevaSemanaPreventivo = GetWeekOfYear(proximaEjecucion);
-
-            // Asignamos la próxima ejecución
-            mantenimientoPreventivo.proximaEjecucion = proximaEjecucion;
-            mantenimientoPreventivo.semanaPreventivo = nuevaSemanaPreventivo; // Asignamos la nueva semana
-
-            // Asignar la fecha de última ejecución, si aplica, de manera similar a la fecha de ejecución.
-            mantenimientoPreventivo.ultimaEjecucion = fechaEjecucion;
 
             // Llamar al repositorio para crear el mantenimiento preventivo
             var mantenimientoCreado = await _repository.CrearMantenimientoPreventico(mantenimientoPreventivo);
@@ -103,14 +94,42 @@ namespace Piolax_WebApp.Services.Impl
                 semanaPreventivo = mantenimientoCreado.semanaPreventivo,
                 Activo = mantenimientoCreado.Activo,
                 idEmpleado = mantenimientoCreado.idEmpleado,
-                rutaPDF = mantenimientoCreado.rutaPDF,
                 ultimaEjecucion = mantenimientoCreado.ultimaEjecucion,
                 proximaEjecucion = mantenimientoCreado.proximaEjecucion,
                 fechaEjecucion = mantenimientoCreado.fechaEjecucion,
-                idEstatusPreventivo = mantenimientoCreado.idEstatusPreventivo // Incluir el estatus en el DTO
+                idEstatusPreventivo = mantenimientoCreado.idEstatusPreventivo 
             };
 
             return mantenimientoPreventivoDTOResult;
+        }
+
+        // Método para marcar como realizado y recalcular la próxima semana
+        public async Task<bool> MarcarComoRealizado(int idMP)
+        {
+            var mantenimiento = await _repository.ConsultarMP(idMP);
+            if (mantenimiento == null) return false;
+
+            // Cambiar estatus
+            mantenimiento.idEstatusPreventivo = 3; // "Realizado"
+            mantenimiento.fechaEjecucion = DateTime.Now;
+
+            // AHORA que se marcó como realizado, calcula la próxima semana
+            DateTime fechaActualEjecucion = GetStartOfWeek(DateTime.Now.Year, mantenimiento.semanaPreventivo);
+            DateTime proximaFecha = fechaActualEjecucion;
+            switch (mantenimiento.idFrecuenciaPreventivo)
+            {
+                case 1: proximaFecha = fechaActualEjecucion.AddMonths(1); break;
+                case 2: proximaFecha = fechaActualEjecucion.AddMonths(2); break;
+                case 3: proximaFecha = fechaActualEjecucion.AddMonths(3); break;
+                case 4: proximaFecha = fechaActualEjecucion.AddYears(1); break;
+            }
+
+            // Y reasignar la semana del mantenimiento a la próxima
+            mantenimiento.semanaPreventivo = GetWeekOfYear(proximaFecha);
+            mantenimiento.proximaEjecucion = proximaFecha;
+
+            await _repository.Modificar(idMP, mantenimiento);
+            return true;
         }
 
 
@@ -151,7 +170,6 @@ namespace Piolax_WebApp.Services.Impl
                 idEmpleado = mantenimiento.idEmpleado,
                 nombreCompletoTecnicoMP = $"{empleado.nombre} {empleado.apellidoPaterno} {empleado.apellidoMaterno}", // Nombre completo del técnico
                 Activo = mantenimiento.Activo,
-                rutPDF = mantenimiento.rutaPDF,
                 ultimaEjecucion = mantenimiento.ultimaEjecucion,
                 proximaEjecucion = mantenimiento.proximaEjecucion,
                 fechaEjecucion = mantenimiento.fechaEjecucion
@@ -272,7 +290,6 @@ namespace Piolax_WebApp.Services.Impl
                 semanaPreventivo = mantenimientoExistente.semanaPreventivo,
                 Activo = mantenimientoExistente.Activo,
                 idEmpleado = mantenimientoExistente.idEmpleado,
-                rutaPDF = mantenimientoExistente.rutaPDF,
                 ultimaEjecucion = mantenimientoExistente.ultimaEjecucion,
                 proximaEjecucion = mantenimientoExistente.proximaEjecucion,
                 fechaEjecucion = mantenimientoExistente.fechaEjecucion,
@@ -299,31 +316,6 @@ namespace Piolax_WebApp.Services.Impl
             // Si se elimina con éxito, devolver true
             return true;
         }
-
-        // Método para marcar como realizado
-        public async Task<bool> MarcarComoRealizado(int idMP)
-        {
-            // Buscar el mantenimiento preventivo por ID
-            var mantenimiento = await _repository.ConsultarMP(idMP);
-
-            // Si no se encuentra el mantenimiento, retornar false
-            if (mantenimiento == null)
-            {
-                return false; // Mantenimiento no encontrado
-            }
-
-            // Cambiar el estatus a "Realizado"
-            mantenimiento.idEstatusPreventivo = 3; // "Realizado"
-
-            // Marcar la fecha de ejecución como la fecha actual
-            mantenimiento.fechaEjecucion = DateTime.Now;
-
-            // Guardar los cambios en la base de datos
-            await _repository.Modificar(idMP, mantenimiento);
-
-            return true; // Mantenimiento marcado como Realizado exitosamente
-        }
-
 
 
 

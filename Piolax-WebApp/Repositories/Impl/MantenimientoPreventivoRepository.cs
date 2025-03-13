@@ -17,7 +17,7 @@ namespace Piolax_WebApp.Repositories.Impl
         }
 
         // Método para consultar un mantenimiento preventivo con detalles
-        public async Task<MantenimientoPreventivo> ConsultarMP(int idMP)
+        public async Task<MantenimientoPreventivo?> ConsultarMP(int idMP)
         {
             return await _context.MantenimientoPreventivo
                 .Include(mp => mp.Area)
