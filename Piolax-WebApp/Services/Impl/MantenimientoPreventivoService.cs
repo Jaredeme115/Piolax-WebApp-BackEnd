@@ -83,11 +83,12 @@ namespace Piolax_WebApp.Services.Impl
             }
 
             // Llamar al repositorio para crear el mantenimiento preventivo
-            var mantenimientoCreado = await _repository.CrearMantenimientoPreventico(mantenimientoPreventivo);
+            var mantenimientoCreado = await _repository.CrearMantenimientoPreventivo(mantenimientoPreventivo);
 
             // Convertir la entidad MantenimientoPreventivo a DTO para devolverlo
             var mantenimientoPreventivoDTOResult = new MantenimientoPreventivoDTO
             {
+                idMP = mantenimientoCreado.idMP,
                 idArea = mantenimientoCreado.idArea,
                 idMaquina = mantenimientoCreado.idMaquina,
                 idFrecuenciaPreventivo = mantenimientoCreado.idFrecuenciaPreventivo,

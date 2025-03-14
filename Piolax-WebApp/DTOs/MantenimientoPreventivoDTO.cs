@@ -2,6 +2,7 @@
 {
     public class MantenimientoPreventivoDTO
     {
+        public int idMP { get; set; }
         public int idArea { get; set; }
         public int idMaquina { get; set; }
         public int semanaPreventivo { get; set; }

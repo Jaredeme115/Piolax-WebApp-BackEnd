@@ -23,7 +23,8 @@ namespace Piolax_WebApp.Controllers
             var mantenimientoPreventivoCreado = await _service.CrearMantenimientoPreventivo(mantenimientoPreventivoCreateDTO);
 
             // Si la creación es exitosa, devolver el DTO con los detalles del mantenimiento creado
-            return CreatedAtAction(nameof(CrearMantenimientoPreventivo), new { id = mantenimientoPreventivoCreado.idArea }, mantenimientoPreventivoCreado);
+            return CreatedAtAction(nameof(CrearMantenimientoPreventivo), new { id = mantenimientoPreventivoCreado.idMP }, mantenimientoPreventivoCreado);
+
         }
 
         // Método HTTP GET para consultar un mantenimiento preventivo con detalles

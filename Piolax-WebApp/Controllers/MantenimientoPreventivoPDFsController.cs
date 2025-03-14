@@ -1,5 +1,6 @@
 ﻿using Microsoft.AspNetCore.Mvc;
 using Piolax_WebApp.DTOs;
+using Piolax_WebApp.Models;
 using Piolax_WebApp.Services;
 
 namespace Piolax_WebApp.Controllers
@@ -9,14 +10,32 @@ namespace Piolax_WebApp.Controllers
         private readonly IMantenimientoPreventivoPDFsService _service = service;
 
         [HttpPost("AgregarMantenimientoPreventivoPDFs")]
-        public async Task<ActionResult<MantenimientoPreventivoPDFsDTO>> AgregarMantenimientoPreventivoPDFs(MantenimientoPreventivoPDFCrearDTO mantenimientoPreventivoPDFCrearDTO)
+        public async Task<ActionResult<MantenimientoPreventivoPDFs>> AgregarMantenimientoPreventivoPDFs(MantenimientoPreventivoPDFsDTO mantenimientoPreventivoPDFsDTO)
         {
-            if (!ModelState.IsValid)
+            try
             {
-                return BadRequest(ModelState);
+                if (!ModelState.IsValid)
+                {
+                    return BadRequest(ModelState);
+                }
+
+                var resultado = await _service.AgregarMantenimientoPreventivoPDFs(mantenimientoPreventivoPDFsDTO);
+
+                if (resultado == null)
+                {
+                    return StatusCode(500, "Error al guardar el PDF en la base de datos.");
+                }
+
+                return Ok(resultado);
             }
-            var mantenimientoPreventivoPDFsAgregado = await _service.AgregarMantenimientoPreventivoPDFs(mantenimientoPreventivoPDFCrearDTO);
-            return CreatedAtAction(nameof(AgregarMantenimientoPreventivoPDFs), new { id = mantenimientoPreventivoPDFsAgregado.idMP }, mantenimientoPreventivoPDFsAgregado);
+            catch (ArgumentException ex)
+            {
+                return BadRequest(ex.Message);
+            }
+            catch (Exception ex)
+            {
+                return StatusCode(500, $"Error interno del servidor: {ex.Message}");
+            }
         }
     }
 }

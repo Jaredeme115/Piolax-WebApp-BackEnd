@@ -9,7 +9,7 @@ namespace Piolax_WebApp.Repositories.Impl
         private readonly AppDbContext _context = context;
 
         // Método para crear un nuevo mantenimiento preventivo
-        public async Task<MantenimientoPreventivo> CrearMantenimientoPreventico(MantenimientoPreventivo mantenimientoPreventivo)
+        public async Task<MantenimientoPreventivo> CrearMantenimientoPreventivo(MantenimientoPreventivo mantenimientoPreventivo)
         {
             _context.MantenimientoPreventivo.Add(mantenimientoPreventivo);
             await _context.SaveChangesAsync();

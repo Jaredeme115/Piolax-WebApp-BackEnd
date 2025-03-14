@@ -8,29 +8,36 @@ namespace Piolax_WebApp.Services.Impl
     {
         private readonly IMantenimientoPreventivoPDFsRepository _repository = repository;
 
-        public async Task<MantenimientoPreventivoPDFsDTO> AgregarMantenimientoPreventivoPDFs(MantenimientoPreventivoPDFCrearDTO mantenimientoPreventivoCrearDTO)
+
+        public async Task<MantenimientoPreventivoPDFs> AgregarMantenimientoPreventivoPDFs(MantenimientoPreventivoPDFsDTO mantenimientoPreventivoPDFsDTO)
         {
+            // Validar si la rutaPDF es nula o vacía
+            if (string.IsNullOrWhiteSpace(mantenimientoPreventivoPDFsDTO.rutaPDF))
+            {
+                throw new ArgumentException("La ruta del PDF no puede estar vacía.");
+            }
+
+            // Validar si el idMP es válido
+            if (mantenimientoPreventivoPDFsDTO.idMP <= 0)
+            {
+                throw new ArgumentException("El ID del mantenimiento preventivo no es válido.");
+            }
+
             var mantenimientoPreventivoPDFs = new MantenimientoPreventivoPDFs
             {
-                idMP = mantenimientoPreventivoCrearDTO.idMP,
-                nombrePDF = null,
-                rutaPDF = mantenimientoPreventivoCrearDTO.rutaPDF
+                idMP = mantenimientoPreventivoPDFsDTO.idMP,
+                nombrePDF = ExtraerNombrePDF(mantenimientoPreventivoPDFsDTO.rutaPDF),
+                rutaPDF = mantenimientoPreventivoPDFsDTO.rutaPDF
             };
-            var mantenimientoPreventivoPDFsAgregado = await _repository.AgregarMantenimientoPreventivoPDFs(mantenimientoPreventivoPDFs);
-            return new MantenimientoPreventivoPDFsDTO
-            {
-                idMP = mantenimientoPreventivoPDFsAgregado.idMP,
-                rutaPDF = mantenimientoPreventivoPDFsAgregado.rutaPDF,
-                nombrePDF = ExtraerNombrePDF(mantenimientoPreventivoPDFsAgregado.rutaPDF)
-            };
+
+            return await _repository.AgregarMantenimientoPreventivoPDFs(mantenimientoPreventivoPDFs);
         }
 
-        // Mêtodo para extraer nombre de la URL 
-
+        // Método mejorado para extraer el nombre del PDF de la URL
         private string ExtraerNombrePDF(string rutaPDF)
         {
-            var nombrePDF = rutaPDF.Split("/").Last();
-            return nombrePDF;
+            return rutaPDF.Split('/').LastOrDefault() ?? "archivo_desconocido.pdf"; // Evita errores si la ruta no tiene "/"
         }
+
     }
 }

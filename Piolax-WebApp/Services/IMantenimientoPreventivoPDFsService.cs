@@ -7,7 +7,7 @@ namespace Piolax_WebApp.Services
     {
         //Task<IEnumerable<MantenimientoPreventivoPDFsDTO>> ObtenerTodosLosMantenimientoPreventivoPDFs();
         //Task<MantenimientoPreventivoPDFsDTO> ObtenerMantenimientoPreventivoPDFsPorID(int idMPPDF);
-        Task<MantenimientoPreventivoPDFsDTO> AgregarMantenimientoPreventivoPDFs(MantenimientoPreventivoPDFCrearDTO mantenimientoPreventivoCrearDTO);
+        Task<MantenimientoPreventivoPDFs> AgregarMantenimientoPreventivoPDFs(MantenimientoPreventivoPDFsDTO mantenimientoPreventivoPDFsDTO);
         //Task<MantenimientoPreventivoPDFs> EliminarMantenimientoPreventivoPDFs(int idMPPDF);
         //Task<MantenimientoPreventivoPDFsDTO> ConsultarPorNombrePDF(string nombrePDF);
     }
