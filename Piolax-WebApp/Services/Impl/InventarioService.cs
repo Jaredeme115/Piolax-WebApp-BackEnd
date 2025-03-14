@@ -225,9 +225,9 @@ namespace Piolax_WebApp.Services.Impl
         }
 
 
-        public async Task<IEnumerable<Inventario>> ConsultarRefaccionesPorFiltros(bool? piezaCritica, bool? inventarioActivoObsoleto)
+        public async Task<IEnumerable<Inventario>> ConsultarRefaccionesPorFiltros(bool? piezaCritica, bool? inventarioActivoObsoleto, string? proceso)
         {
-            return await _repository.ConsultarRefaccionesPorFiltros(piezaCritica, inventarioActivoObsoleto);
+            return await _repository.ConsultarRefaccionesPorFiltros(piezaCritica, inventarioActivoObsoleto, proceso);
         }
 
         public async Task<IEnumerable<string>> ConsultarNombresRefaccionesPorCategoria(int idCategoria)

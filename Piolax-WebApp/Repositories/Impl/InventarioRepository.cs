@@ -188,7 +188,7 @@ namespace Piolax_WebApp.Repositories.Impl
             return inventario.cantidadActual;
         }
 
-        public async Task<IEnumerable<Inventario>> ConsultarRefaccionesPorFiltros(bool? piezaCritica, bool? inventarioActivoObsoleto)
+        public async Task<IEnumerable<Inventario>> ConsultarRefaccionesPorFiltros(bool? piezaCritica, bool? inventarioActivoObsoleto, string? proceso)
         {
             // Partimos de un IQueryable para ir aplicando filtros condicionalmente
             var query = _context.Inventario.AsQueryable();
@@ -198,6 +198,9 @@ namespace Piolax_WebApp.Repositories.Impl
 
             if (inventarioActivoObsoleto.HasValue)
                 query = query.Where(x => x.inventarioActivoObsoleto == inventarioActivoObsoleto.Value);
+
+            if (!string.IsNullOrEmpty(proceso))
+                query = query.Where(x => x.proceso == proceso);
 
             return await query.ToListAsync();
         }

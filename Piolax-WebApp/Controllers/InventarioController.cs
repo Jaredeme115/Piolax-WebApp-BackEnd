@@ -136,9 +136,9 @@ namespace Piolax_WebApp.Controllers
 
         
         [HttpGet("filtrar-refacciones")]
-        public async Task<IActionResult> FiltrarRefacciones([FromQuery] bool? piezaCritica, [FromQuery] bool? inventarioObsoleto)
+        public async Task<IActionResult> FiltrarRefacciones([FromQuery] bool? piezaCritica, [FromQuery] bool? inventarioObsoleto, [FromQuery] string? proceso)
         {
-            var result = await _service.ConsultarRefaccionesPorFiltros(piezaCritica, inventarioObsoleto);
+            var result = await _service.ConsultarRefaccionesPorFiltros(piezaCritica, inventarioObsoleto, proceso);
             return Ok(result);
         }
 
