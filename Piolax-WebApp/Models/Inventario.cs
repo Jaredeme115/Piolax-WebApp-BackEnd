@@ -80,5 +80,7 @@ namespace Piolax_WebApp.Models
         public EstatusInventario EstatusInventario { get; set; } = EstatusInventario.Disponible; // Valor predeterminad
 
         public virtual ICollection<asignacion_refacciones> Asignacion_Refacciones { get; set; } = new List<asignacion_refacciones>(); // Lista de asignacion_refacciones asociados a Inventario
+
+        public virtual ICollection<MantenimientoPreventivo_Refacciones> MantenimientoPreventivo_Refacciones { get; set; } = new List<MantenimientoPreventivo_Refacciones>(); // Lista de MantenimientoPreventivo_Refacciones asociados a Inventario
     }
 }

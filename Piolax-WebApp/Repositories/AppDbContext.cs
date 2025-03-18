@@ -49,6 +49,8 @@ namespace Piolax_WebApp.Repositories
         public DbSet<EstatusPreventivo> EstatusPreventivo { get; set; } = default!;
         public DbSet<FrecuenciaMP> FrecuenciaMP { get; set; } = default!;
         public DbSet<MantenimientoPreventivoPDFs> MantenimientoPreventivoPDFs { get; set; } = default!;
+        public DbSet<ObservacionesMP> observacionesMPs { get; set; } = default!;
+        public DbSet<MantenimientoPreventivo_Refacciones> MantenimientoPreventivo_Refacciones { get; set; } = default!;
 
         //KPI´s Mantenimiento
         public DbSet<KpisMantenimiento> KpisMantenimiento { get; set; } = default!;
@@ -236,12 +238,31 @@ namespace Piolax_WebApp.Repositories
                .WithMany(e => e.MantenimientosPreventivos)
                .HasForeignKey(mp => mp.idEmpleado);
 
-            //
+            // Relacion entre MantenimientoPreventivoPDFs y MantenimientoPreventivo
 
             modelBuilder.Entity<MantenimientoPreventivoPDFs>()
                 .HasOne(mp => mp.MantenimientoPreventivos)
                 .WithMany(mpp => mpp.MantenimientoPreventivoPDFs)
                 .HasForeignKey(mp => mp.idMP);
+
+            // Relacion entre ObservacionesMP y MantenimientoPreventivo
+
+            modelBuilder.Entity<ObservacionesMP>()
+                .HasOne(mp => mp.MantenimientoPreventivos)
+                .WithMany(omp => omp.ObservacionesMP)
+                .HasForeignKey(mp => mp.idMP);
+
+            // Relacion entre MantenimientoPreventivo_Refacciones y MantenimientoPreventivo, Inventario
+
+            modelBuilder.Entity<MantenimientoPreventivo_Refacciones>()
+                .HasOne(mp => mp.MantenimientoPreventivos)
+                .WithMany(mpr => mpr.MantenimientoPreventivo_Refacciones)
+                .HasForeignKey(mp => mp.idMP);
+
+            modelBuilder.Entity<MantenimientoPreventivo_Refacciones>()
+                .HasOne(i => i.Inventario)
+                .WithMany(mpr => mpr.MantenimientoPreventivo_Refacciones)
+                .HasForeignKey(i => i.idRefaccion);
 
             // Configurar la relacion entre KpisMantenimiento y Empleados
             modelBuilder.Entity<KpisMantenimiento>()
