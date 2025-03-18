@@ -29,16 +29,12 @@ namespace Piolax_WebApp.Repositories.Impl
 
         // Método para modificar un mantenimiento preventivo
         // Método para modificar un mantenimiento preventivo
-        public async Task<MantenimientoPreventivo> Modificar(int idMP, MantenimientoPreventivo mantenimientoPreventivo)
+        public async Task<MantenimientoPreventivo?> Modificar(int idMP, MantenimientoPreventivo mantenimientoPreventivo)
         {
             var mantenimientoExistente = await _context.MantenimientoPreventivo.FindAsync(idMP);
 
-            if (mantenimientoExistente == null)
-            {
-                return null; // Si no existe el mantenimiento, devolvemos null
-            }
+            if (mantenimientoExistente == null) return null; // Retorna null si no existe
 
-            // Actualizamos las propiedades del mantenimiento preventivo existente
             mantenimientoExistente.semanaPreventivo = mantenimientoPreventivo.semanaPreventivo;
             mantenimientoExistente.idFrecuenciaPreventivo = mantenimientoPreventivo.idFrecuenciaPreventivo;
             mantenimientoExistente.idEstatusPreventivo = mantenimientoPreventivo.idEstatusPreventivo;
@@ -46,25 +42,31 @@ namespace Piolax_WebApp.Repositories.Impl
             mantenimientoExistente.ultimaEjecucion = mantenimientoPreventivo.ultimaEjecucion;
             mantenimientoExistente.proximaEjecucion = mantenimientoPreventivo.proximaEjecucion;
 
-            // Guardamos los cambios en la base de datos
             await _context.SaveChangesAsync();
-
-            return mantenimientoExistente; // Retornamos el mantenimiento modificado
+            return mantenimientoExistente; // Retorna el mantenimiento actualizado
         }
 
 
 
         // Método para eliminar un mantenimiento preventivo
-        public async Task<MantenimientoPreventivo> Eliminar(int idMP)
+        public async Task<bool> Eliminar(int idMP)
         {
             var mantenimientoPreventivo = await _context.MantenimientoPreventivo.FindAsync(idMP);
-            if (mantenimientoPreventivo != null)
-            {
-                _context.MantenimientoPreventivo.Remove(mantenimientoPreventivo); // Eliminar el mantenimiento
-                await _context.SaveChangesAsync(); // Guardar cambios
-            }
+            if (mantenimientoPreventivo == null) return false;
 
-            return mantenimientoPreventivo; // Devolvemos el mantenimiento eliminado (o null si no existía)
+            _context.MantenimientoPreventivo.Remove(mantenimientoPreventivo);
+            await _context.SaveChangesAsync();
+            return true;
+        }
+
+        public async Task<IEnumerable<MantenimientoPreventivo>> ConsultarTodosMPs()
+        {
+            return await _context.MantenimientoPreventivo
+                .Include(mp => mp.Area)
+                .Include(mp => mp.Maquina)
+                .Include(mp => mp.FrecuenciaMP)
+                .Include(mp => mp.EstatusPreventivo)
+                .ToListAsync();
         }
 
     }

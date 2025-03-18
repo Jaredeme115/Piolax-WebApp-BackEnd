@@ -17,6 +17,6 @@ namespace Piolax_WebApp.Models
 
         public int cantidad { get; set; }
 
-        public DateTime fechaSolicitud { get; set; }
+        public DateTime fechaUso { get; set; }
     }
 }
