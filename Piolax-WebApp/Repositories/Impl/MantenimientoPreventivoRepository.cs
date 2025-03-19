@@ -69,5 +69,17 @@ namespace Piolax_WebApp.Repositories.Impl
                 .ToListAsync();
         }
 
+        public async Task<IEnumerable<MantenimientoPreventivo>> ConsultarMantenimientosPorPeriodo(DateTime inicio, DateTime fin)
+        {
+            return await _context.MantenimientoPreventivo
+                .Include(mp => mp.Area)
+                .Include(mp => mp.Maquina)
+                .Include(mp => mp.FrecuenciaMP)
+                .Include(mp => mp.EstatusPreventivo)
+                .Where(mp => mp.fechaEjecucion >= inicio && mp.fechaEjecucion <= fin)
+                .ToListAsync();
+        }
+
+
     }
 }

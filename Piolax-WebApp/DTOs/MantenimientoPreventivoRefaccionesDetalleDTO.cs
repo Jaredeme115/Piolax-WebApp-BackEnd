@@ -6,6 +6,7 @@ namespace Piolax_WebApp.DTOs
     public class MantenimientoPreventivoRefaccionesDetalleDTO
     {
         public int idMPRefaccion { get; set; }
+
         public int idMP { get; set; }
 
         public int idRefaccion { get; set; }

@@ -81,7 +81,7 @@ namespace Piolax_WebApp.Controllers
                 return NotFound(new { success = false, message = "Mantenimiento no encontrado" });
             }
 
-            return Ok(new { success = true, message = "Mantenimiento marcado como Realizado" });
+            return Ok(new { success = true, message = "Mantenimiento marcado como Realizado y KPIs actualizados." });
         }
     }
 }

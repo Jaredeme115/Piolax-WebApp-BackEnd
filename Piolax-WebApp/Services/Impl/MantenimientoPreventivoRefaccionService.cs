@@ -19,7 +19,7 @@ namespace Piolax_WebApp.Services.Impl
             return await _repository.ConsultarRefaccionesMP(idMP);
         }
 
-        public async Task<MantenimientoPreventivoRefaccionesDTO> CrearRefaccionMP(MantenimientoPreventivo_Refacciones mantenimientoPreventivoRefacciones)
+        public async Task<MPRefaccionesResponseDTO> CrearRefaccionMP(MantenimientoPreventivo_Refacciones mantenimientoPreventivoRefacciones)
         {
             // Validar si el mantenimiento preventivo existe
             if (await _mantenimientoPreventivoRepository.ConsultarMP(mantenimientoPreventivoRefacciones.idMP) == null)
@@ -34,16 +34,6 @@ namespace Piolax_WebApp.Services.Impl
                 throw new ArgumentException("La refacción no existe en el inventario.");
             }
 
-            // Validar si hay suficiente cantidad en el inventario
-            if (inventario.cantidadActual < mantenimientoPreventivoRefacciones.cantidad)
-            {
-                throw new ArgumentException("No hay suficiente cantidad disponible en el inventario.");
-            }
-
-            // Restar la cantidad usada del inventario
-            inventario.cantidadActual -= mantenimientoPreventivoRefacciones.cantidad;
-            await _inventarioRepository.ActualizarInventario(inventario);
-
             // Crear el registro de refacción utilizada en el mantenimiento preventivo
             var refaccionMP = new MantenimientoPreventivo_Refacciones
             {
@@ -56,7 +46,7 @@ namespace Piolax_WebApp.Services.Impl
             var nuevaRefaccion = await _repository.CrearRefaccionMP(refaccionMP);
 
             // Mapear la entidad a DTO de respuesta
-            return new MantenimientoPreventivoRefaccionesDTO
+            return new MPRefaccionesResponseDTO
             {
                 idMPRefaccion = nuevaRefaccion.idMPRefaccion,
                 idMP = nuevaRefaccion.idMP,
@@ -64,6 +54,7 @@ namespace Piolax_WebApp.Services.Impl
                 cantidad = nuevaRefaccion.cantidad
             };
         }
+
 
         public async Task<IEnumerable<MantenimientoPreventivo_Refacciones>> ConsultarTodasLasRefacciones()
         {
@@ -75,14 +66,6 @@ namespace Piolax_WebApp.Services.Impl
             var refaccion = await _repository.ConsultarRefaccionPorId(idMPRefaccion);
             if (refaccion == null) return false;
 
-            // Devolver la cantidad eliminada al inventario
-            var inventario = await _inventarioRepository.ConsultarInventarioPorID(refaccion.idRefaccion);
-            if (inventario != null)
-            {
-                inventario.cantidadActual += refaccion.cantidad;
-                await _inventarioRepository.ActualizarInventario(inventario);
-            }
-
             return await _repository.EliminarRefaccionMP(idMPRefaccion);
         }
 
@@ -90,28 +73,6 @@ namespace Piolax_WebApp.Services.Impl
         {
             var existente = await _repository.ConsultarRefaccionPorId(mantenimientoPreventivoRefacciones.idMPRefaccion);
             if (existente == null) return false;
-
-            // Validar cambios en la cantidad
-            if (existente.cantidad != mantenimientoPreventivoRefacciones.cantidad)
-            {
-                var inventario = await _inventarioRepository.ConsultarInventarioPorID(existente.idRefaccion);
-                if (inventario == null)
-                {
-                    throw new ArgumentException("La refacción no existe en el inventario.");
-                }
-
-                int diferencia = mantenimientoPreventivoRefacciones.cantidad - existente.cantidad;
-
-                // Verificar si hay suficiente stock para aumentar la cantidad
-                if (diferencia > 0 && inventario.cantidadActual < diferencia)
-                {
-                    throw new ArgumentException("No hay suficiente cantidad en el inventario.");
-                }
-
-                // Actualizar el stock en el inventario
-                inventario.cantidadActual -= diferencia;
-                await _inventarioRepository.ActualizarInventario(inventario);
-            }
 
             return await _repository.ActualizarRefaccionMP(mantenimientoPreventivoRefacciones);
         }
@@ -130,6 +91,33 @@ namespace Piolax_WebApp.Services.Impl
                 cantidad = refaccion.cantidad
             };
         }
+
+        public async Task<bool> ConfirmarUsoDeRefacciones(int idMP)
+        {
+            var refacciones = await _repository.ConsultarRefaccionesMP(idMP);
+            if (!refacciones.Any()) return false;
+
+            foreach (var refaccion in refacciones)
+            {
+                var inventario = await _inventarioRepository.ConsultarInventarioPorID(refaccion.idRefaccion);
+                if (inventario == null)
+                {
+                    throw new ArgumentException($"La refacción con ID {refaccion.idRefaccion} no existe en el inventario.");
+                }
+
+                // Verificar si hay suficiente stock antes de descontar
+                if (inventario.cantidadActual < refaccion.cantidad)
+                {
+                    throw new ArgumentException($"Stock insuficiente para la refacción con ID {refaccion.idRefaccion}.");
+                }
+
+                // Descontar del inventario
+                await _inventarioRepository.ActualizarCantidadInventario(refaccion.idRefaccion, refaccion.cantidad);
+            }
+
+            return true;
+        }
+
     }
 }
 

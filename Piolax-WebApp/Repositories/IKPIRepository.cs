@@ -6,5 +6,7 @@ namespace Piolax_WebApp.Repositories
     {
         Task GuardarKPIMantenimiento(KpisMantenimiento kpiMantenimiento);
         Task GuardarKPIDetalles(int idKPIMantenimiento, List<KpisDetalle> kpiDetalles);
+        Task GuardarKPIPreventivo(KpisMP kpisMP);
+        Task GuardarKPIDetallesMP(int idKPIMP, List<KpisMPDetalle> kpiDetalles);
     }
 }

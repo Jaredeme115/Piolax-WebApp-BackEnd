@@ -11,7 +11,8 @@ namespace Piolax_WebApp.Services.Impl
         IMaquinasRepository maquinasRepository,
         IEmpleadoRepository empleadoRepository,
         IFrecuenciaMPRepository frecuenciaMPRepository,
-        IEstatusPreventivoRepository estatusPreventivoRepository): IMantenimientoPreventivoService
+        IEstatusPreventivoRepository estatusPreventivoRepository,
+        IKPIMantenimientoPreventivoService kPIMantenimientoPreventivoService): IMantenimientoPreventivoService
     {
         private readonly IMantenimientoPreventivoRepository _repository = repository;
         private readonly IAreasRepository _areasRepository = areasRepository;
@@ -19,6 +20,7 @@ namespace Piolax_WebApp.Services.Impl
         private readonly IEmpleadoRepository _empleadoRepository = empleadoRepository;
         private readonly IFrecuenciaMPRepository _frecuenciaRepository = frecuenciaMPRepository;
         private readonly IEstatusPreventivoRepository _estatusRepository = estatusPreventivoRepository;
+        private readonly IKPIMantenimientoPreventivoService _kpiMantenimientoPreventivoService = kPIMantenimientoPreventivoService;
 
         // Método para crear un mantenimiento preventivo
         public async Task<MantenimientoPreventivoDTO> CrearMantenimientoPreventivo(MantenimientoPreventivoCreateDTO mantenimientoPreventivoCreateDTO)
@@ -108,13 +110,14 @@ namespace Piolax_WebApp.Services.Impl
         public async Task<bool> MarcarComoRealizado(int idMP)
         {
             var mantenimiento = await _repository.ConsultarMP(idMP);
-            if (mantenimiento == null) return false;
+            if (mantenimiento == null)
+                return false;
 
-            // Cambiar estatus
+            // Cambiar estatus y asignar fecha de ejecución
             mantenimiento.idEstatusPreventivo = 3; // "Realizado"
             mantenimiento.fechaEjecucion = DateTime.Now;
 
-            // AHORA que se marcó como realizado, calcula la próxima semana
+            // Calcular la próxima fecha de ejecución según la frecuencia
             DateTime fechaActualEjecucion = GetStartOfWeek(DateTime.Now.Year, mantenimiento.semanaPreventivo);
             DateTime proximaFecha = fechaActualEjecucion;
             switch (mantenimiento.idFrecuenciaPreventivo)
@@ -125,14 +128,20 @@ namespace Piolax_WebApp.Services.Impl
                 case 4: proximaFecha = fechaActualEjecucion.AddYears(1); break;
             }
 
-            // Y reasignar la semana del mantenimiento a la próxima
             mantenimiento.semanaPreventivo = GetWeekOfYear(proximaFecha);
             mantenimiento.proximaEjecucion = proximaFecha;
 
+            // Actualizar el mantenimiento en la BD
             await _repository.Modificar(idMP, mantenimiento);
+
+            // Disparar el cálculo de KPIs en tiempo real
+            // Por ejemplo, calculamos los KPIs para el mes actual
+            DateTime inicioPeriodo = new DateTime(DateTime.Now.Year, DateTime.Now.Month, 1);
+            DateTime finPeriodo = inicioPeriodo.AddMonths(1).AddDays(-1);
+            await _kpiMantenimientoPreventivoService.CalcularYGuardarKPIs(inicioPeriodo, finPeriodo);
+
             return true;
         }
-
 
 
 
