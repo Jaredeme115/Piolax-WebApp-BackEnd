@@ -119,6 +119,10 @@ builder.Services.AddScoped<IMantenimientoPreventivoPDFsService, MantenimientoPre
 builder.Services.AddScoped<IMantenimientoPreventivoRefaccionesRepository, MantenimientoPreventivoRefaccionesRepository>();
 builder.Services.AddScoped<IMantenimientoPreventivoRefaccionesService, MantenimientoPreventivoRefaccionService>();
 
+//MantenimientoPreventivoObservaciones
+builder.Services.AddScoped<IObservacionesMPRepository, ObservacionesMPRepository>();
+builder.Services.AddScoped<IObservacionesMPService, ObservacionesMPService>();
+
 //KPI's 
 builder.Services.AddScoped<IKPIRepository, KPIRepository>();
 builder.Services.AddScoped<IKPIMantenimientoPreventivoService, KPIMantenimientoPreventivoService>();

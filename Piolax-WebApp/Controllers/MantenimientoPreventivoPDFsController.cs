@@ -10,7 +10,7 @@ namespace Piolax_WebApp.Controllers
         private readonly IMantenimientoPreventivoPDFsService _service = service;
 
         [HttpPost("AgregarMantenimientoPreventivoPDFs")]
-        public async Task<ActionResult<MantenimientoPreventivoPDFs>> AgregarMantenimientoPreventivoPDFs(MantenimientoPreventivoPDFsDTO mantenimientoPreventivoPDFsDTO)
+        public async Task<ActionResult<MantenimientoPreventivoPDFsDTO>> AgregarMantenimientoPreventivoPDFs(MantenimientoPreventivoPDFCrearDTO mantenimientoPreventivoPDFCrearDTO)
         {
             try
             {
@@ -19,18 +19,81 @@ namespace Piolax_WebApp.Controllers
                     return BadRequest(ModelState);
                 }
 
-                var resultado = await _service.AgregarMantenimientoPreventivoPDFs(mantenimientoPreventivoPDFsDTO);
+                var resultado = await _service.AgregarMantenimientoPreventivoPDFs(mantenimientoPreventivoPDFCrearDTO);
 
                 if (resultado == null)
                 {
                     return StatusCode(500, "Error al guardar el PDF en la base de datos.");
                 }
 
-                return Ok(resultado);
+                return Ok(new MantenimientoPreventivoPDFsDTO
+                {
+                    idMP = resultado.idMP,
+                    nombrePDF = resultado.nombrePDF,
+                    rutaPDF = resultado.rutaPDF
+                });
             }
             catch (ArgumentException ex)
             {
                 return BadRequest(ex.Message);
+            }
+            catch (Exception ex)
+            {
+                return StatusCode(500, $"Error interno del servidor: {ex.Message}");
+            }
+        }
+
+        [HttpGet("ObtenerTodosLosMantenimientoPreventivoPDFs")]
+        public async Task<ActionResult<IEnumerable<MantenimientoPreventivoPDFsDTO>>> ObtenerTodosLosMantenimientoPreventivoPDFs()
+        {
+            var resultado = await _service.ObtenerTodosLosMantenimientoPreventivoPDFs();
+            return Ok(resultado);
+        }
+
+        [HttpGet("ObtenerMantenimientoPreventivoPDFsPorID/{idMPPDF}")]
+        public async Task<ActionResult<MantenimientoPreventivoPDFsDTO>> ObtenerMantenimientoPreventivoPDFsPorID(int idMPPDF)
+        {
+            var resultado = await _service.ObtenerMantenimientoPreventivoPDFsPorID(idMPPDF);
+            if (resultado == null)
+            {
+                return NotFound($"No se encontró el PDF con ID {idMPPDF}.");
+            }
+            return Ok(resultado);
+        }
+
+        [HttpDelete("EliminarMantenimientoPreventivoPDFs/{idMPPDF}")]
+        public async Task<ActionResult<MantenimientoPreventivoPDFsDTO>> EliminarMantenimientoPreventivoPDFs(int idMPPDF)
+        {
+            var resultado = await _service.EliminarMantenimientoPreventivoPDFs(idMPPDF);
+            if (resultado == null)
+            {
+                return NotFound($"No se encontró el PDF con ID {idMPPDF}.");
+            }
+            return Ok(resultado);
+        }
+
+        [HttpGet("ConsultarPorNombrePDF/{nombrePDF}")]
+        public async Task<ActionResult<MantenimientoPreventivoPDFsDTO>> ConsultarPorNombrePDF(string nombrePDF)
+        {
+            var resultado = await _service.ConsultarPorNombrePDF(nombrePDF);
+            if (resultado == null)
+            {
+                return NotFound($"No se encontró el PDF con el nombre {nombrePDF}.");
+            }
+            return Ok(resultado);
+        }
+
+        [HttpGet("ObtenerPDFsPorMantenimientoPreventivo/{idMP}")]
+        public async Task<ActionResult<IEnumerable<MantenimientoPreventivoPDFsDTO>>> ObtenerPDFsPorMantenimientoPreventivo(int idMP)
+        {
+            try
+            {
+                var resultados = await _service.ObtenerPDFsPorMantenimientoPreventivo(idMP);
+                if (resultados == null || !resultados.Any())
+                {
+                    return NotFound("No se encontraron PDFs para este mantenimiento preventivo.");
+                }
+                return Ok(resultados);
             }
             catch (Exception ex)
             {

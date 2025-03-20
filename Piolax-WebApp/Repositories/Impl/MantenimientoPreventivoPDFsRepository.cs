@@ -54,6 +54,13 @@ namespace Piolax_WebApp.Repositories.Impl
             return await _context.MantenimientoPreventivoPDFs.FirstOrDefaultAsync(mppdf => mppdf.nombrePDF == nombrePDF);
         }
 
+        public async Task<IEnumerable<MantenimientoPreventivoPDFs>> ObtenerPDFsPorMantenimientoPreventivo(int idMP)
+        {
+            return await _context.MantenimientoPreventivoPDFs
+                .Where(mppdf => mppdf.idMP == idMP)
+                .ToListAsync();
+        }
+
 
     }
 }

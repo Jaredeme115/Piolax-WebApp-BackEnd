@@ -49,7 +49,7 @@ namespace Piolax_WebApp.Repositories
         public DbSet<EstatusPreventivo> EstatusPreventivo { get; set; } = default!;
         public DbSet<FrecuenciaMP> FrecuenciaMP { get; set; } = default!;
         public DbSet<MantenimientoPreventivoPDFs> MantenimientoPreventivoPDFs { get; set; } = default!;
-        public DbSet<ObservacionesMP> observacionesMPs { get; set; } = default!;
+        public DbSet<ObservacionesMP> ObservacionesMP { get; set; } = default!;
         public DbSet<MantenimientoPreventivo_Refacciones> MantenimientoPreventivo_Refacciones { get; set; } = default!;
 
         //KPI´s Mantenimiento Correctivo
