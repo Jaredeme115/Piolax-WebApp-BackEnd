@@ -142,6 +142,26 @@ namespace Piolax_WebApp.Services.Impl
                 cantidad = refaccion.cantidad
             });
         }
+
+        public async Task<IEnumerable<Asignacion_RefaccionesDetallesDTO>> ConsultarRefaccionesPorSolicitud(int idSolicitud)
+        {
+            var refacciones = await _repository.ConsultarRefaccionesPorSolicitud(idSolicitud);
+
+            if (!refacciones.Any())
+            {
+                return Enumerable.Empty<Asignacion_RefaccionesDetallesDTO>();
+            }
+
+            return refacciones.Select(refaccion => new Asignacion_RefaccionesDetallesDTO
+            {
+                idAsignacionRefaccion = refaccion.idAsignacionRefaccion,
+                idAsignacion = refaccion.idAsignacion,
+                idRefaccion = refaccion.idRefaccion,
+                nombreRefaccion = refaccion.Inventario.nombreProducto,
+                cantidad = refaccion.cantidad
+            });
+        }
+
     }
 
 }

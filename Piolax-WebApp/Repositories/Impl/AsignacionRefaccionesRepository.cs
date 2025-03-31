@@ -15,6 +15,21 @@ namespace Piolax_WebApp.Repositories.Impl
             .ToListAsync();
         }
 
+        public async Task<IEnumerable<asignacion_refacciones>> ConsultarRefaccionesPorSolicitud(int idSolicitud)
+        {
+            return await _context.asignacion_refacciones
+                .Where(r => _context.Asignaciones
+                    .Where(a => a.idSolicitud == idSolicitud)
+                    .Select(a => a.idAsignacion)
+                    .Contains(r.idAsignacion))
+                .Include(r => r.Inventario)
+                .ToListAsync();
+        }
+
+       
+
+
+
         public async Task<asignacion_refacciones> CrearAsignacionRefacciones(asignacion_refacciones asignacionRefacciones)
         {
             await _context.asignacion_refacciones.AddAsync(asignacionRefacciones);

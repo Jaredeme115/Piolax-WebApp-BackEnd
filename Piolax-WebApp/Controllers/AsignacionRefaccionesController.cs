@@ -38,5 +38,13 @@ namespace Piolax_WebApp.Controllers
         {
             return Ok(await _service.ConsultarRefaccionesConDetallesPorAsignacion(idAsignacion));
         }
+
+        [HttpGet("ConsultarRefaccionesPorSolicitud/{idSolicitud}")]
+        public async Task<ActionResult<IEnumerable<Asignacion_RefaccionesDetallesDTO>>> ConsultarRefaccionesPorSolicitud(int idSolicitud)
+        {
+            var resultado = await _service.ConsultarRefaccionesPorSolicitud(idSolicitud);
+            return Ok(resultado);
+        }
+
     }
 }
