@@ -170,25 +170,34 @@ string corsConfiguration = "_corsConfiguration";
 
 //Conexion con Localhost
 
-builder.Services.AddCors(options =>
+/*builder.Services.AddCors(options =>
     options.AddPolicy(name: corsConfiguration,
         cors => cors.WithOrigins("http://localhost:4200")
         .AllowAnyHeader()
         .AllowAnyMethod()
         .AllowCredentials()
     )
-);
+);*/
 
 
 //Conexion para exponer URL a internet  
 
-/*builder.Services.AddCors(options =>
+builder.Services.AddCors(options =>
 {
-    options.AddPolicy("AllowAll",
-        cors => cors.AllowAnyOrigin()
-                    .AllowAnyHeader()
-                    .AllowAnyMethod());
-});*/
+    options.AddPolicy(name: corsConfiguration, cors =>
+    {
+        cors
+            .SetIsOriginAllowed(origin =>
+            {
+                // Permite localhost y cualquier túnel de Cloudflare (trycloudflare.com)
+                return origin == "http://localhost:4200" ||
+                       new Uri(origin).Host.EndsWith("trycloudflare.com");
+            })
+            .AllowAnyHeader()
+            .AllowAnyMethod()
+            .AllowCredentials();
+    });
+});
 
 //Configuración de JWT
 
@@ -199,7 +208,9 @@ if (string.IsNullOrEmpty(tokenKey))
 }
 
 builder.Services.AddScoped<ITokenService, TokenService>();
-builder.Services.AddAuthentication(JwtBearerDefaults.AuthenticationScheme)
+
+//Localhost
+/*builder.Services.AddAuthentication(JwtBearerDefaults.AuthenticationScheme)
                 .AddJwtBearer(option =>
                 {
                     option.TokenValidationParameters = new TokenValidationParameters
@@ -212,7 +223,48 @@ builder.Services.AddAuthentication(JwtBearerDefaults.AuthenticationScheme)
                         ValidAudience = builder.Configuration["Jwt:Audience"], // Usar el Audience configurado
                         ClockSkew = TimeSpan.Zero
                     };
-});
+});*/
+
+//Exponer URL a internet
+builder.Services.AddAuthentication(JwtBearerDefaults.AuthenticationScheme)
+    .AddJwtBearer(options =>
+    {
+        //var tokenKey = builder.Configuration["TokenKey"];
+        options.TokenValidationParameters = new TokenValidationParameters
+        {
+            ValidateIssuerSigningKey = true,
+            IssuerSigningKey = new SymmetricSecurityKey(Encoding.UTF8.GetBytes(tokenKey)),
+            ValidateIssuer = true,
+            ValidateAudience = true,
+            ClockSkew = TimeSpan.Zero,
+
+            // Validación dinámica de Issuer
+            IssuerValidator = (issuer, token, parameters) =>
+            {
+                if (issuer.StartsWith("https://localhost") || issuer.Contains("trycloudflare.com"))
+                {
+                    return issuer;
+                }
+
+                throw new SecurityTokenInvalidIssuerException("Issuer no válido.");
+            },
+
+            // Validación dinámica de Audience
+            AudienceValidator = (audiences, token, parameters) =>
+            {
+                foreach (var audience in audiences)
+                {
+                    if (audience.StartsWith("https://localhost") || audience.Contains("trycloudflare.com"))
+                    {
+                        return true;
+                    }
+                }
+
+                return false;
+            }
+        };
+    });
+
 
 //Configuración de roles
 
@@ -232,11 +284,11 @@ if (app.Environment.IsDevelopment())
 
 app.UseHttpsRedirection();
 
-//Para conexion con localhost
+//Para conexion con localhost y url publica
 app.UseCors(corsConfiguration);
 
 //Para exponer URL publica
-//app.UseCors("AllowAll");
+//app.UseCors("AllowLocalTunnel");
 
 app.UseAuthentication();
 
@@ -245,6 +297,6 @@ app.UseAuthorization();
 app.MapControllers();
 
 // Endpoint de SignalR
-app.MapHub<NotificationHub>("/notificationHub");
+//app.MapHub<NotificationHub>("/notificationHub");
 
 app.Run();

@@ -14,7 +14,7 @@
         public string nombreEstatusPreventivo { get; set; }
         public int idEmpleado { get; set; }
         public string nombreCompletoTecnicoMP { get; set; }
-        public bool Activo { get; set; } = true;
+        public bool activo { get; set; } = true;
         public DateTime? ultimaEjecucion { get; set; }
         public DateTime? proximaEjecucion { get; set; }
         public DateTime? fechaEjecucion { get; set; }

@@ -8,6 +8,6 @@
         public int idFrecuenciaPreventivo { get; set; }
         public int? idEstatusPreventivo { get; set; }
         public int idEmpleado { get; set; }
-        public bool Activo { get; set; } = true;
+        public bool activo { get; set; } = true;
     }
 }

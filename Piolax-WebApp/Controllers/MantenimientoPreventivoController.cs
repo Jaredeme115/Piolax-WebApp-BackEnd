@@ -83,5 +83,88 @@ namespace Piolax_WebApp.Controllers
 
             return Ok(new { success = true, message = "Mantenimiento marcado como Realizado y KPIs actualizados." });
         }
+
+
+        [HttpGet("ConsultarTodos")]
+        public async Task<ActionResult<IEnumerable<MantenimientoPreventivoDetallesDTO>>> ConsultarTodos()
+        {
+            try
+            {
+                var listaDto = await _service.ConsultarTodosMPsDTO();
+                return Ok(listaDto);
+            }
+            catch (Exception ex)
+            {
+                return StatusCode(500, $"Error interno del servidor: {ex.Message}");
+            }
+        }
+
+        /*[HttpGet("MostrarMPsAsignados/{idEmpleado}")]
+        public async Task<IEnumerable<MantenimientoPreventivoDetallesDTO>> MostrarMPsAsignados(int idEmpleado)
+        {
+            try
+            {
+                var listaDto = await _service.MostrarMPsAsignados(idEmpleado);
+                return Ok(listaDto);
+            }
+            catch (Exception ex)
+            {
+                return StatusCode(500, $"Error interno del servidor: {ex.Message}");
+            }
+
+        }*/
+
+        [HttpPut("ActivarMP/{idMP}")]
+        public async Task<IActionResult> ActivarMP(int idMP)
+        {
+            try
+            {
+                var dto = await _service.ActivarMantenimientoPreventivo(idMP);
+                if (dto == null)
+                    return NotFound($"No se encontró MP con id {idMP}.");
+
+                return Ok(dto);
+            }
+            catch (Exception ex)
+            {
+                return StatusCode(500, ex.Message);
+            }
+        }
+
+        [HttpPut("DesactivarMP/{idMP}")]
+        public async Task<IActionResult> DesactivarMP(int idMP)
+        {
+            try
+            {
+                var dto = await _service.DesactivarMantenimientoPreventivo(idMP);
+                if (dto == null) return NotFound($"No se encontró MP con id {idMP}");
+                return Ok(dto);
+            }
+            catch (Exception ex)
+            {
+                return StatusCode(500, ex.Message);
+            }
+        }
+
+        [HttpPut("CambiarEstatusEnProceso/{idMP}")]
+        public async Task<IActionResult> CambiarEstatusEnProceso(int idMP)
+        {
+            var mpActualizado = await _service.CambiarEstatusEnProceso(idMP);
+
+            if (mpActualizado == null)
+                return NotFound();
+
+            return Ok(mpActualizado);
+        }
+
+        [HttpPut("CancelarMPEnProceso/{idMP}")]
+        public async Task<IActionResult> CancelarMantenimientoEnProceso(int idMP)
+        {
+            var mp = await _service.CancelarMantenimientoEnProceso(idMP);
+            if (mp == null) return NotFound();
+            return Ok(mp);
+        }
+
+
     }
 }

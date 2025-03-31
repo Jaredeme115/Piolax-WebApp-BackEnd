@@ -30,7 +30,7 @@ namespace Piolax_WebApp.Models
         public int idEstatusPreventivo { get; set; }
         public EstatusPreventivo EstatusPreventivo { get; set; }
 
-        public bool Activo { get; set; } = true;
+        public bool activo { get; set; } = true;
 
         public DateTime? ultimaEjecucion { get; set; }
         public DateTime? proximaEjecucion { get; set; }

@@ -11,7 +11,7 @@ namespace Piolax_WebApp.DTOs
 
         public int semanaPreventivo { get; set; }
 
-        public bool Activo { get; set; }
+        public bool activo { get; set; }
 
         public int idEmpleado { get; set; }
 

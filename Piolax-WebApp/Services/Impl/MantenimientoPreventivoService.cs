@@ -35,7 +35,7 @@ namespace Piolax_WebApp.Services.Impl
                 idMaquina = mantenimientoPreventivoCreateDTO.idMaquina,
                 idFrecuenciaPreventivo = mantenimientoPreventivoCreateDTO.idFrecuenciaPreventivo,
                 semanaPreventivo = mantenimientoPreventivoCreateDTO.semanaPreventivo,
-                Activo = mantenimientoPreventivoCreateDTO.Activo,
+                activo = mantenimientoPreventivoCreateDTO.activo,
                 idEmpleado = mantenimientoPreventivoCreateDTO.idEmpleado,
 
                 // No asignamos fecha de ejecución / pró para un mantenimiento nuevo
@@ -95,7 +95,7 @@ namespace Piolax_WebApp.Services.Impl
                 idMaquina = mantenimientoCreado.idMaquina,
                 idFrecuenciaPreventivo = mantenimientoCreado.idFrecuenciaPreventivo,
                 semanaPreventivo = mantenimientoCreado.semanaPreventivo,
-                Activo = mantenimientoCreado.Activo,
+                activo = mantenimientoCreado.activo,
                 idEmpleado = mantenimientoCreado.idEmpleado,
                 ultimaEjecucion = mantenimientoCreado.ultimaEjecucion,
                 proximaEjecucion = mantenimientoCreado.proximaEjecucion,
@@ -179,7 +179,7 @@ namespace Piolax_WebApp.Services.Impl
                 nombreEstatusPreventivo = estatus?.nombreEstatusPreventivo, // Descripción del estatus
                 idEmpleado = mantenimiento.idEmpleado,
                 nombreCompletoTecnicoMP = $"{empleado.nombre} {empleado.apellidoPaterno} {empleado.apellidoMaterno}", // Nombre completo del técnico
-                Activo = mantenimiento.Activo,
+                activo = mantenimiento.activo,
                 ultimaEjecucion = mantenimiento.ultimaEjecucion,
                 proximaEjecucion = mantenimiento.proximaEjecucion,
                 fechaEjecucion = mantenimiento.fechaEjecucion
@@ -244,7 +244,7 @@ namespace Piolax_WebApp.Services.Impl
 
             // Asignamos los demás campos que pueden haberse actualizado
             mantenimientoExistente.semanaPreventivo = mantenimientoPreventivoModificarDTO.semanaPreventivo;
-            mantenimientoExistente.Activo = mantenimientoPreventivoModificarDTO.Activo;
+            mantenimientoExistente.activo = mantenimientoPreventivoModificarDTO.activo;
 
             // Verificamos si el técnico ha cambiado, y si es así, actualizamos
             if (mantenimientoPreventivoModificarDTO.idEmpleado != 0)
@@ -298,7 +298,7 @@ namespace Piolax_WebApp.Services.Impl
             {
                 idFrecuenciaPreventivo = mantenimientoExistente.idFrecuenciaPreventivo,
                 semanaPreventivo = mantenimientoExistente.semanaPreventivo,
-                Activo = mantenimientoExistente.Activo,
+                activo = mantenimientoExistente.activo,
                 idEmpleado = mantenimientoExistente.idEmpleado,
                 ultimaEjecucion = mantenimientoExistente.ultimaEjecucion,
                 proximaEjecucion = mantenimientoExistente.proximaEjecucion,
@@ -327,6 +327,190 @@ namespace Piolax_WebApp.Services.Impl
             return true;
         }
 
+        public async Task<IEnumerable<MantenimientoPreventivoDetallesDTO>> ConsultarTodosMPsDTO()
+        {
+            var lista = await _repository.ConsultarTodosMPs();
+
+            var listaDto = lista.Select(mp => new MantenimientoPreventivoDetallesDTO
+            {
+                idMP = mp.idMP,
+                idArea = mp.idArea,
+                nombreArea = mp.Area?.nombreArea ?? "",
+                idMaquina = mp.idMaquina,
+                nombreMaquina = mp.Maquina?.nombreMaquina ?? "",
+                semanaPreventivo = mp.semanaPreventivo,
+                idFrecuenciaPreventivo = mp.idFrecuenciaPreventivo,
+                nombreFrecuenciaPreventivo = mp.FrecuenciaMP?.nombreFrecuenciaMP ?? "",
+                idEstatusPreventivo = mp.idEstatusPreventivo,
+                nombreEstatusPreventivo = mp.EstatusPreventivo?.nombreEstatusPreventivo ?? "",
+                idEmpleado = mp.idEmpleado,
+                nombreCompletoTecnicoMP = mp.Empleado == null
+                    ? ""
+                    : $"{mp.Empleado.nombre} {mp.Empleado.apellidoPaterno} {mp.Empleado.apellidoMaterno}",
+                activo = mp.activo,
+                ultimaEjecucion = mp.ultimaEjecucion,
+                proximaEjecucion = mp.proximaEjecucion,
+                fechaEjecucion = mp.fechaEjecucion
+            });
+
+            return listaDto;
+        }
+
+        public async Task<IEnumerable<MantenimientoPreventivoDetallesDTO>> MostrarMPsAsignados(int idEmpleado)
+        {
+            // 1. Llamar al repositorio para obtener la lista de mantenimientos asignados al empleado
+            var mantenimientos = await _repository.MostrarMPsAsignados(idEmpleado);
+
+            // 2. Convertir la lista de entidades a DTOs (MantenimientoPreventivoDetallesDTO)
+            var resultado = mantenimientos.Select(mp => new MantenimientoPreventivoDetallesDTO
+            {
+                idMP = mp.idMP,
+                idArea = mp.idArea,
+                nombreArea = mp.Area?.nombreArea,      // Relación con área
+                idMaquina = mp.idMaquina,
+                nombreMaquina = mp.Maquina?.nombreMaquina,
+                idFrecuenciaPreventivo = mp.idFrecuenciaPreventivo,
+                nombreFrecuenciaPreventivo = mp.FrecuenciaMP?.nombreFrecuenciaMP,
+                idEstatusPreventivo = mp.idEstatusPreventivo,
+                nombreEstatusPreventivo = mp.EstatusPreventivo?.nombreEstatusPreventivo,
+                idEmpleado = mp.idEmpleado,
+                nombreCompletoTecnicoMP = mp.Empleado != null
+                    ? mp.Empleado.nombre + " " + mp.Empleado.apellidoPaterno
+                    : string.Empty,
+                ultimaEjecucion = mp.ultimaEjecucion,
+                proximaEjecucion = mp.proximaEjecucion,
+                fechaEjecucion = mp.fechaEjecucion,
+                semanaPreventivo = mp.semanaPreventivo
+            });
+
+            return resultado;
+        }
+
+        public async Task<MantenimientoPreventivoDetallesDTO> ActivarMantenimientoPreventivo(int idMP)
+        {
+            // 1) Llamamos al repositorio para activar el MP
+            var mp = await _repository.ActivarMP(idMP);
+            if (mp == null)
+                return null; // o lanzar excepción si prefieres
+
+            // 2) Cargar la relación si lo requieres (Empleado, Área, etc.) 
+            //    o usar un Include en 'ActivarMP' si no dispones de mp con toda la información.
+            //    Aquí asumo que mp viene con la información necesaria,
+            //    o la consultas aparte con un Include. Ejemplo:
+            //mp = await _context.MantenimientoPreventivo
+            //       .Include(m => m.Area)
+            //       .Include(m => m.Maquina)
+            //       .Include(m => m.Empleado)
+            //       .FirstOrDefaultAsync(m => m.idMP == idMP);
+
+            // 3) Mapear la entidad a DTO
+            var dto = new MantenimientoPreventivoDetallesDTO
+            {
+                idMP = mp.idMP,
+                idArea = mp.idArea,
+                nombreArea = mp.Area?.nombreArea ?? "",
+                idMaquina = mp.idMaquina,
+                nombreMaquina = mp.Maquina?.nombreMaquina ?? "",
+                semanaPreventivo = mp.semanaPreventivo,
+                idFrecuenciaPreventivo = mp.idFrecuenciaPreventivo,
+                // FrecuenciaMP?: mp.FrecuenciaMP?.nombreFrecuenciaMP
+                idEstatusPreventivo = mp.idEstatusPreventivo,
+                // nombreEstatusPreventivo = mp.EstatusPreventivo?.nombreEstatusPreventivo
+                idEmpleado = mp.idEmpleado,
+                nombreCompletoTecnicoMP = mp.Empleado == null
+                    ? ""
+                    : $"{mp.Empleado.nombre} {mp.Empleado.apellidoPaterno} {mp.Empleado.apellidoMaterno}",
+                activo = mp.activo,
+                ultimaEjecucion = mp.ultimaEjecucion,
+                proximaEjecucion = mp.proximaEjecucion,
+                fechaEjecucion = mp.fechaEjecucion
+            };
+
+            // 4) Retornar el DTO
+            return dto;
+        }
+
+        public async Task<MantenimientoPreventivoDetallesDTO> DesactivarMantenimientoPreventivo(int idMP)
+        {
+            var mp = await _repository.DesactivarMP(idMP);
+            if (mp == null) return null;
+
+            // Opcionalmente, incluir .Include(...) si quieres mapear Empleado, Área, etc.
+            return new MantenimientoPreventivoDetallesDTO
+            {
+                idMP = mp.idMP,
+                idArea = mp.idArea,
+                nombreArea = mp.Area?.nombreArea ?? "",
+                idMaquina = mp.idMaquina,
+                nombreMaquina = mp.Maquina?.nombreMaquina ?? "",
+                semanaPreventivo = mp.semanaPreventivo,
+                idFrecuenciaPreventivo = mp.idFrecuenciaPreventivo,
+                // FrecuenciaMP?: mp.FrecuenciaMP?.nombreFrecuenciaMP
+                idEstatusPreventivo = mp.idEstatusPreventivo,
+                // nombreEstatusPreventivo = mp.EstatusPreventivo?.nombreEstatusPreventivo
+                idEmpleado = mp.idEmpleado,
+                nombreCompletoTecnicoMP = mp.Empleado == null
+                    ? ""
+                    : $"{mp.Empleado.nombre} {mp.Empleado.apellidoPaterno} {mp.Empleado.apellidoMaterno}",
+                activo = mp.activo,
+                ultimaEjecucion = mp.ultimaEjecucion,
+                proximaEjecucion = mp.proximaEjecucion,
+                fechaEjecucion = mp.fechaEjecucion
+            };
+        }
+
+        public async Task<MantenimientoPreventivoDetallesDTO> CambiarEstatusEnProceso(int idMP)
+        {
+            var mp = await _repository.CambiarEstatusEnProceso(idMP);
+
+            if (mp == null) return null;
+
+            return new MantenimientoPreventivoDetallesDTO
+            {
+                idMP = mp.idMP,
+                idArea = mp.idArea,
+                nombreArea = mp.Area?.nombreArea ?? "",
+                idMaquina = mp.idMaquina,
+                nombreMaquina = mp.Maquina?.nombreMaquina ?? "",
+                semanaPreventivo = mp.semanaPreventivo,
+                idFrecuenciaPreventivo = mp.idFrecuenciaPreventivo,
+                idEstatusPreventivo = mp.idEstatusPreventivo,
+                idEmpleado = mp.idEmpleado,
+                nombreCompletoTecnicoMP = mp.Empleado == null
+                    ? ""
+                    : $"{mp.Empleado.nombre} {mp.Empleado.apellidoPaterno} {mp.Empleado.apellidoMaterno}",
+                activo = mp.activo,
+                ultimaEjecucion = mp.ultimaEjecucion,
+                proximaEjecucion = mp.proximaEjecucion,
+                fechaEjecucion = mp.fechaEjecucion
+            };
+        }
+
+        public async Task<MantenimientoPreventivoDetallesDTO> CancelarMantenimientoEnProceso(int idMP)
+        {
+            var mp = await _repository.CancelarMantenimientoEnProceso(idMP);
+            if (mp == null) return null;
+
+            return new MantenimientoPreventivoDetallesDTO
+            {
+                idMP = mp.idMP,
+                idArea = mp.idArea,
+                nombreArea = mp.Area?.nombreArea ?? "",
+                idMaquina = mp.idMaquina,
+                nombreMaquina = mp.Maquina?.nombreMaquina ?? "",
+                semanaPreventivo = mp.semanaPreventivo,
+                idFrecuenciaPreventivo = mp.idFrecuenciaPreventivo,
+                idEstatusPreventivo = mp.idEstatusPreventivo,
+                idEmpleado = mp.idEmpleado,
+                nombreCompletoTecnicoMP = mp.Empleado == null
+                    ? ""
+                    : $"{mp.Empleado.nombre} {mp.Empleado.apellidoPaterno} {mp.Empleado.apellidoMaterno}",
+                activo = mp.activo,
+                ultimaEjecucion = mp.ultimaEjecucion,
+                proximaEjecucion = mp.proximaEjecucion,
+                fechaEjecucion = mp.fechaEjecucion
+            };
+        }
 
 
         //Obtener la semana actual

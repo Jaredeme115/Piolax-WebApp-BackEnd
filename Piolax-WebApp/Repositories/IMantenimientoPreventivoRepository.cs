@@ -10,6 +10,11 @@ namespace Piolax_WebApp.Repositories
        Task<MantenimientoPreventivo> Modificar(int idMP, MantenimientoPreventivo mantenimientoPreventivo);
        Task<bool> Eliminar(int idMP);
        Task<IEnumerable<MantenimientoPreventivo>> ConsultarTodosMPs();
+       Task<IEnumerable<MantenimientoPreventivo>> MostrarMPsAsignados(int idEmpleado);
        Task<IEnumerable<MantenimientoPreventivo>> ConsultarMantenimientosPorPeriodo(DateTime inicio, DateTime fin);
+       Task<MantenimientoPreventivo> ActivarMP(int idMP);
+       Task<MantenimientoPreventivo> DesactivarMP(int idMP);
+       Task<MantenimientoPreventivo> CambiarEstatusEnProceso(int idMP);
+       Task<MantenimientoPreventivo> CancelarMantenimientoEnProceso(int idMP);
     }
 }

@@ -15,6 +15,10 @@
       "launchBrowser": true,
       "launchUrl": "swagger",
       "applicationUrl": "http://localhost:5265",
+
+      //CloudFlare
+      //"applicationUrl": "http://0.0.0.0:5265",
+
       "environmentVariables": {
         "ASPNETCORE_ENVIRONMENT": "Development"
       }
@@ -25,6 +29,10 @@
       "launchBrowser": true,
       "launchUrl": "swagger",
       "applicationUrl": "https://localhost:7208;http://localhost:5265",
+
+      //CloudFlare
+      //"applicationUrl": "https://0.0.0.0:7208;http://0.0.0.0:5265",
+
       "environmentVariables": {
         "ASPNETCORE_ENVIRONMENT": "Development"
       }
