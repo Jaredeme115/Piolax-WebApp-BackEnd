@@ -544,6 +544,29 @@ namespace Piolax_WebApp.Controllers
             }
         }
 
+        [HttpGet("ObtenerEmpleadosPorArea/{idArea}")]
+        public async Task<ActionResult<IEnumerable<EmpleadoNombreCompletoDTO>>> ObtenerEmpleadosPorArea(int idArea)
+        {
+            var empleados = await _empleadoAreaRolService.ObtenerEmpleadosPorArea(idArea);
+
+            if (empleados == null || !empleados.Any())
+            {
+                return NotFound("No se encontraron empleados en el área especificada.");
+            }
+
+            // Transformar Empleado a EmpleadoNombreCompletoDTO
+            var empleadosDTO = empleados.Select(emp => new EmpleadoNombreCompletoDTO
+            {
+                idEmpleado = emp.idEmpleado,
+                nombre = emp.nombre,
+                apellidoPaterno = emp.apellidoPaterno,
+                apellidoMaterno = emp.apellidoMaterno,
+                nombreCompleto = $"{emp.nombre} {emp.apellidoPaterno} {emp.apellidoMaterno}".Trim()
+            }).ToList();
+
+            return Ok(empleadosDTO);
+        }
+        
     }
 }
 

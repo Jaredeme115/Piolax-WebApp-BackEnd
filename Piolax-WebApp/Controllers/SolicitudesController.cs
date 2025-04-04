@@ -132,6 +132,12 @@ namespace Piolax_WebApp.Controllers
             return Ok(solicitudes);
         }
 
+        [HttpPost("crear")]
+        public async Task<IActionResult> Crear([FromBody] SolicitudesDTO dto)
+        {
+            var resultado = await _service.RegistrarSolicitud(dto);
+            return Ok(resultado);
+        }
 
     }
 }

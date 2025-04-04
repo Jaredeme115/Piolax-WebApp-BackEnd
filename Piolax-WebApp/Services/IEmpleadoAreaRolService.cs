@@ -27,9 +27,11 @@ namespace Piolax_WebApp.Services
         //Metodo para obtener el area de un empleado
         Task<IEnumerable<Areas>> ObtenerAreaPorEmpleado(string numNomina);
 
+        //Task<List<EmpleadoAreaRol>> ObtenerPorAreaYRol(int idArea, int idRol); //
 
         //Metodo para obtener la informacion detallada de todos los empleados (area y rol incluido)
         Task<IEnumerable<EmpleadoAreaRol>> ConsultarTodosConDetalles();
+        Task<IEnumerable<EmpleadoNombreCompletoDTO>> ObtenerEmpleadosPorArea(int idArea);
 
     }
 }

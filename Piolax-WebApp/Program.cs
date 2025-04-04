@@ -108,7 +108,11 @@ builder.Services.AddScoped<IKPIRepository, KPIRepository>();
 
 //Notificaciones
 builder.Services.AddScoped<NewRequestNotificationService>();
+builder.Services.AddScoped<INotificacionService, NotificacionService>();
+builder.Services.AddSignalR();
 
+//Dash
+builder.Services.AddScoped<IDashboardService, DashboardService>();
 
 
 builder.Services.AddEndpointsApiExplorer();
@@ -213,6 +217,7 @@ app.UseHttpsRedirection();
 
 //Para conexion con localhost
 app.UseCors(corsConfiguration);
+app.UseCors("AllowAngular"); // Asegúrate de permitir tu frontend
 
 //Para exponer URL publica
 //app.UseCors("AllowAll");
