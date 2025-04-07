@@ -48,9 +48,7 @@ namespace Piolax_WebApp.Repositories
         public DbSet<KpisMantenimiento> KpisMantenimiento { get; set; } = default!;
         public DbSet<KpisDetalle> KpisDetalle { get; set; } = default!;
 
-        //NOTIFICACIONES_APP
-        public DbSet<Notificacion> Notificaciones { get; set; }
-        public DbSet<EstadoNotificacion> EstadoNotificaciones { get; set; }
+
 
         protected override void OnModelCreating(ModelBuilder modelBuilder)
         {
@@ -185,11 +183,6 @@ namespace Piolax_WebApp.Repositories
                 .WithOne(at => at.StatusAprobacionTecnico)
                 .HasForeignKey(at => at.idStatusAprobacionTecnico);
 
-            // Configurar la relación entre notificación y empleado 
-            modelBuilder.Entity<Empleado>()
-                .HasMany(noti => noti.Notificaciones)
-                .WithOne(e => e.Empleado)
-                .HasForeignKey(e => e.idEmpleado);
 
             // Configurar la relación entre EstatusInventario, Inventario
             modelBuilder.Entity<Inventario>()

@@ -1,7 +1,4 @@
-﻿using Microsoft.AspNetCore.SignalR;
-using Microsoft.EntityFrameworkCore;
-using Piolax_WebApp.DTOs;
-using Piolax_WebApp.Hubs;
+﻿using Piolax_WebApp.DTOs;
 using Piolax_WebApp.Models;
 using Piolax_WebApp.Repositories;
 using Piolax_WebApp.Repositories.Impl;
@@ -17,12 +14,8 @@ namespace Piolax_WebApp.Services.Impl
         IStatusOrdenService statusOrdenService,
         IStatusAprobacionSolicitanteService statusAprobacionSolicitanteService,
         ICategoriaTicketService categoriaTicketService,
-        IAsignacionRepository asignacionRepository,
-        INotificacionService notificacionService,
-        IHubContext<NotificationHub> hubContext
-
-        ) : ISolicitudService 
-
+        IAsignacionRepository asignacionRepository
+        ) : ISolicitudService
     {
         private readonly ISolicitudesRepository _repository = repository;
         private readonly IEmpleadoService _empleadoService = empleadoService;
@@ -33,10 +26,6 @@ namespace Piolax_WebApp.Services.Impl
         private readonly IStatusAprobacionSolicitanteService _statusAprobacionSolicitanteService = statusAprobacionSolicitanteService;
         private readonly ICategoriaTicketService _categoriaTicketService = categoriaTicketService;
         private readonly IAsignacionRepository _asignacionRepository = asignacionRepository;
-        private readonly INotificacionService _notificacionService = notificacionService;
-        private readonly IHubContext<NotificationHub> hubContext;
-        // ...
-
 
         public async Task<SolicitudesDetalleDTO> RegistrarSolicitud(SolicitudesDTO solicitudesDTO)
         {
@@ -92,15 +81,6 @@ namespace Piolax_WebApp.Services.Impl
             var statusAprobacionSolicitante = await _statusAprobacionSolicitanteService.Consultar(solicitud.idStatusAprobacionSolicitante); // Obtener el status de aprobación del solicitante por ID
 
             var categoriaTicket = await _categoriaTicketService.Consultar(solicitud.idCategoriaTicket); // Obtener la categoría del ticket por ID
-
-            await hubContext.Clients.Group("Rol-Tecnico")
-                .SendAsync("RecibirNotificacion", new
-                {
-                    titulo = "Nueva orden de mantenimiento",
-                    mensaje = "Se creó una nueva orden para máquina/facility.",
-                    fechaEnvio = DateTime.Now
-                });
-
 
             var solicitudDetalleDTO = new SolicitudesDetalleDTO
             {
@@ -495,6 +475,5 @@ namespace Piolax_WebApp.Services.Impl
 
             return solicitudesDetalleDTO;
         }
-
     }
 }
