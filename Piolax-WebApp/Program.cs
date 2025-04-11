@@ -282,6 +282,21 @@ if (app.Environment.IsDevelopment())
     app.UseSwaggerUI();
 }
 
+
+// Permitir al CORS para archivos estáticos
+app.UseStaticFiles(new StaticFileOptions
+{
+    OnPrepareResponse = ctx =>
+    {
+        ctx.Context.Response.Headers.Append("Access-Control-Allow-Origin", "http://localhost:4200");
+        ctx.Context.Response.Headers.Append("Access-Control-Allow-Methods", "GET, OPTIONS");
+        ctx.Context.Response.Headers.Append("Access-Control-Allow-Headers", "Content-Type, Authorization");
+    }
+});
+
+// Permitir servir archivos estáticos
+app.UseStaticFiles();
+
 app.UseHttpsRedirection();
 
 //Para conexion con localhost y url publica
@@ -297,6 +312,6 @@ app.UseAuthorization();
 app.MapControllers();
 
 // Endpoint de SignalR
-//app.MapHub<NotificationHub>("/notificationHub");
+app.MapHub<AsignacionHub>("/AsignacionHub");
 
 app.Run();

@@ -3,5 +3,6 @@
     public class EliminarRefaccionDTO
     {
         public int idAsignacionRefaccion { get; set; }
+        public int idAsignacionActual { get; set; }
     }
 }

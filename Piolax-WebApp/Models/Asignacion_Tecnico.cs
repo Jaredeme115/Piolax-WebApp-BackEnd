@@ -38,6 +38,8 @@ namespace Piolax_WebApp.Models
         // descontando pausas propias o retiros parciales
         public double tiempoAcumuladoMinutos { get; set; } = 0;
 
+        public bool retirado { get; set; } = false;
+
         public virtual ICollection<asignacion_refacciones> Asignacion_Refacciones { get; set; } = new List<asignacion_refacciones>(); // Lista de asignacion_refacciones asociados a Asignacion_Tecnico
     }
 }

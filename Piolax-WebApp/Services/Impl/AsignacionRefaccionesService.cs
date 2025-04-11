@@ -83,7 +83,7 @@ namespace Piolax_WebApp.Services.Impl
             });
         }
 
-        public async Task<bool> EliminarRefaccionDeAsignacion(int idAsignacionRefaccion)
+        public async Task<bool> EliminarRefaccionDeAsignacion(int idAsignacionRefaccion, int idAsignacionActual)
         {
             var refaccion = await _repository.ConsultarRefaccionesPorId(idAsignacionRefaccion);
             if (refaccion == null) return false;
@@ -98,6 +98,11 @@ namespace Piolax_WebApp.Services.Impl
             if (asignacion.StatusAsignacion == null)
             {
                 throw new InvalidOperationException("El estado de la asignación no está definido.");
+            }
+
+            if (refaccion.idAsignacion != idAsignacionActual)
+            {
+                return await _repository.EliminarRefaccionDeAsignacion(idAsignacionRefaccion);
             }
 
             if (asignacion.StatusAsignacion.descripcionStatusAsignacion == "Pausa Por Tecnico")

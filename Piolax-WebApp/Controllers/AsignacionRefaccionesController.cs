@@ -21,10 +21,39 @@ namespace Piolax_WebApp.Controllers
             return Ok(await _service.ConsultarTodasLasRefacciones());
         }
 
+        /*[HttpDelete("EliminarRefaccionDeAsignacion")]
+        public async Task<ActionResult<bool>> EliminarRefaccionDeAsignacion([FromBody] EliminarRefaccionDTO eliminarRefaccionDTO)
+        {
+            return await _service.EliminarRefaccionDeAsignacion(eliminarRefaccionDTO.idAsignacionRefaccion,);
+        }*/
+
         [HttpDelete("EliminarRefaccionDeAsignacion")]
         public async Task<ActionResult<bool>> EliminarRefaccionDeAsignacion([FromBody] EliminarRefaccionDTO eliminarRefaccionDTO)
         {
-            return await _service.EliminarRefaccionDeAsignacion(eliminarRefaccionDTO.idAsignacionRefaccion);
+            try
+            {
+                bool resultado = await _service.EliminarRefaccionDeAsignacion(
+                    eliminarRefaccionDTO.idAsignacionRefaccion,
+                    eliminarRefaccionDTO.idAsignacionActual
+                );
+
+                if (!resultado)
+                {
+                    return NotFound("La refaccion no fue encontrada o no se puede eliminar");
+                }
+                return Ok(true);
+            }
+
+            catch (InvalidOperationException ex)
+            {
+                return BadRequest(ex.Message);
+            }
+            catch (Exception ex)
+            {
+                return StatusCode(500, $"Error interno en el servidor: {ex.Message}");
+            }
+
+
         }
 
         [HttpPut("ActualizarRefaccionEnAsignacion")]

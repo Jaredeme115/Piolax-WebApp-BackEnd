@@ -100,5 +100,37 @@ namespace Piolax_WebApp.Controllers
                 return StatusCode(500, $"Error interno del servidor: {ex.Message}");
             }
         }
+
+        [HttpGet("ListarPDFsPorArea/{idArea}")]
+        public IActionResult ListarPDFsPorArea(int idArea)
+        {
+            var nombreCarpeta = idArea switch
+            {
+                1 => "Metales",
+                2 => "Ensamble",
+                3 => "Plasticos",
+                19 => "Facility",
+                _ => null
+            };
+
+            if (string.IsNullOrEmpty(nombreCarpeta))
+                return BadRequest("Área no válida.");
+
+            var rutaBase = Path.Combine(Directory.GetCurrentDirectory(), "wwwroot", "PDFs", nombreCarpeta);
+
+            if (!Directory.Exists(rutaBase))
+                return NotFound("No se encontró la carpeta del área.");
+
+            var archivos = Directory.GetFiles(rutaBase, "*.pdf")
+                                    .Select(path => new
+                                    {
+                                        nombrePDF = Path.GetFileName(path),
+                                        rutaPDF = $"/PDFs/{nombreCarpeta}/{Path.GetFileName(path)}"
+                                    });
+
+            return Ok(archivos);
+        }
+
+
     }
 }

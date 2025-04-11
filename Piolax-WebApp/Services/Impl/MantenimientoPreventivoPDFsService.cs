@@ -8,6 +8,9 @@ namespace Piolax_WebApp.Services.Impl
     {
         private readonly IMantenimientoPreventivoPDFsRepository _repository = repository;
 
+        private readonly string _pdfBaseUrl = "https://localhost:7208"; // Ajusta si tu backend está en otro puerto
+
+
 
         public async Task<MantenimientoPreventivoPDFs> AgregarMantenimientoPreventivoPDFs(MantenimientoPreventivoPDFCrearDTO mantenimientoPreventivoPDFCrearDTO)
         {
@@ -38,7 +41,8 @@ namespace Piolax_WebApp.Services.Impl
             {
                 idMP = mppdf.idMP,
                 nombrePDF = mppdf.nombrePDF,
-                rutaPDF = mppdf.rutaPDF
+                //rutaPDF = mppdf.rutaPDF
+                rutaPDF = $"{_pdfBaseUrl}{mppdf.rutaPDF}"
             });
         }
 
@@ -52,7 +56,8 @@ namespace Piolax_WebApp.Services.Impl
             {
                 idMP = resultado.idMP,
                 nombrePDF = resultado.nombrePDF,
-                rutaPDF = resultado.rutaPDF
+                //rutaPDF = resultado.rutaPDF
+                rutaPDF = $"{_pdfBaseUrl}{resultado.rutaPDF}"
             };
         }
 
@@ -66,7 +71,8 @@ namespace Piolax_WebApp.Services.Impl
             {
                 idMP = resultado.idMP,
                 nombrePDF = resultado.nombrePDF,
-                rutaPDF = resultado.rutaPDF
+                //rutaPDF = resultado.rutaPDF
+                rutaPDF = $"{_pdfBaseUrl}{resultado.rutaPDF}"
             };
         }
 
@@ -80,20 +86,23 @@ namespace Piolax_WebApp.Services.Impl
             {
                 idMP = resultado.idMP,
                 nombrePDF = resultado.nombrePDF,
-                rutaPDF = resultado.rutaPDF
+                //rutaPDF = resultado.rutaPDF
+                rutaPDF = $"{_pdfBaseUrl}{resultado.rutaPDF}"
             };
         }
 
         public async Task<IEnumerable<MantenimientoPreventivoPDFsDTO>> ObtenerPDFsPorMantenimientoPreventivo(int idMP)
         {
             var resultados = await _repository.ObtenerPDFsPorMantenimientoPreventivo(idMP);
+
             return resultados.Select(mppdf => new MantenimientoPreventivoPDFsDTO
             {
                 idMP = mppdf.idMP,
                 nombrePDF = mppdf.nombrePDF,
-                rutaPDF = mppdf.rutaPDF
+                rutaPDF = $"{_pdfBaseUrl}{mppdf.rutaPDF}" // 👈 Devuelve la URL completa
             });
         }
+
 
 
         // Método mejorado para extraer el nombre del PDF de la URL

@@ -22,7 +22,8 @@ namespace Piolax_WebApp.Services.Impl
         private readonly IMaquinasRepository _maquinaRepository = maquinasRepository;
         private readonly IKPIRepository _kpiRepository = kpiRepository;
 
-        public async Task<AsignacionResponseDTO> AgregarAsignacion(AsignacionesDTO asignacionesDTO)
+
+        /*public async Task<AsignacionResponseDTO> AgregarAsignacion(AsignacionesDTO asignacionesDTO)
         {
             // Verificar que la solicitud exista
             var solicitudExiste = await _solicitudRepository.ExisteSolicitud(asignacionesDTO.idSolicitud);
@@ -64,7 +65,63 @@ namespace Piolax_WebApp.Services.Impl
             };
 
             return response;
+        }*/
+
+        public async Task<AsignacionResponseDTO> AgregarAsignacion(AsignacionesDTO asignacionesDTO)
+        {
+            // Verificar que la solicitud exista
+            var solicitudExiste = await _solicitudRepository.ExisteSolicitud(asignacionesDTO.idSolicitud);
+            if (!solicitudExiste)
+            {
+                throw new ArgumentException("La solicitud no existe.");
+            }
+
+            // Obtener detalles de la solicitud (para validaciones, etc.)
+            var solicitudDetalle = await _solicitudRepository.ObtenerSolicitudConDetalles(asignacionesDTO.idSolicitud);
+            if (solicitudDetalle == null)
+            {
+                throw new Exception("No se pudo obtener la información de la solicitud.");
+            }
+
+            // Validar el código QR
+            string nombreMaquinaEsperado = solicitudDetalle.Maquina.nombreMaquina;
+            if (!string.Equals(asignacionesDTO.codigoQR?.Trim(), nombreMaquinaEsperado?.Trim(), StringComparison.OrdinalIgnoreCase))
+            {
+                throw new Exception("El código QR proporcionado no coincide con la máquina asignada.");
+            }
+
+            // Verificar si ya existe una asignación activa para la solicitud (estado 1 o 2)
+            var asignacionActiva = await _repository.ObtenerAsignacionActivaPorSolicitud(asignacionesDTO.idSolicitud);
+            if (asignacionActiva != null)
+            {
+                // Se reutiliza la asignación activa
+                return new AsignacionResponseDTO
+                {
+                    idAsignacion = asignacionActiva.idAsignacion,
+                    idSolicitud = asignacionActiva.idSolicitud,
+                    idStatusAsignacion = asignacionActiva.idStatusAsignacion
+                };
+            }
+
+            // Si no existe, crear una nueva asignación
+            var asignacion = new Asignaciones
+            {
+                idSolicitud = asignacionesDTO.idSolicitud,
+                idStatusAsignacion = 1 // En Proceso Técnico
+            };
+
+            var nuevaAsignacion = await _repository.AgregarAsignacion(asignacion);
+            var response = new AsignacionResponseDTO
+            {
+                idAsignacion = nuevaAsignacion.idAsignacion,
+                idSolicitud = nuevaAsignacion.idSolicitud,
+                idStatusAsignacion = nuevaAsignacion.idStatusAsignacion
+            };
+
+            return response;
         }
+
+
 
 
         public async Task<IEnumerable<Asignaciones>> ConsultarTodasLasAsignaciones()

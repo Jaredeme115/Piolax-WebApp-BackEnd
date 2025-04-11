@@ -29,5 +29,8 @@ namespace Piolax_WebApp.DTOs
 
         [Required]
         public bool esTecnicoActivo { get; set; }
+
+        //Agregado 
+        public int idSolicitud { get; set; }
     }
 }

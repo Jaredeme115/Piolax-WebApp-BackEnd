@@ -9,7 +9,7 @@ namespace Piolax_WebApp.Services
         Task<IEnumerable<Asignacion_RefaccionesDetallesDTO>> ConsultarRefaccionesPorSolicitud(int idSolicitud);
         Task<Asignacion_RefaccionesResponseDTO> CrearAsignacionRefacciones(Asignacion_RefaccionesDTO asignacionRefaccionesDTO);
         Task<IEnumerable<Asignacion_RefaccionesDetallesDTO>> ConsultarTodasLasRefacciones();
-        Task<bool> EliminarRefaccionDeAsignacion(int idAsignacionRefaccion);
+        Task<bool> EliminarRefaccionDeAsignacion(int idAsignacionRefaccion, int idAsignacionActual);
         Task<bool> ActualizarRefaccionEnAsignacion(Asignacion_RefaccionesDTO asignacionRefaccionesDTO);
         Task<IEnumerable<Asignacion_RefaccionesDetallesDTO>> ConsultarRefaccionesConDetallesPorAsignacion(int idAsignacion);
     }
