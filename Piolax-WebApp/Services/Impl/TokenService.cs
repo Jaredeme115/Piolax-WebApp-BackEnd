@@ -49,6 +49,21 @@ namespace Piolax_WebApp.Services.Impl
                 claims.Add(new Claim(ClaimTypes.Role, rol));
             }
 
+            // Agreado para las notificaciones
+
+            // Obtener las áreas del empleado
+            var areas = _context.EmpleadoAreaRol
+                .Where(ear => ear.idEmpleado == empleado.idEmpleado)
+                .Select(ear => ear.idArea)
+                .Distinct()
+                .ToList();
+
+            // Agregar cada área como un claim
+            foreach (var area in areas)
+            {
+                claims.Add(new Claim("idArea", area.ToString()));
+            }
+
             var creds = new SigningCredentials(_key, SecurityAlgorithms.HmacSha256);
 
             var notBefore = DateTime.UtcNow;

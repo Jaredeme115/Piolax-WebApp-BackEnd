@@ -18,7 +18,7 @@ namespace Piolax_WebApp.Controllers
         private readonly IHubContext<NotificationHub> _hubContext = hubContext;
 
 
-        [HttpPost("Registrar")]
+        /*[HttpPost("Registrar")]
         public async Task<IActionResult> RegistrarSolicitud([FromBody] SolicitudesDTO solicitudesDTO)
         {
             try
@@ -37,7 +37,34 @@ namespace Piolax_WebApp.Controllers
             {
                 return BadRequest($"Error al registrar la solicitud: {ex.Message}");
             }
+        }*/
+
+        [HttpPost("Registrar")]
+        public async Task<IActionResult> RegistrarSolicitud([FromBody] SolicitudesDTO solicitudesDTO)
+        {
+            try
+            {
+                var solicitudDetalle = await _service.RegistrarSolicitud(solicitudesDTO);
+
+                // Envía la notificación con el mensaje específico
+                await _hubContext.Clients.Group("Mantenimiento").SendAsync("ReceiveNotification", "Nueva solicitud asignada");
+
+                // También podemos enviar los detalles en otro canal para procesar más información si es necesario
+                await _hubContext.Clients.Group("Mantenimiento").SendAsync("ReceiveRequestDetails", new
+                {
+                    idSolicitud = solicitudDetalle.idSolicitud,
+                    descripcion = solicitudesDTO.descripcion,
+                    fechaSolicitud = solicitudesDTO.fechaSolicitud
+                });
+
+                return Ok(solicitudDetalle);
+            }
+            catch (Exception ex)
+            {
+                return BadRequest($"Error al registrar la solicitud: {ex.Message}");
+            }
         }
+
 
 
         [HttpGet("{idSolicitud}/Detalle")]

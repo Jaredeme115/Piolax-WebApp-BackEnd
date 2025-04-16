@@ -42,9 +42,13 @@ namespace Piolax_WebApp.BackgroundServices
                             .Where(s => !s.notificado)
                             .ToListAsync(stoppingToken);
 
+                        // Dentro del método ExecuteAsync en el foreach
                         foreach (var solicitud in newRequests)
                         {
-                            // Envía la notificación vía SignalR a todos los clientes
+                            // Envía la notificación simple con el mensaje específico
+                            await _hubContext.Clients.All.SendAsync("ReceiveNotification", "Nueva solicitud asignada", stoppingToken);
+
+                            // También puedes mantener el envío de detalles si lo necesitas
                             await _hubContext.Clients.All.SendAsync("ReceiveNewRequest", new
                             {
                                 idSolicitud = solicitud.idSolicitud,

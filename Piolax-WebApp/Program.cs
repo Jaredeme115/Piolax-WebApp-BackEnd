@@ -127,6 +127,10 @@ builder.Services.AddScoped<IObservacionesMPService, ObservacionesMPService>();
 builder.Services.AddScoped<IKPIRepository, KPIRepository>();
 builder.Services.AddScoped<IKPIMantenimientoPreventivoService, KPIMantenimientoPreventivoService>();
 
+//Dashboard
+builder.Services.AddScoped<IKPIRepository, KPIRepository>();
+builder.Services.AddScoped<IKPIDashboardService, KPIDashboardService>();
+
 //Notificaciones
 builder.Services.AddScoped<NewRequestNotificationService>();
 
@@ -313,5 +317,6 @@ app.MapControllers();
 
 // Endpoint de SignalR
 app.MapHub<AsignacionHub>("/AsignacionHub");
+app.MapHub<NotificationHub>("/NotificationHub");
 
 app.Run();
