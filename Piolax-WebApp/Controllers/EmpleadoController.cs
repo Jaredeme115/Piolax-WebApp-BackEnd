@@ -466,6 +466,18 @@ namespace Piolax_WebApp.Controllers
 
             return Ok(empleadosDTO);
         }
+        [Authorize]
+        [HttpGet("ObtenerIdEmpleadoDesdeToken")]
+        public IActionResult ObtenerIdEmpleadoDesdeToken()
+        {
+            var idEmpleadoClaim = User.Claims.FirstOrDefault(c => c.Type == "idEmpleado");
+            if (idEmpleadoClaim == null)
+            {
+                return Unauthorized("No se encontró el idEmpleado en el token.");
+            }
+
+            return Ok(int.Parse(idEmpleadoClaim.Value));
+        }
 
 
 

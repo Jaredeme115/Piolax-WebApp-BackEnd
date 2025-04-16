@@ -33,6 +33,7 @@ namespace Piolax_WebApp.Services.Impl
         {
             var claims = new List<Claim>
             {
+
                    new Claim(JwtRegisteredClaimNames.Sub, empleado.numNomina),
                    new Claim(JwtRegisteredClaimNames.Jti, Guid.NewGuid().ToString())
              };

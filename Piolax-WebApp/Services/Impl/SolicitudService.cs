@@ -1,4 +1,6 @@
-﻿using Piolax_WebApp.DTOs;
+﻿using Microsoft.AspNetCore.SignalR;
+using Piolax_WebApp.DTOs;
+using Piolax_WebApp.Hubs;
 using Piolax_WebApp.Models;
 using Piolax_WebApp.Repositories;
 using Piolax_WebApp.Repositories.Impl;
@@ -14,6 +16,7 @@ namespace Piolax_WebApp.Services.Impl
         IStatusOrdenService statusOrdenService,
         IStatusAprobacionSolicitanteService statusAprobacionSolicitanteService,
         ICategoriaTicketService categoriaTicketService,
+        IHubContext<NotificationHub> hubContext,
         IAsignacionRepository asignacionRepository
         ) : ISolicitudService
     {
@@ -26,6 +29,7 @@ namespace Piolax_WebApp.Services.Impl
         private readonly IStatusAprobacionSolicitanteService _statusAprobacionSolicitanteService = statusAprobacionSolicitanteService;
         private readonly ICategoriaTicketService _categoriaTicketService = categoriaTicketService;
         private readonly IAsignacionRepository _asignacionRepository = asignacionRepository;
+        private readonly IHubContext<NotificationHub> _hubContext = hubContext;
 
         public async Task<SolicitudesDetalleDTO> RegistrarSolicitud(SolicitudesDTO solicitudesDTO)
         {
@@ -106,7 +110,17 @@ namespace Piolax_WebApp.Services.Impl
                 nombreCategoriaTicket = solicitud.categoriaTicket.descripcionCategoriaTicket
             };
 
+            await _hubContext.Clients.All.SendAsync("RecibirNotificacion", new
+            {
+                tipo = "solicitud",
+                mensaje = $"Nueva solicitud creada por {solicitudDetalleDTO.nombreCompletoEmpleado} para la máquina {solicitudDetalleDTO.nombreMaquina}",
+                fecha = DateTime.Now
+            });
+
             return solicitudDetalleDTO;
+
+
+
         }
         public async Task<SolicitudesDetalleDTO?> ObtenerSolicitudConDetalles(int idSolicitud)
         {

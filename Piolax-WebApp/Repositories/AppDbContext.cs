@@ -1,6 +1,7 @@
 ﻿using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Options;
 using Piolax_WebApp.Models;
+using Piolax_WebApp.Services.Impl;
 using System;
 
 namespace Piolax_WebApp.Repositories
@@ -59,7 +60,6 @@ namespace Piolax_WebApp.Repositories
         //KPI´s Mantenimiento Preventivo
         public DbSet<KpisMP> KpisMP { get; set; } = default!;
         public DbSet<KpisMPDetalle> KpisMPDetalle { get; set; } = default!;
-
 
 
         protected override void OnModelCreating(ModelBuilder modelBuilder)

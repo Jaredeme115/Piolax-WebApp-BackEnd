@@ -131,6 +131,7 @@ builder.Services.AddScoped<IKPIMantenimientoPreventivoService, KPIMantenimientoP
 builder.Services.AddScoped<NewRequestNotificationService>();
 
 
+builder.Services.AddSignalR();
 
 builder.Services.AddEndpointsApiExplorer();
 builder.Services.AddSwaggerGen(options =>
@@ -282,6 +283,13 @@ if (app.Environment.IsDevelopment())
     app.UseSwaggerUI();
 }
 
+app.UseCors(policy =>
+{
+    policy.WithOrigins("http://localhost:4200")
+          .AllowAnyHeader()
+          .AllowAnyMethod()
+          .AllowCredentials();
+});
 
 // Permitir al CORS para archivos estáticos
 app.UseStaticFiles(new StaticFileOptions
@@ -293,6 +301,7 @@ app.UseStaticFiles(new StaticFileOptions
         ctx.Context.Response.Headers.Append("Access-Control-Allow-Headers", "Content-Type, Authorization");
     }
 });
+app.MapHub<NotificationHub>("/hub/notificaciones");
 
 // Permitir servir archivos estáticos
 app.UseStaticFiles();
