@@ -17,5 +17,8 @@ namespace Piolax_WebApp.Models
 
         [Required]
         public float kpiValor { get; set; }
+
+
+
     }
 }

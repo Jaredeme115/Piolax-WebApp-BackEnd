@@ -10,11 +10,12 @@ namespace Piolax_WebApp.Services.Impl
         private readonly IAsignacionService _asignacionService = asignacionService;
 
         /// <summary>
-        /// Obtiene el MTTA filtrado por área y/o máquina
+        /// Obtiene el MTTA filtrado por 
+        /// área y/o máquina
         /// </summary>
-        public async Task<KPIResponseDTO> ObtenerMTTA(int? idArea = null, int? idMaquina = null)
+        public async Task<KPIResponseDTO> ObtenerMTTA(int? idArea = null, int? idMaquina = null, int? anio = null, int? mes = null)
         {
-            var kpiDetalles = await _repository.ConsultarMTTA(idArea, idMaquina);
+            var kpiDetalles = await _repository.ConsultarMTTA(idArea, idMaquina, anio, mes);
             if (!kpiDetalles.Any())
                 return new KPIResponseDTO { Nombre = "MTTA", Valor = 0, UnidadMedida = "minutos" };
 
@@ -32,9 +33,9 @@ namespace Piolax_WebApp.Services.Impl
         /// <summary>
         /// Obtiene el MTTR filtrado por área, máquina y/o técnico
         /// </summary>
-        public async Task<KPIResponseDTO> ObtenerMTTR(int? idArea = null, int? idMaquina = null, int? idEmpleado = null)
+        public async Task<KPIResponseDTO> ObtenerMTTR(int? idArea = null, int? idMaquina = null, int? idEmpleado = null, int? anio = null, int? mes = null)
         {
-            var kpiDetalles = await _repository.ConsultarMTTR(idArea, idMaquina, idEmpleado);
+            var kpiDetalles = await _repository.ConsultarMTTR(idArea, idMaquina, idEmpleado, anio, mes);
             if (!kpiDetalles.Any())
                 return new KPIResponseDTO { Nombre = "MTTR", Valor = 0, UnidadMedida = "minutos" };
 
@@ -108,12 +109,12 @@ namespace Piolax_WebApp.Services.Impl
             int? idAreaMTTR = null, int? idMaquinaMTTR = null, int? idEmpleadoMTTR = null,
             int? idAreaMTBF = null,
             int? idAreaDowntime = null, int? idMaquinaDowntime = null,
-            int? añoDowntime = null, int? mesDowntime = null, int? semanaDowntime = null, int? diaSemanaDowntime = null)
+            int? anioDowntime = null, int? mesDowntime = null, int? semanaDowntime = null, int? diaSemanaDowntime = null)
         {
             var kpis = new List<KPIResponseDTO>();
 
             // Obtener MTTA
-            var mtta = await ObtenerMTTA(idAreaMTTA, idMaquinaMTTA);
+            var mtta = await ObtenerMTTA(idAreaMTTA, idMaquinaMTTA, anioDowntime, mesDowntime);
             kpis.Add(mtta);
 
             // Obtener MTTR
@@ -126,7 +127,7 @@ namespace Piolax_WebApp.Services.Impl
 
             // Obtener TotalDowntime
             var totalDowntime = await ObtenerTotalDowntime(idAreaDowntime, idMaquinaDowntime,
-                añoDowntime, mesDowntime, semanaDowntime, diaSemanaDowntime);
+                anioDowntime, mesDowntime, semanaDowntime, diaSemanaDowntime);
             kpis.Add(totalDowntime);
 
             return kpis;

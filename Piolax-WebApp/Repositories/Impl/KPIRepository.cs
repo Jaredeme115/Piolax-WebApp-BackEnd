@@ -42,7 +42,7 @@ namespace Piolax_WebApp.Repositories.Impl
             await _context.SaveChangesAsync();
         }
 
-        public async Task<IEnumerable<KpisDetalle>> ConsultarMTTA(int? idArea = null, int? idMaquina = null)
+        public async Task<IEnumerable<KpisDetalle>> ConsultarMTTA(int? idArea = null, int? idMaquina = null, int? anio = null, int? mes = null)
         {
             var query = _context.KpisDetalle
                 .Include(kd => kd.KpisMantenimiento)
@@ -57,11 +57,19 @@ namespace Piolax_WebApp.Repositories.Impl
             {
                 query = query.Where(kd => kd.KpisMantenimiento.idMaquina == idMaquina.Value);
             }
+            if (anio.HasValue)
+            {
+                query = query.Where(kd => kd.KpisMantenimiento.fechaCalculo.Year == anio);
+            }
+            if (mes.HasValue)
+            {
+                query = query.Where(kd => kd.KpisMantenimiento.fechaCalculo.Month == mes);
+            }
 
             return await query.ToListAsync();
         }
 
-        public async Task<IEnumerable<KpisDetalle>> ConsultarMTTR(int? idArea = null, int? idMaquina = null, int? idEmpleado = null)
+        public async Task<IEnumerable<KpisDetalle>> ConsultarMTTR(int? idArea = null, int? idMaquina = null, int? idEmpleado = null, int? anio = null, int? mes = null)
         {
             var query = _context.KpisDetalle
                 .Include(kd => kd.KpisMantenimiento)
@@ -81,6 +89,14 @@ namespace Piolax_WebApp.Repositories.Impl
             {
                 query = query.Where(kd => kd.KpisMantenimiento.idEmpleado == idEmpleado.Value);
             }
+            if (anio.HasValue)
+            {
+                query = query.Where(kd => kd.KpisMantenimiento.fechaCalculo.Year == anio);
+            }
+            if (mes.HasValue)
+            {
+                query = query.Where(kd => kd.KpisMantenimiento.fechaCalculo.Month == mes);
+            }
 
             return await query.ToListAsync();
         }
@@ -99,7 +115,7 @@ namespace Piolax_WebApp.Repositories.Impl
             return await query.ToListAsync();
         }
 
-        public async Task<IEnumerable<KpisMantenimiento>> ConsultarTotalDowntime(int? idArea = null, int? idMaquina = null, int? año = null, int? mes = null, int? semana = null, int? diaSemana = null)
+        public async Task<IEnumerable<KpisMantenimiento>> ConsultarTotalDowntime(int? idArea = null, int? idMaquina = null, int? anio = null, int? mes = null, int? semana = null, int? diaSemana = null)
         {
             var query = _context.KpisMantenimiento
                 .Include(km => km.KpisDetalle)
@@ -115,9 +131,9 @@ namespace Piolax_WebApp.Repositories.Impl
                 query = query.Where(km => km.idMaquina == idMaquina.Value);
             }
 
-            if (año.HasValue)
+            if (anio.HasValue)
             {
-                query = query.Where(km => km.fechaCalculo.Year == año.Value);
+                query = query.Where(km => km.fechaCalculo.Year == anio.Value);
             }
 
             if (mes.HasValue)

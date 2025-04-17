@@ -4,10 +4,10 @@ namespace Piolax_WebApp.Services
 {
     public interface IKPIDashboardService
     {
-        Task<KPIResponseDTO> ObtenerMTTA(int? idArea = null, int? idMaquina = null);
-        Task<KPIResponseDTO> ObtenerMTTR(int? idArea = null, int? idMaquina = null, int? idEmpleado = null);
+        Task<KPIResponseDTO> ObtenerMTTA(int? idArea = null, int? idMaquina = null, int? anio = null, int? mes = null);
+        Task<KPIResponseDTO> ObtenerMTTR(int? idArea = null, int? idMaquina = null, int? idEmpleado = null, int? anio = null, int? mes = null);
         Task<KPIResponseDTO> ObtenerMTBF(int? idArea = null);
-        Task<KPIResponseDTO> ObtenerTotalDowntime(int? idArea = null, int? idMaquina = null, int? año = null, int? mes = null, int? semana = null, int? diaSemana = null);
+        Task<KPIResponseDTO> ObtenerTotalDowntime(int? idArea = null, int? idMaquina = null, int? anio = null, int? mes = null, int? semana = null, int? diaSemana = null);
         Task<IEnumerable<KPIResponseDTO>> ObtenerResumenKPIs(
             int? idAreaMTTA = null, int? idMaquinaMTTA = null,
             int? idAreaMTTR = null, int? idMaquinaMTTR = null, int? idEmpleadoMTTR = null,

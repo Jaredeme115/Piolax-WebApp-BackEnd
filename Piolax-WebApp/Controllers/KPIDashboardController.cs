@@ -10,16 +10,16 @@ namespace Piolax_WebApp.Controllers
         private readonly IKPIDashboardService _service = service;
 
         [HttpGet("mtta")]
-        public async Task<IActionResult> GetMTTA(int? idArea = null, int? idMaquina = null)
+        public async Task<IActionResult> GetMTTA(int? idArea, int? idMaquina, int? anio = null, int? mes = null)
         {
-            var result = await _service.ObtenerMTTA(idArea, idMaquina);
+            var result = await _service.ObtenerMTTA(idArea, idMaquina, anio, mes);
             return Ok(result);
         }
 
         [HttpGet("mttr")]
-        public async Task<IActionResult> GetMTTR(int? idArea = null, int? idMaquina = null, int? idEmpleado = null)
+        public async Task<IActionResult> GetMTTR(int? idArea = null, int? idMaquina = null, int? idEmpleado = null, int? anio = null, int? mes = null)
         {
-            var result = await _service.ObtenerMTTR(idArea, idMaquina, idEmpleado);
+            var result = await _service.ObtenerMTTR(idArea, idMaquina, idEmpleado, anio, mes);
             return Ok(result);
         }
 
@@ -33,10 +33,10 @@ namespace Piolax_WebApp.Controllers
         [HttpGet("totaldowntime")]
         public async Task<IActionResult> GetTotalDowntime(
             int? idArea = null, int? idMaquina = null,
-            int? año = null, int? mes = null, int? semana = null, int? diaSemana = null)
+            int? anio = null, int? mes = null, int? semana = null, int? diaSemana = null)
         {
             var result = await _service.ObtenerTotalDowntime(
-                idArea, idMaquina, año, mes, semana, diaSemana);
+                idArea, idMaquina, anio, mes, semana, diaSemana);
             return Ok(result);
         }
 
