@@ -51,6 +51,6 @@ namespace Piolax_WebApp.Models
 
         public virtual ICollection<Asignaciones> Asignaciones { get; set; } = new List<Asignaciones>(); // Lista de Asignaciones asociados a Solicitud
 
-
+        public virtual ICollection<Notificacion>  Notificacions{ get; set; } = new List<Notificacion>(); // Lista de Notificaciones asociados a Solicitud
     }
 }

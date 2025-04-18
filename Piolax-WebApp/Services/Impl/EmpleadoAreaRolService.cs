@@ -148,5 +148,10 @@ namespace Piolax_WebApp.Services.Impl
             return await _repository.ConsultarTodosConDetalles();
         }
 
+        public async Task<IEnumerable<Roles>> ObtenerRolesPorEmpleado(string numNomina)
+        {
+            return await _repository.ObtenerRolesPorEmpleado(numNomina);
+        }
+
     }
 }

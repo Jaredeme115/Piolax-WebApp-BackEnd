@@ -76,6 +76,17 @@ namespace Piolax_WebApp.Controllers
             return Ok(rol);
         }
 
+        [HttpGet("ObtenerRolesPorEmpleado/{numNomina}")]
+        public async Task<IActionResult> ObtenerRolesPorEmpleado(string numNomina)
+        {
+            var roles = await _empleadoAreaRolService.ObtenerRolesPorEmpleado(numNomina);
+            if (roles == null || !roles.Any())
+            {
+                return NotFound("No se encontraron roles para este empleado.");
+            }
+            return Ok(roles);
+        }
+
 
     }
 }

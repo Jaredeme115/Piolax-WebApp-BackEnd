@@ -3,12 +3,20 @@ using System.Threading.Tasks;
 
 namespace Piolax_WebApp.Hubs
 {
-    public class NotificationHub: Hub
+    public class NotificationHub : Hub
     {
-        // Este método lo pueden llamar los clientes si se requiere (opcional)
-        public async Task SendNotification(string message)
+        public async Task EnviarNotificacion(string tipo, string mensaje, string? rol = null)
         {
-            await Clients.All.SendAsync("ReceiveNotification", message);
+            if (!string.IsNullOrEmpty(rol))
+            {
+                await Clients.Group(rol).SendAsync("RecibirNotificacion", new { tipo, mensaje });
+            }
+            else
+            {
+                await Clients.All.SendAsync("RecibirNotificacion", new { tipo, mensaje });
+            }
         }
     }
 }
+
+

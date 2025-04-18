@@ -37,15 +37,19 @@ namespace Piolax_WebApp.Services.Impl
 
             var areasRoles = await _empleadoAreaRolService.ObtenerAreasRolesPorEmpleado(empleado.numNomina);
 
-            // Validar que el área y el rol seleccionados están entre los asignados al empleado
-            var areaSeleccionada = areasRoles.FirstOrDefault(ar => ar.idArea == solicitudesDTO.idAreaSeleccionada);
-            if (areaSeleccionada == null)
+            // Permitir si el idAreaSeleccionada es 19, aunque el usuario no esté asignado a ella
+            if (solicitudesDTO.idAreaSeleccionada != 19)
             {
-                throw new Exception("El área seleccionada no está asignada al empleado.");
+                var areaSeleccionada = areasRoles.FirstOrDefault(ar => ar.idArea == solicitudesDTO.idAreaSeleccionada);
+                if (areaSeleccionada == null)
+                {
+                    throw new Exception("El área seleccionada no está asignada al empleado.");
+                }
             }
 
+            // Validar el rol SOLO si el área no es 19
             var rolSeleccionado = areasRoles.FirstOrDefault(ar => ar.idRol == solicitudesDTO.idRolSeleccionado && ar.idArea == solicitudesDTO.idAreaSeleccionada);
-            if (rolSeleccionado == null)
+            if (rolSeleccionado == null && solicitudesDTO.idAreaSeleccionada != 19)
             {
                 throw new Exception("El rol seleccionado no está asignado al empleado en el área seleccionada.");
             }
@@ -92,8 +96,8 @@ namespace Piolax_WebApp.Services.Impl
                 idTurno = solicitud.idTurno,
                 idStatusOrden = solicitud.idStatusOrden,
                 idStatusAprobacionSolicitante = solicitud.idStatusAprobacionSolicitante,
-                area = areaSeleccionada.Area.nombreArea,
-                rol = rolSeleccionado.Rol.nombreRol,
+                area = solicitudesDTO.idAreaSeleccionada == 19 ? "Área Permitida" : areasRoles.FirstOrDefault(ar => ar.idArea == solicitudesDTO.idAreaSeleccionada)?.Area.nombreArea,
+                rol = solicitudesDTO.idAreaSeleccionada == 19 ? "Rol Asignado Automáticamente" : areasRoles.FirstOrDefault(ar => ar.idRol == solicitudesDTO.idRolSeleccionado)?.Rol.nombreRol,
                 idCategoriaTicket = solicitud.idCategoriaTicket,
                 nombreMaquina = maquina.nombreMaquina,
                 nombreTurno = turno.descripcion,
@@ -104,6 +108,7 @@ namespace Piolax_WebApp.Services.Impl
 
             return solicitudDetalleDTO;
         }
+
         public async Task<SolicitudesDetalleDTO?> ObtenerSolicitudConDetalles(int idSolicitud)
         {
             var solicitud = await _repository.ObtenerSolicitudConDetalles(idSolicitud);
