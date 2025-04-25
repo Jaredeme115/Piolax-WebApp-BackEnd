@@ -47,9 +47,9 @@ namespace Piolax_WebApp.Controllers
                 var solicitudDetalle = await _service.RegistrarSolicitud(solicitudesDTO);
 
                 // Envía la notificación con el mensaje específico
-                await _hubContext.Clients.Group("Mantenimiento").SendAsync("ReceiveNotification", "Nueva solicitud asignada");
+                //await _hubContext.Clients.Group("Mantenimiento").SendAsync("ReceiveNotification", "Nueva solicitud asignada");
 
-                // También podemos enviar los detalles en otro canal para procesar más información si es necesario
+                //Enviar detalles en otro canal para procesar más información si es necesario
                 await _hubContext.Clients.Group("Mantenimiento").SendAsync("ReceiveRequestDetails", new
                 {
                     idSolicitud = solicitudDetalle.idSolicitud,

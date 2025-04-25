@@ -4,13 +4,23 @@ using Piolax_WebApp.Repositories;
 
 namespace Piolax_WebApp.Services.Impl
 {
-    public class MantenimientoPreventivoPDFsService (IMantenimientoPreventivoPDFsRepository repository): IMantenimientoPreventivoPDFsService
+    public class MantenimientoPreventivoPDFsService (IMantenimientoPreventivoPDFsRepository repository, IHttpContextAccessor httpContextAccessor): IMantenimientoPreventivoPDFsService
     {
         private readonly IMantenimientoPreventivoPDFsRepository _repository = repository;
+        private readonly IHttpContextAccessor _httpContextAccessor = httpContextAccessor;
 
-        private readonly string _pdfBaseUrl = "https://localhost:7208"; // Ajusta si tu backend está en otro puerto
+        //private readonly string _pdfBaseUrl = "https://localhost:7208"; // Ajusta si tu backend está en otro puerto
 
-
+        // Método para obtener la URL base dinámicamente
+        private string GetBaseUrl()
+        {
+            var request = _httpContextAccessor.HttpContext?.Request;
+            if (request != null)
+            {
+                return $"{request.Scheme}://{request.Host}";
+            }
+            return string.Empty;
+        }
 
         public async Task<MantenimientoPreventivoPDFs> AgregarMantenimientoPreventivoPDFs(MantenimientoPreventivoPDFCrearDTO mantenimientoPreventivoPDFCrearDTO)
         {
@@ -42,7 +52,8 @@ namespace Piolax_WebApp.Services.Impl
                 idMP = mppdf.idMP,
                 nombrePDF = mppdf.nombrePDF,
                 //rutaPDF = mppdf.rutaPDF
-                rutaPDF = $"{_pdfBaseUrl}{mppdf.rutaPDF}"
+                //rutaPDF = $"{_pdfBaseUrl}{mppdf.rutaPDF}"
+                rutaPDF = $"{mppdf.rutaPDF}"
             });
         }
 
@@ -57,7 +68,8 @@ namespace Piolax_WebApp.Services.Impl
                 idMP = resultado.idMP,
                 nombrePDF = resultado.nombrePDF,
                 //rutaPDF = resultado.rutaPDF
-                rutaPDF = $"{_pdfBaseUrl}{resultado.rutaPDF}"
+                //rutaPDF = $"{_pdfBaseUrl}{resultado.rutaPDF}"
+                rutaPDF = $"{resultado.rutaPDF}"
             };
         }
 
@@ -72,7 +84,8 @@ namespace Piolax_WebApp.Services.Impl
                 idMP = resultado.idMP,
                 nombrePDF = resultado.nombrePDF,
                 //rutaPDF = resultado.rutaPDF
-                rutaPDF = $"{_pdfBaseUrl}{resultado.rutaPDF}"
+                //rutaPDF = $"{_pdfBaseUrl}{resultado.rutaPDF}"
+                rutaPDF = $"{resultado.rutaPDF}"
             };
         }
 
@@ -87,7 +100,8 @@ namespace Piolax_WebApp.Services.Impl
                 idMP = resultado.idMP,
                 nombrePDF = resultado.nombrePDF,
                 //rutaPDF = resultado.rutaPDF
-                rutaPDF = $"{_pdfBaseUrl}{resultado.rutaPDF}"
+                //rutaPDF = $"{_pdfBaseUrl}{resultado.rutaPDF}"
+                rutaPDF = $"{resultado.rutaPDF}"
             };
         }
 
@@ -99,7 +113,8 @@ namespace Piolax_WebApp.Services.Impl
             {
                 idMP = mppdf.idMP,
                 nombrePDF = mppdf.nombrePDF,
-                rutaPDF = $"{_pdfBaseUrl}{mppdf.rutaPDF}" // 👈 Devuelve la URL completa
+                //rutaPDF = $"{_pdfBaseUrl}{mppdf.rutaPDF}" // 👈 Devuelve la URL completa
+                rutaPDF = $"{mppdf.rutaPDF}"
             });
         }
 

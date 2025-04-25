@@ -75,6 +75,11 @@ namespace Piolax_WebApp.Models
         [Required]
         public DateTime fechaActualizacion { get; set; }
 
+        public bool bajoStockNotificado { get; set; } = false; // Valor predeterminado
+
+        public DateTime? ultimaNotificacionBajoStock { get; set; }
+
+
         [Required]
         [Column(TypeName = "ENUM('Disponible', 'Pendiente', 'EnReparación')")]
         public EstatusInventario EstatusInventario { get; set; } = EstatusInventario.Disponible; // Valor predeterminad

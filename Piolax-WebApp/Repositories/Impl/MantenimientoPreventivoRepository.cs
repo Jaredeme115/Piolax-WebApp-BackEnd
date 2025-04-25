@@ -41,6 +41,7 @@ namespace Piolax_WebApp.Repositories.Impl
             mantenimientoExistente.activo = mantenimientoPreventivo.activo;
             mantenimientoExistente.ultimaEjecucion = mantenimientoPreventivo.ultimaEjecucion;
             mantenimientoExistente.proximaEjecucion = mantenimientoPreventivo.proximaEjecucion;
+            mantenimientoExistente.semanaOriginalMP = mantenimientoPreventivo.semanaOriginalMP;
 
             await _context.SaveChangesAsync();
             return mantenimientoExistente; // Retorna el mantenimiento actualizado

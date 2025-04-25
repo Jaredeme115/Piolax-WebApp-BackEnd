@@ -7,14 +7,18 @@ using QRCoder;
 using System.Drawing;
 using System.Drawing.Imaging;
 using OfficeOpenXml;
+using Piolax_WebApp.Hubs;
+using Microsoft.AspNetCore.SignalR;
+using Microsoft.EntityFrameworkCore;
 
 
 namespace Piolax_WebApp.Services.Impl
 {
-    public class InventarioService(IInventarioRepository repository, IMaquinasService maquinasService) : IInventarioService
+    public class InventarioService(IInventarioRepository repository, IMaquinasService maquinasService, IHubContext<AsignacionHub> hubContext) : IInventarioService
     {
         private readonly IInventarioRepository _repository = repository;
         private readonly IMaquinasService _maquinasService = maquinasService;
+        private readonly IHubContext<AsignacionHub> _hubContext = hubContext;
 
 
         public async Task<Inventario> ConsultarInventarioPorCategoria(int idInventarioCategoria)
@@ -155,6 +159,29 @@ namespace Piolax_WebApp.Services.Impl
 
             // Guardar cambios en el repositorio
             var refaccionModificada = await _repository.Modificar(productoExistente);
+
+            // Notificar si el stock esta por debajo del mínimo
+            if (refaccionModificada.cantidadActual <= refaccionModificada.cantidadMin && !refaccionModificada.bajoStockNotificado)
+            {
+                // enviar alerta
+                await _hubContext.Clients.Group("Mantenimiento")
+                    .SendAsync("LowStockAlert", new
+                    {
+                        refaccionModificada.idRefaccion,
+                        refaccionModificada.nombreProducto,
+                        refaccionModificada.cantidadActual,
+                        refaccionModificada.cantidadMin
+                    });
+
+                // marcar para no notificar de nuevo inmediatamente
+                refaccionModificada.bajoStockNotificado = true;
+                await _repository.Modificar(productoExistente);
+            } else if (refaccionModificada.bajoStockNotificado && refaccionModificada.cantidadActual > refaccionModificada.cantidadMin)
+            {
+                // Si repusieron por encima del mínimo, resetear flag para futuras alertas
+                refaccionModificada.bajoStockNotificado = false;
+                await _repository.Modificar(productoExistente);
+            }
 
             // Retornar la refacción modificada en formato DTO
             return new InventarioDetalleDTO

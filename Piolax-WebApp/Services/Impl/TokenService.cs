@@ -32,42 +32,39 @@ namespace Piolax_WebApp.Services.Impl
         public string CrearToken(Empleado empleado)
         {
             var claims = new List<Claim>
-            {
-                   new Claim(JwtRegisteredClaimNames.Sub, empleado.numNomina),
-                   new Claim(JwtRegisteredClaimNames.Jti, Guid.NewGuid().ToString())
-             };
+    {
+           new Claim(ClaimTypes.NameIdentifier, empleado.idEmpleado.ToString()),
+           new Claim(JwtRegisteredClaimNames.Sub, empleado.numNomina),
+           new Claim(JwtRegisteredClaimNames.Jti, Guid.NewGuid().ToString())
+    };
 
-            // Obtener los roles del empleado desde la base de datos
-            var roles = _context.EmpleadoAreaRol
+            // Obtener los roles y áreas del empleado desde la base de datos
+            var empleadoAreaRoles = _context.EmpleadoAreaRol
                 .Where(ear => ear.idEmpleado == empleado.idEmpleado)
-                .Select(ear => ear.Rol.nombreRol)
+                .Include(ear => ear.Rol)
                 .ToList();
 
-            // Agregar roles a los claims
-            foreach (var rol in roles)
+            // Usamos una variable para almacenar las combinaciones área-rol para debugging
+            var combinaciones = new List<string>();
+
+            // Agregar roles a los claims y guardar los idRol
+            foreach (var ear in empleadoAreaRoles)
             {
-                claims.Add(new Claim(ClaimTypes.Role, rol));
+                claims.Add(new Claim(ClaimTypes.Role, ear.Rol.nombreRol));
+                claims.Add(new Claim("idRol", ear.idRol.ToString()));  // Este es el cambio clave
+                claims.Add(new Claim("idArea", ear.idArea.ToString()));
+
+                // Guardar combinación para debugging
+                combinaciones.Add($"Area: {ear.idArea}, Rol: {ear.idRol}");
             }
 
-            // Agreado para las notificaciones
-
-            // Obtener las áreas del empleado
-            var areas = _context.EmpleadoAreaRol
-                .Where(ear => ear.idEmpleado == empleado.idEmpleado)
-                .Select(ear => ear.idArea)
-                .Distinct()
-                .ToList();
-
-            // Agregar cada área como un claim
-            foreach (var area in areas)
-            {
-                claims.Add(new Claim("idArea", area.ToString()));
-            }
+            // Para debugging - puedes comentar o quitar esto en producción
+            Console.WriteLine($"Token generado para empleado {empleado.idEmpleado} con combinaciones: {string.Join("; ", combinaciones)}");
 
             var creds = new SigningCredentials(_key, SecurityAlgorithms.HmacSha256);
 
             var notBefore = DateTime.UtcNow;
-            var expires = notBefore.AddMinutes(_config.GetValue<int>("TokenExpirationMinutes")); // Configurar el tiempo de expiración
+            var expires = notBefore.AddMinutes(_config.GetValue<int>("TokenExpirationMinutes"));
 
             var token = new JwtSecurityToken(
                 issuer: _config["Jwt:Issuer"],

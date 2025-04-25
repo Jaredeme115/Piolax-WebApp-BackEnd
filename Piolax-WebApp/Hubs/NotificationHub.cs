@@ -1,8 +1,12 @@
-﻿using Microsoft.AspNetCore.SignalR;
+﻿using Microsoft.AspNetCore.Authorization;
+using Microsoft.AspNetCore.SignalR;
+using Piolax_WebApp.Models;
+using System.Security.Claims;
 using System.Threading.Tasks;
 
 namespace Piolax_WebApp.Hubs
 {
+    [Authorize]
     public class NotificationHub : Hub
     {
         // Método general para enviar notificaciones
@@ -17,15 +21,79 @@ namespace Piolax_WebApp.Hubs
             await Clients.All.SendAsync("ReceiveRequestNotification", "Nueva solicitud asignada", idSolicitud, descripcion);
         }
 
+        // Método para notificaciones de bajo stock
+        public async Task SendLowStockNotification(int idRefaccion, string nombreProducto, int stockActual, int stockMinimo)
+        {
+            string mensaje = $"Bajo stock de {nombreProducto} - Actual: {stockActual} / Mínimo: {stockMinimo}";
+
+            // Enviar solo a los gestores de inventario especificados
+            await Clients.Group("GestoresInventario").SendAsync("LowStockAlert", new
+            {
+                idRefaccion,
+                nombreProducto,
+                cantidadActual = stockActual,
+                cantidadMin = stockMinimo,
+                mensaje
+            });
+        }
+
         public override async Task OnConnectedAsync()
         {
-            // Obtener todos los claims de idArea que tenga el usuario
-            var idAreaClaims = Context.User?.FindAll("idArea");
+            Console.WriteLine("🟡 Entrando a OnConnectedAsync");
 
-            // Si alguno de los claims tiene el valor "5", se agrega al grupo "Mantenimiento"
-            if (idAreaClaims != null && idAreaClaims.Any(claim => claim.Value == "5"))
+            // 1) Agrupar a cada conexión por usuario (para notificaciones individuales)
+            var idEmpleado = Context.UserIdentifier;
+            Console.WriteLine($"[Hub] Conexión añadida a User_{idEmpleado}");
+            await Groups.AddToGroupAsync(Context.ConnectionId, $"User_{idEmpleado}");
+
+            // 2) Agrupar por área + rol
+            var idAreas = Context.User.FindAll("idArea").Select(c => c.Value).ToList();
+            var roles = Context.User.FindAll(ClaimTypes.Role).Select(c => c.Value).ToList();
+            var idRoles = Context.User.FindAll("idRol").Select(c => c.Value).ToList();
+
+            foreach (var idArea in idAreas)
             {
-                await Groups.AddToGroupAsync(Context.ConnectionId, "Mantenimiento");
+                // a) Técnicos de Mantenimiento (idArea = 5)
+                if (idArea == "5")
+                {
+                    await Groups.AddToGroupAsync(Context.ConnectionId, "Mantenimiento");
+                    Console.WriteLine($"[Hub] Conexión añadida a Mantenimiento");
+                }
+
+                // b) Assistant Managers de esa área
+                if (roles.Contains("Assistant Manager"))
+                {
+                    var grp = $"Area_{idArea}_Assistant";
+                    await Groups.AddToGroupAsync(Context.ConnectionId, grp);
+                    Console.WriteLine($"[Hub] Conexión añadida a {grp}");
+                }
+
+                // c) Supervisor de esa área
+                if (roles.Contains("Supervisor"))
+                {
+                    var grp = $"Area_{idArea}_Supervisor";
+                    await Groups.AddToGroupAsync(Context.ConnectionId, grp);
+                    Console.WriteLine($"[Hub] Conexión añadida a {grp}");
+                }
+
+                // d) Grupos combinados por área y rol (para notificaciones específicas)
+                foreach (var idRol in idRoles)
+                {
+                    var combinedGroup = $"Area_{idArea}_Rol_{idRol}";
+                    await Groups.AddToGroupAsync(Context.ConnectionId, combinedGroup);
+                    Console.WriteLine($"[Hub] Conexión añadida a {combinedGroup}");
+                }
+            }
+
+            // Grupo especial para notificaciones de inventario
+            bool esGestorInventario =
+                (idAreas.Contains("5") && idRoles.Contains("7")) ||
+                (idAreas.Contains("2") && idRoles.Contains("12"));
+
+            if (esGestorInventario)
+            {
+                await Groups.AddToGroupAsync(Context.ConnectionId, "GestoresInventario");
+                Console.WriteLine($"[Hub] Conexión añadida a GestoresInventario");
             }
 
             await base.OnConnectedAsync();
@@ -40,8 +108,32 @@ namespace Piolax_WebApp.Hubs
             }
             else
             {
-                // Otros casos
+                Console.WriteLine($"Cliente {Context.ConnectionId} no pudo unirse al grupo debido a idArea {idArea}");
             }
+        }
+
+        // 1) Notificar nueva solicitud a los técnicos de Mantenimiento
+        public async Task NewRequest(int idSolicitud, string descripcion, int idArea)
+        {
+            await Clients.Group("Mantenimiento")
+                .SendAsync("ReceiveNewRequest", new { idSolicitud, descripcion });
+        }
+
+        // 2) Notificar al solicitante que su orden está lista para validación
+        public async Task NotifyRequestReady(int idSolicitud, int idSolicitante)
+        {
+            await Clients.Group($"User_{idSolicitante}")
+                .SendAsync("RequestReadyForApproval", new { idSolicitud });
+        }
+
+        // 3) Notificar a los roles superiores de área que hay una solicitud pendiente de validación
+        public async Task NotifyAwaitingValidation(int idSolicitud, int idArea)
+        {
+            var dto = new { idSolicitud, idArea };
+            await Clients.Group($"Area_{idArea}_Assistant")
+                .SendAsync("RequestAwaitingValidation", dto);
+            await Clients.Group($"Area_{idArea}_Supervisor")
+                .SendAsync("RequestAwaitingValidation", dto);
         }
 
 

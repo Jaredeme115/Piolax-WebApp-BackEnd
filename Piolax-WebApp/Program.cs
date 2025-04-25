@@ -11,6 +11,8 @@ using System.Collections.Specialized;
 using Piolax_WebApp.BackgroundServices; 
 using Piolax_WebApp.Hubs;
 using Piolax_WebApp.Utilities;
+using System.IdentityModel.Tokens.Jwt;
+using System.Security.Claims;
 
 
 
@@ -132,7 +134,11 @@ builder.Services.AddScoped<IKPIRepository, KPIRepository>();
 builder.Services.AddScoped<IKPIDashboardService, KPIDashboardService>();
 
 //Notificaciones
-builder.Services.AddScoped<NewRequestNotificationService>();
+//builder.Services.AddScoped<NewRequestNotificationService>();
+builder.Services.AddHostedService<LowStockNotificationService>();
+
+//Obtener URL dinamicamente
+builder.Services.AddHttpContextAccessor();
 
 
 
@@ -205,6 +211,9 @@ builder.Services.AddCors(options =>
 
 //Configuración de JWT
 
+// Agregado para Notificaciones de quien Solicito - Limpia el mapeo por defecto del handler
+JwtSecurityTokenHandler.DefaultInboundClaimTypeMap.Clear();
+
 var tokenKey = builder.Configuration["TokenKey"];
 if (string.IsNullOrEmpty(tokenKey))
 {
@@ -236,6 +245,9 @@ builder.Services.AddAuthentication(JwtBearerDefaults.AuthenticationScheme)
         //var tokenKey = builder.Configuration["TokenKey"];
         options.TokenValidationParameters = new TokenValidationParameters
         {
+            //Agregado
+            NameClaimType = ClaimTypes.NameIdentifier,
+
             ValidateIssuerSigningKey = true,
             IssuerSigningKey = new SymmetricSecurityKey(Encoding.UTF8.GetBytes(tokenKey)),
             ValidateIssuer = true,
@@ -267,6 +279,28 @@ builder.Services.AddAuthentication(JwtBearerDefaults.AuthenticationScheme)
                 return false;
             }
         };
+
+        //Agregado para Notificaciones
+
+        options.Events = new JwtBearerEvents
+        {
+            OnMessageReceived = context =>
+            {
+                // Extrae el token de la query string "access_token"
+                var accessToken = context.Request.Query["access_token"];
+
+                // Solo para rutas de hubs de SignalR
+                var path = context.HttpContext.Request.Path;
+                if (!string.IsNullOrEmpty(accessToken) &&
+                    (path.StartsWithSegments("/NotificationHub") ||
+                     path.StartsWithSegments("/AsignacionHub")))
+                {
+                    context.Token = accessToken;
+                }
+
+                return Task.CompletedTask;
+            }
+        };
     });
 
 
@@ -274,7 +308,16 @@ builder.Services.AddAuthentication(JwtBearerDefaults.AuthenticationScheme)
 
 builder.Services.AddAuthorization(options =>
 {
-    options.AddPolicy("AdminOnly", policy => policy.RequireRole("Admin"));
+    //options.AddPolicy("AdminOnly", policy => policy.RequireRole("Admin"));
+    options.AddPolicy("AdminOnly", policy =>
+        policy.RequireRole(
+            "Tecnico",        // tu rol original
+            "Supervisor",     // rol adicional
+            "Assistant Manager", // otro rol
+            "Manager",         // cuantos roles necesites
+            "Lider"
+        )
+    );
 });
 
 var app = builder.Build();
@@ -288,7 +331,7 @@ if (app.Environment.IsDevelopment())
 
 
 // Permitir al CORS para archivos estáticos
-app.UseStaticFiles(new StaticFileOptions
+/*app.UseStaticFiles(new StaticFileOptions
 {
     OnPrepareResponse = ctx =>
     {
@@ -296,7 +339,30 @@ app.UseStaticFiles(new StaticFileOptions
         ctx.Context.Response.Headers.Append("Access-Control-Allow-Methods", "GET, OPTIONS");
         ctx.Context.Response.Headers.Append("Access-Control-Allow-Headers", "Content-Type, Authorization");
     }
+});*/
+
+app.UseStaticFiles(new StaticFileOptions
+{
+    OnPrepareResponse = ctx =>
+    {
+        var request = ctx.Context.Request;
+        var response = ctx.Context.Response;
+
+        // Tomamos el origen de la petición
+        var origin = request.Headers["Origin"].FirstOrDefault();
+
+        // Si viene de localhost:4200 o contiene "trycloudflare.com", lo permitimos
+        if (!string.IsNullOrEmpty(origin) &&
+            (origin == "http://localhost:4200" || origin.Contains("trycloudflare.com")))
+        {
+            response.Headers.Append("Access-Control-Allow-Origin", origin);
+            response.Headers.Append("Access-Control-Allow-Methods", "GET, OPTIONS");
+            response.Headers.Append("Access-Control-Allow-Headers", "Content-Type, Authorization");
+        }
+    }
 });
+
+
 
 // Permitir servir archivos estáticos
 app.UseStaticFiles();
