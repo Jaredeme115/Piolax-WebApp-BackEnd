@@ -4,7 +4,10 @@
     {
         public int idArea { get; set; }
         public int idMaquina { get; set; }
+        public int anioPreventivo { get; set; }
+
         public int semanaPreventivo { get; set; }
+        public int? semanaOriginalMP { get; set; }
         public int idFrecuenciaPreventivo { get; set; }
         public int? idEstatusPreventivo { get; set; }
         public int idEmpleado { get; set; }

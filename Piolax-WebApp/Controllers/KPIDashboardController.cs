@@ -10,17 +10,46 @@ namespace Piolax_WebApp.Controllers
         private readonly IKPIDashboardService _service = service;
 
         [HttpGet("mtta")]
-        public async Task<IActionResult> GetMTTA(int? idArea, int? idMaquina, int? anio = null, int? mes = null)
+        public async Task<IActionResult> GetMTTA(int? idArea = null, int? idMaquina = null, int? anio = null, int? mes = null, int? semana = null, int? diaSemana = null)
         {
-            var result = await _service.ObtenerMTTA(idArea, idMaquina, anio, mes);
+            var result = await _service.ObtenerMTTA(idArea, idMaquina, anio, mes, semana, diaSemana);
             return Ok(result);
+        }
+        // Método para obtener MTTA segmentado
+        [HttpGet("ObtenerMTTASegmentado")]
+        public async Task<ActionResult<List<KpiSegmentadoDTO>>> ObtenerMTTASegmentado(
+            int? idArea = null,
+            int? idMaquina = null,
+            int? anio = null,
+            int? mes = null,
+            int? semana = null,
+            int? diaSemana = null)
+        {
+            var resultado = await _service.ObtenerMTTASegmentado(idArea, idMaquina, anio, mes, semana, diaSemana);
+            return Ok(resultado);
         }
 
         [HttpGet("mttr")]
-        public async Task<IActionResult> GetMTTR(int? idArea = null, int? idMaquina = null, int? idEmpleado = null, int? anio = null, int? mes = null)
+        public async Task<IActionResult> GetMTTR(int? idArea = null, int? idMaquina = null, int? idEmpleado = null, int? anio = null, int? mes = null,
+             int? semana = null, int? diaSemana = null)
         {
-            var result = await _service.ObtenerMTTR(idArea, idMaquina, idEmpleado, anio, mes);
+            var result = await _service.ObtenerMTTR(idArea, idMaquina, idEmpleado, anio, mes, semana , diaSemana);
             return Ok(result);
+        }
+
+        // Método para obtener MTTR segmentado 
+        [HttpGet("ObtenerMTTRSegmentado")]
+        public async Task<ActionResult<List<KpiSegmentadoDTO>>> ObtenerMTTRSegmentado(
+            int? idArea = null,
+            int? idMaquina = null,
+            int? idEmpleado = null,
+            int? anio = null,
+            int? mes = null,
+            int? semana = null,
+            int? diaSemana = null)
+        {
+            var resultado = await _service.ObtenerMTTRSegmentado(idArea, idMaquina, idEmpleado, anio, mes, semana, diaSemana);
+            return Ok(resultado);
         }
 
         [HttpGet("mtbf")]
@@ -57,6 +86,8 @@ namespace Piolax_WebApp.Controllers
 
             return Ok(result);
         }
+
+
 
     }
 }

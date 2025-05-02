@@ -7,7 +7,13 @@
         public string nombreArea { get; set; }
         public int idMaquina { get; set; }
         public string nombreMaquina { get; set; }
+
+        public int anioPreventivo { get; set; }
+
         public int semanaPreventivo { get; set; }
+
+        public int? semanaOriginalMP { get; set; }
+        
         public int idFrecuenciaPreventivo { get; set; }
         public string nombreFrecuenciaPreventivo { get; set; }
         public int idEstatusPreventivo { get; set; }

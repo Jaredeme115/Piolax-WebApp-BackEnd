@@ -14,7 +14,9 @@ namespace Piolax_WebApp.Repositories.Impl
             _context.MantenimientoPreventivo.Add(mantenimientoPreventivo);
             await _context.SaveChangesAsync();
             return mantenimientoPreventivo;
+
         }
+
 
         // Método para consultar un mantenimiento preventivo con detalles
         public async Task<MantenimientoPreventivo?> ConsultarMP(int idMP)
@@ -27,6 +29,7 @@ namespace Piolax_WebApp.Repositories.Impl
                 .FirstOrDefaultAsync(mp => mp.idMP == idMP);
         }
 
+
         // Método para modificar un mantenimiento preventivo
         // Método para modificar un mantenimiento preventivo
         public async Task<MantenimientoPreventivo?> Modificar(int idMP, MantenimientoPreventivo mantenimientoPreventivo)
@@ -36,6 +39,9 @@ namespace Piolax_WebApp.Repositories.Impl
             if (mantenimientoExistente == null) return null; // Retorna null si no existe
 
             mantenimientoExistente.semanaPreventivo = mantenimientoPreventivo.semanaPreventivo;
+            mantenimientoExistente.semanaOriginalMP = mantenimientoPreventivo.semanaOriginalMP;
+            mantenimientoExistente.anioPreventivo = mantenimientoPreventivo.anioPreventivo;
+
             mantenimientoExistente.idFrecuenciaPreventivo = mantenimientoPreventivo.idFrecuenciaPreventivo;
             mantenimientoExistente.idEstatusPreventivo = mantenimientoPreventivo.idEstatusPreventivo;
             mantenimientoExistente.activo = mantenimientoPreventivo.activo;
@@ -67,6 +73,7 @@ namespace Piolax_WebApp.Repositories.Impl
                 .Include(mp => mp.FrecuenciaMP)
                 .Include(mp => mp.EstatusPreventivo)
                 .Include(mp => mp.Empleado)
+                .OrderBy(mp => mp.anioPreventivo).ThenBy(mp => mp.semanaPreventivo) // ✅ orden por año-semana
                 .ToListAsync();
         }
 
@@ -148,6 +155,37 @@ namespace Piolax_WebApp.Repositories.Impl
 
             return mp;
         }
+
+        public async Task<IEnumerable<MantenimientoPreventivo>> ConsultarPorAnioYMes(int anio, int mes)
+        {
+            var fechaInicio = new DateTime(anio, mes, 1);
+            var fechaFin = fechaInicio.AddMonths(1).AddDays(-1);
+
+            var calendar = System.Globalization.CultureInfo.CurrentCulture.Calendar;
+
+            var semanas = Enumerable.Range(0, (fechaFin - fechaInicio).Days + 1)
+                .Select(offset =>
+                {
+                    var date = fechaInicio.AddDays(offset);
+                    return new
+                    {
+                        Week = calendar.GetWeekOfYear(date, System.Globalization.CalendarWeekRule.FirstDay, DayOfWeek.Monday),
+                        Year = date.Year
+                    };
+                })
+                .Distinct()
+                .ToList();
+
+            var semanasDelMes = semanas.Select(x => x.Week).ToList();
+            var aniosValidos = semanas.Select(x => x.Year).Distinct().ToList();
+
+            return await _context.MantenimientoPreventivo
+                .Where(mp =>
+                    aniosValidos.Contains(mp.anioPreventivo) &&
+                    semanasDelMes.Contains(mp.semanaPreventivo))
+                .ToListAsync();
+        }
+
 
 
     }

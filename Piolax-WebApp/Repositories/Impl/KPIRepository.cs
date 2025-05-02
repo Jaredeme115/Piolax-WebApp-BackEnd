@@ -1,5 +1,7 @@
 ﻿using Microsoft.EntityFrameworkCore;
+using Piolax_WebApp.DTOs;
 using Piolax_WebApp.Models;
+using static Microsoft.EntityFrameworkCore.DbLoggerCategory;
 
 namespace Piolax_WebApp.Repositories.Impl
 {
@@ -42,7 +44,7 @@ namespace Piolax_WebApp.Repositories.Impl
             await _context.SaveChangesAsync();
         }
 
-        public async Task<IEnumerable<KpisDetalle>> ConsultarMTTA(int? idArea = null, int? idMaquina = null, int? anio = null, int? mes = null)
+        public async Task<IEnumerable<KpisDetalle>> ConsultarMTTA(int? idArea = null, int? idMaquina = null, int? anio = null, int? mes = null, int? semana = null, int? diaSemana = null)
         {
             var query = _context.KpisDetalle
                 .Include(kd => kd.KpisMantenimiento)
@@ -57,6 +59,7 @@ namespace Piolax_WebApp.Repositories.Impl
             {
                 query = query.Where(kd => kd.KpisMantenimiento.idMaquina == idMaquina.Value);
             }
+
             if (anio.HasValue)
             {
                 query = query.Where(kd => kd.KpisMantenimiento.fechaCalculo.Year == anio);
@@ -66,10 +69,28 @@ namespace Piolax_WebApp.Repositories.Impl
                 query = query.Where(kd => kd.KpisMantenimiento.fechaCalculo.Month == mes);
             }
 
-            return await query.ToListAsync();
+            var resultados = await query.ToListAsync();
+
+            // 🔥 Aquí filtramos por semana
+            if (semana.HasValue)
+            {
+                resultados = resultados
+                    .Where(kd => System.Globalization.ISOWeek.GetWeekOfYear(kd.KpisMantenimiento.fechaCalculo) == semana.Value)
+                    .ToList();
+            }
+
+            // 🔥 Aquí filtramos por día de la semana
+            if (diaSemana.HasValue)
+            {
+                resultados = resultados
+                    .Where(kd => (int)kd.KpisMantenimiento.fechaCalculo.DayOfWeek == diaSemana.Value)
+                    .ToList();
+            }
+
+            return resultados;
         }
 
-        public async Task<IEnumerable<KpisDetalle>> ConsultarMTTR(int? idArea = null, int? idMaquina = null, int? idEmpleado = null, int? anio = null, int? mes = null)
+        public async Task<IEnumerable<KpisDetalle>> ConsultarMTTR(int? idArea = null, int? idMaquina = null, int? idEmpleado = null, int? anio = null, int? mes = null, int? semana = null, int? diaSemana = null)
         {
             var query = _context.KpisDetalle
                 .Include(kd => kd.KpisMantenimiento)
@@ -98,7 +119,25 @@ namespace Piolax_WebApp.Repositories.Impl
                 query = query.Where(kd => kd.KpisMantenimiento.fechaCalculo.Month == mes);
             }
 
-            return await query.ToListAsync();
+            var resultados = await query.ToListAsync();
+
+            // 🔥 Aquí filtramos por semana
+            if (semana.HasValue)
+            {
+                resultados = resultados
+                    .Where(kd => System.Globalization.ISOWeek.GetWeekOfYear(kd.KpisMantenimiento.fechaCalculo) == semana.Value)
+                    .ToList();
+            }
+
+            // 🔥 Aquí filtramos por día de la semana
+            if (diaSemana.HasValue)
+            {
+                resultados = resultados
+                    .Where(kd => (int)kd.KpisMantenimiento.fechaCalculo.DayOfWeek == diaSemana.Value)
+                    .ToList();
+            }
+
+            return resultados;
         }
 
         public async Task<IEnumerable<KpisDetalle>> ConsultarMTBF(int? idArea = null)
@@ -156,11 +195,68 @@ namespace Piolax_WebApp.Repositories.Impl
             return await query.ToListAsync();
         }
 
+        public async Task<IEnumerable<KpisMP>> ConsultarKPIsPreventivo(int? año = null, int? mes = null)
+        {
+            // Usamos Include para incluir la relación KpisMPDetalle
+            var query = _context.KpisMP
+                .Include(kp => kp.KpisMPDetalle)
+                .AsQueryable();
+
+            if (año.HasValue)
+            {
+                query = query.Where(kp => kp.fechaCalculo.Year == año.Value);
+            }
+
+            if (mes.HasValue)
+            {
+                query = query.Where(kp => kp.fechaCalculo.Month == mes.Value);
+            }
+
+            // Ejecuta la consulta hasta aquí
+            var results = await query.ToListAsync();
+
+            return results;
+        }
+
+        public async Task<IEnumerable<KpisMPDetalle>> ConsultarKPIsDetallePreventivo(string nombreKPI = null, int? año = null, int? mes = null)
+        {
+            // Aquí está el problema: debes importar el tipo correcto
+            // Primero obtenemos la consulta base sin el Include
+            var query = _context.KpisMPDetalle.AsQueryable();
+
+            // Añadimos el Include de forma correcta
+            query = query.Include(kd => kd.KpisMP);
+
+            if (!string.IsNullOrEmpty(nombreKPI))
+            {
+                query = query.Where(kd => kd.kpiMPNombre == nombreKPI);
+            }
+
+            if (año.HasValue)
+            {
+                query = query.Where(kd => kd.KpisMP.fechaCalculo.Year == año.Value);
+            }
+
+            if (mes.HasValue)
+            {
+                query = query.Where(kd => kd.KpisMP.fechaCalculo.Month == mes.Value);
+            }
+
+            // Ejecuta la consulta hasta aquí
+            var results = await query.ToListAsync();
+
+            return results;
+        }
+
         private int GetWeekOfYear(DateTime date)
         {
             var calendar = System.Globalization.CultureInfo.CurrentCulture.Calendar;
             return calendar.GetWeekOfYear(date, System.Globalization.CalendarWeekRule.FirstDay, DayOfWeek.Monday);
         }
+
+
+
+
 
     }
 }

@@ -20,7 +20,11 @@ namespace Piolax_WebApp.Models
         public int idEmpleado { get; set; }
         public Empleado Empleado { get; set; }
 
+        public int anioPreventivo { get; set; }
+
         public int semanaPreventivo { get; set; }
+
+        public int? semanaOriginalMP { get; set; }
 
         //[ForeignKey("FrecuenciaMP")]
         public int idFrecuenciaPreventivo { get; set; }
@@ -35,7 +39,8 @@ namespace Piolax_WebApp.Models
         public DateTime? ultimaEjecucion { get; set; }
         public DateTime? proximaEjecucion { get; set; }
         public DateTime? fechaEjecucion { get; set; }
-
+     
+         
         public virtual ICollection<MantenimientoPreventivoPDFs> MantenimientoPreventivoPDFs { get; set; } = new List<MantenimientoPreventivoPDFs>(); // Lista de MantenimientoPreventivoPDFs asociados a Mantenimiento Preventivo
 
         public virtual ICollection<ObservacionesMP> ObservacionesMP { get; set; } = new List<ObservacionesMP>(); // Lista de ObservacionesMP asociados a Mantenimiento Preventivo
