@@ -137,6 +137,9 @@ builder.Services.AddScoped<IKPIDashboardService, KPIDashboardService>();
 //builder.Services.AddScoped<NewRequestNotificationService>();
 builder.Services.AddHostedService<LowStockNotificationService>();
 
+// Añade el servicio de KPIs en tiempo real
+builder.Services.AddHostedService<KPIRealTimeService>();
+
 //Obtener URL dinamicamente
 builder.Services.AddHttpContextAccessor();
 

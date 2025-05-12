@@ -22,5 +22,8 @@ namespace Piolax_WebApp.Repositories
         Task<IEnumerable<Solicitudes>> ObtenerSolicitudesConPrioridadAsync();
         Task<bool> EliminarSolicitud(int idSolicitud);
 
+        //Método para obtener solicitudes por area
+        Task<IEnumerable<Solicitudes>> ObtenerSolicitudesPorAreaYRoles(int idArea, List<int> idRoles);
+
     }
 }

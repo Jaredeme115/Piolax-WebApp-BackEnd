@@ -109,7 +109,8 @@ namespace Piolax_WebApp.Controllers
             {
                 s.idSolicitud,
                 s.descripcion,
-                fechaSolicitud = s.fechaSolicitud.ToString("dd/MM/yyyy HH:mm:ss"), // Formatear la fecha
+                //fechaSolicitud = s.fechaSolicitud.ToString("dd/MM/yyyy HH:mm:ss"), // Formatear la fecha
+                fechaSolicitud = s.fechaSolicitud,
                 s.nombreCompletoEmpleado,
                 s.nombreMaquina,
                 s.nombreTurno,
@@ -178,6 +179,34 @@ namespace Piolax_WebApp.Controllers
                 return StatusCode(500, new { mensaje = "Error al eliminar la solicitud.", error = ex.Message });
             }
         }
+
+        [HttpGet("ObtenerSolicitudesPorAreaYRoles/{idArea}")]
+        public async Task<ActionResult<IEnumerable<SolicitudesDetalleDTO>>> ObtenerSolicitudesPorAreaYRoles(int idArea)
+        {
+            // Lista de roles específicos a filtrar (6, 7, 8)
+            var rolesEspecificos = new List<int> { 6, 7, 8 };
+
+            var solicitudes = await _service.ObtenerSolicitudesPorAreaYRoles(idArea, rolesEspecificos);
+
+            var solicitudesFormateadas = solicitudes.Select(s => new
+            {
+                s.idSolicitud,
+                s.descripcion,
+                //fechaSolicitud = s.fechaSolicitud.ToString("dd/MM/yyyy HH:mm:ss"),
+                fechaSolicitud = s.fechaSolicitud,
+                s.nombreCompletoEmpleado,
+                s.nombreMaquina,
+                s.nombreTurno,
+                s.nombreStatusOrden,
+                s.nombreStatusAprobacionSolicitante,
+                s.area,
+                s.rol,
+                s.nombreCategoriaTicket
+            });
+
+            return Ok(solicitudesFormateadas);
+        }
+
 
     }
 }

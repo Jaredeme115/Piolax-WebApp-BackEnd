@@ -2,6 +2,7 @@
 using Piolax_WebApp.Models;
 using Piolax_WebApp.Repositories;
 using Piolax_WebApp.Repositories.Impl;
+using System.Linq;
 
 namespace Piolax_WebApp.Services.Impl
 {
@@ -323,7 +324,7 @@ namespace Piolax_WebApp.Services.Impl
         /// <param name="idMaquina">Identificador de la máquina.</param>
         /// <param name="idArea">Identificador del área.</param>
         /// <returns>Promedio de tiempo entre fallas en minutos.</returns>
-        public async Task<double> CalcularMTBF(int idMaquina, int idArea)
+        /*public async Task<double> CalcularMTBF(int idMaquina, int idArea)
         {
             var solicitudes = await _solicitudRepository.ConsultarSolicitudesPorMaquinaYArea(idMaquina, idArea);
             if (!solicitudes.Any())
@@ -334,7 +335,53 @@ namespace Piolax_WebApp.Services.Impl
             double tiempoTotalOperacion = (DateTime.Now - fechaInicioOperacion).TotalMinutes;
             int cantidadFallas = solicitudes.Count(); // Se asume cada solicitud es una "falla"
             return cantidadFallas > 0 ? tiempoTotalOperacion / cantidadFallas : 0;
+        }*/
+
+        /// <summary>
+        /// Calcula el MTBF (Mean Time Between Failures) en minutos.
+        /// Se resta el tiempo perdido en reparaciones (MTTR) del tiempo total 
+        /// disponible desde la primera falla hasta ahora.
+        /// </summary>
+        public async Task<double> CalcularMTBF(int idMaquina, int idArea)
+        {
+            // 1) Todas las solicitudes (cada una es una falla)
+            var solicitudes = await _solicitudRepository
+                .ConsultarSolicitudesPorMaquinaYArea(idMaquina, idArea);
+            if (!solicitudes.Any())
+                return 0;
+
+            // 2) Fecha de inicio de operación = primera solicitud (proxy de instalación)
+            DateTime fechaInicioOperacion = solicitudes.Min(s => s.fechaSolicitud);
+
+            // 3) Tiempo total disponible en minutos
+            double tiempoTotalDisponible = (DateTime.Now - fechaInicioOperacion).TotalMinutes;
+
+            // 4) Sumar todo el tiempo perdido (MTTR) en minutos
+            double tiempoPerdido = 0;
+            foreach (var sol in solicitudes)
+            {
+                // Obtenemos la asignación principal (fase de reparación)
+                var asign = sol.Asignaciones?
+                    .FirstOrDefault(a => a.idStatusAsignacion >= 1);
+                if (asign == null)
+                    continue;
+
+                // Sumamos el tiempo acumulado de cada técnico en esa falla
+                tiempoPerdido += asign.Asignacion_Tecnico
+                    .Sum(t => t.tiempoAcumuladoMinutos);
+            }
+
+            // 5) Número de paradas = número de solicitudes (fallas)
+            int numeroParadas = solicitudes.Count();
+
+            // 6) Aplicar fórmula MTBF = (Disponible – Perdido) / Paradas
+            var mtbfMinutos = numeroParadas > 0
+                ? (tiempoTotalDisponible - tiempoPerdido) / numeroParadas
+                : 0;
+
+            return mtbfMinutos;
         }
+
 
         #endregion
 
@@ -364,6 +411,7 @@ namespace Piolax_WebApp.Services.Impl
 
             await _kpiRepository.GuardarKPIDetalles(kpiMantenimiento.idKPIMantenimiento, kpiDetalles);
         }
+
 
 
     }

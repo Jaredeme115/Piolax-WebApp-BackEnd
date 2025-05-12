@@ -38,6 +38,7 @@ namespace Piolax_WebApp.Services.Impl
                 semanaOriginalMP = mantenimientoPreventivoCreateDTO.semanaPreventivo,
                 activo = mantenimientoPreventivoCreateDTO.activo,
                 idEmpleado = mantenimientoPreventivoCreateDTO.idEmpleado,
+                anioPreventivo = DateTime.Now.Year,
 
 
                 // No asignamos fecha de ejecución / pró para un mantenimiento nuevo
@@ -73,6 +74,7 @@ namespace Piolax_WebApp.Services.Impl
                 // Actualizar la nueva semana y proximaEjecucion
                 mantenimientoPreventivo.proximaEjecucion = fechaActual;
                 mantenimientoPreventivo.semanaPreventivo = GetWeekOfYear(fechaActual);
+                mantenimientoPreventivo.anioPreventivo = fechaActual.Year;
 
                 // Asignar la última ejecución a la fecha actual
                 mantenimientoPreventivo.ultimaEjecucion = DateTime.Now;
@@ -80,7 +82,7 @@ namespace Piolax_WebApp.Services.Impl
             else
             {
                 // Mantener la lógica actual para Pendiente o No realizado
-                if (mantenimientoPreventivo.semanaPreventivo >= semanaActual)
+                if (mantenimientoPreventivo.semanaPreventivo >= semanaActual && mantenimientoPreventivo.anioPreventivo >= DateTime.Now.Year)
                     mantenimientoPreventivo.idEstatusPreventivo = 1; // Pendiente
                 else
                     mantenimientoPreventivo.idEstatusPreventivo = 2; // No realizado
@@ -98,6 +100,7 @@ namespace Piolax_WebApp.Services.Impl
                 idFrecuenciaPreventivo = mantenimientoCreado.idFrecuenciaPreventivo,
                 semanaPreventivo = mantenimientoCreado.semanaPreventivo,
                 semanaOriginalMP = mantenimientoCreado.semanaOriginalMP,
+                anioPreventivo = mantenimientoCreado.anioPreventivo,
                 activo = mantenimientoCreado.activo,
                 idEmpleado = mantenimientoCreado.idEmpleado,
                 ultimaEjecucion = mantenimientoCreado.ultimaEjecucion,
@@ -133,6 +136,7 @@ namespace Piolax_WebApp.Services.Impl
 
             mantenimiento.semanaPreventivo = GetWeekOfYear(proximaFecha);
             mantenimiento.proximaEjecucion = proximaFecha;
+            mantenimiento.anioPreventivo = proximaFecha.Year;
 
             // Actualizar el mantenimiento en la BD
             await _repository.Modificar(idMP, mantenimiento);
@@ -324,22 +328,61 @@ namespace Piolax_WebApp.Services.Impl
                 return null; // O puedes lanzar una excepción si prefieres
             }
 
-            // Si es la primera vez que se reprograma y la semana cambia, 
-            // guardamos la semana original
-            if (mantenimientoExistente.semanaPreventivo != mantenimientoPreventivoModificarDTO.semanaPreventivo)
+            // Si es una reprogramación (cambio de semana)
+            /*if (mantenimientoExistente.semanaPreventivo != mantenimientoPreventivoModificarDTO.semanaPreventivo)
             {
-                // Si es la primera reprogramación o no tiene semana original guardada
-                if (mantenimientoExistente.idEstatusPreventivo != 4 || mantenimientoExistente.semanaOriginalMP == 0)
+                // CORRECCIÓN: Asegurar que semanaOriginalMP siempre tenga un valor válido
+                // Si es la primera reprogramación O si semanaOriginalMP no es válida
+                if (mantenimientoExistente.idEstatusPreventivo != 4 ||
+                    mantenimientoExistente.semanaOriginalMP == 0 ||
+                    mantenimientoExistente.semanaOriginalMP == mantenimientoExistente.semanaPreventivo)
                 {
                     // Guardamos la semana actual como la original antes de cambiarla
                     mantenimientoExistente.semanaOriginalMP = mantenimientoExistente.semanaPreventivo;
+
+                    // Si la semana original sigue siendo igual a la nueva semana (caso extraño)
+                    if (mantenimientoExistente.semanaOriginalMP == mantenimientoPreventivoModificarDTO.semanaPreventivo)
+                    {
+                        // Calcular una semana original diferente basada en el intervalo
+                        int intervalo = ObtenerIntervaloDeFrecuencia(mantenimientoExistente.idFrecuenciaPreventivo);
+                        mantenimientoExistente.semanaOriginalMP = mantenimientoPreventivoModificarDTO.semanaPreventivo - intervalo;
+
+                        // Asegurar que esté en rango válido (1-52)
+                        if (mantenimientoExistente.semanaOriginalMP <= 0)
+                        {
+                            mantenimientoExistente.semanaOriginalMP += 52;
+                        }
+                    }
                 }
 
-                // Cambiamos a estado reprogramado
+                
+
+                // Cambio a estado reprogramado
                 mantenimientoExistente.idEstatusPreventivo = 4; // "Reprogramado"
 
                 // Actualizamos a la nueva semana
                 mantenimientoExistente.semanaPreventivo = mantenimientoPreventivoModificarDTO.semanaPreventivo;
+
+                // Actualizamos el año si es que la semana pasa del mes de diciembre
+                var fechaSemana = GetStartOfWeek(DateTime.Now.Year, mantenimientoExistente.semanaPreventivo);
+                mantenimientoExistente.anioPreventivo = fechaSemana.Year;
+            }*/
+
+            // Lógica de reprogramación
+            if (mantenimientoExistente.semanaPreventivo != mantenimientoPreventivoModificarDTO.semanaPreventivo)
+            {
+                // Preservar semana original SOLO en la primera reprogramación
+                if (mantenimientoExistente.idEstatusPreventivo != 4)
+                {
+                    mantenimientoExistente.semanaOriginalMP = mantenimientoExistente.semanaPreventivo;
+                }
+
+                mantenimientoExistente.idEstatusPreventivo = 4;
+                mantenimientoExistente.semanaPreventivo = mantenimientoPreventivoModificarDTO.semanaPreventivo;
+
+                // Calcular año correcto para semanas de transición
+                var fechaSemana = GetStartOfWeek(DateTime.Now.Year, mantenimientoExistente.semanaPreventivo);
+                mantenimientoExistente.anioPreventivo = fechaSemana.Year;
             }
 
             // Actualizar la frecuencia solo si se modificó
@@ -348,8 +391,7 @@ namespace Piolax_WebApp.Services.Impl
                 mantenimientoExistente.idFrecuenciaPreventivo = mantenimientoPreventivoModificarDTO.idFrecuenciaPreventivo;
             }
 
-            // Asignamos la semana actualizada (si fue reprogramada o no)
-            //mantenimientoExistente.semanaPreventivo = mantenimientoPreventivoModificarDTO.semanaPreventivo;
+            // Actualizamos otros campos modificables
             mantenimientoExistente.activo = mantenimientoPreventivoModificarDTO.activo;
 
             // Verificamos si el técnico ha cambiado, y si es así, actualizamos
@@ -358,43 +400,41 @@ namespace Piolax_WebApp.Services.Impl
                 mantenimientoExistente.idEmpleado = mantenimientoPreventivoModificarDTO.idEmpleado;
             }
 
-            // Actualizar la `proximaEjecucion` solo si tiene fechaEjecucion asignada
-            // y no es un mantenimiento reprogramado
+            // Actualizar la proximaEjecucion según el estado y la información disponible
             if (mantenimientoExistente.fechaEjecucion.HasValue)
             {
-                // Dependiendo de la frecuencia, sumamos el número de meses o años a la fecha de ejecución
+                // Si tiene fechaEjecucion, calculamos la próxima según la frecuencia
                 switch (mantenimientoExistente.idFrecuenciaPreventivo)
                 {
                     case 1: // Frecuencia mensual
                         mantenimientoExistente.proximaEjecucion = mantenimientoExistente.fechaEjecucion.Value.AddMonths(1);
                         break;
-
                     case 2: // Frecuencia bimestral
                         mantenimientoExistente.proximaEjecucion = mantenimientoExistente.fechaEjecucion.Value.AddMonths(2);
                         break;
-
                     case 3: // Frecuencia trimestral
                         mantenimientoExistente.proximaEjecucion = mantenimientoExistente.fechaEjecucion.Value.AddMonths(3);
                         break;
-
                     case 4: // Frecuencia Anual
                         mantenimientoExistente.proximaEjecucion = mantenimientoExistente.fechaEjecucion.Value.AddYears(1);
                         break;
-
                     default:
-                        mantenimientoExistente.proximaEjecucion = mantenimientoExistente.fechaEjecucion.Value; // Si no se encuentra la frecuencia, no hacer ajuste
+                        mantenimientoExistente.proximaEjecucion = mantenimientoExistente.fechaEjecucion.Value;
                         break;
                 }
             }
             else if (mantenimientoExistente.idEstatusPreventivo == 4) // Si es reprogramado
             {
-                // Si es una reprogramación, la proximaEjecucion debe ser la fecha de la semana reprogramada
-                mantenimientoExistente.proximaEjecucion = GetStartOfWeek(DateTime.Now.Year, mantenimientoPreventivoModificarDTO.semanaPreventivo);
+                // Para mantenimientos reprogramados, la proximaEjecucion es la fecha de la semana reprogramada
+                // Usamos el año actual o el año de anioPreventivo si es diferente
+                int yearToUse = mantenimientoExistente.anioPreventivo;
+                mantenimientoExistente.proximaEjecucion = GetStartOfWeek(yearToUse, mantenimientoExistente.semanaPreventivo);
             }
             else if (!mantenimientoExistente.proximaEjecucion.HasValue)
             {
-                // Si proximaEjecucion es null, asignamos una fecha predeterminada
-                mantenimientoExistente.proximaEjecucion = DateTime.Now;
+                // Si no hay proximaEjecucion, usamos la fecha de la semana programada
+                int yearToUse = mantenimientoExistente.anioPreventivo;
+                mantenimientoExistente.proximaEjecucion = GetStartOfWeek(yearToUse, mantenimientoExistente.semanaPreventivo);
             }
 
             // Guardar los cambios en la base de datos
@@ -409,6 +449,7 @@ namespace Piolax_WebApp.Services.Impl
                 idFrecuenciaPreventivo = mantenimientoExistente.idFrecuenciaPreventivo,
                 semanaPreventivo = mantenimientoExistente.semanaPreventivo,
                 semanaOriginalMP = mantenimientoExistente.semanaOriginalMP, // Incluir semana original
+                anioPreventivo = mantenimientoExistente.anioPreventivo,
                 activo = mantenimientoExistente.activo,
                 idEmpleado = mantenimientoExistente.idEmpleado,
                 ultimaEjecucion = mantenimientoExistente.ultimaEjecucion,
@@ -419,6 +460,7 @@ namespace Piolax_WebApp.Services.Impl
 
             return mantenimientoPreventivoDTOResult;
         }
+
 
 
 
@@ -450,6 +492,8 @@ namespace Piolax_WebApp.Services.Impl
                 idMaquina = mp.idMaquina,
                 nombreMaquina = mp.Maquina?.nombreMaquina ?? "",
                 semanaPreventivo = mp.semanaPreventivo,
+                semanaOriginalMP = mp.semanaOriginalMP,
+                anioPreventivo = mp.anioPreventivo,
                 idFrecuenciaPreventivo = mp.idFrecuenciaPreventivo,
                 nombreFrecuenciaPreventivo = mp.FrecuenciaMP?.nombreFrecuenciaMP ?? "",
                 idEstatusPreventivo = mp.idEstatusPreventivo,
@@ -491,7 +535,8 @@ namespace Piolax_WebApp.Services.Impl
                 ultimaEjecucion = mp.ultimaEjecucion,
                 proximaEjecucion = mp.proximaEjecucion,
                 fechaEjecucion = mp.fechaEjecucion,
-                semanaPreventivo = mp.semanaPreventivo
+                semanaPreventivo = mp.semanaPreventivo,
+                anioPreventivo = mp.anioPreventivo
             });
 
             return resultado;
@@ -534,7 +579,8 @@ namespace Piolax_WebApp.Services.Impl
                 activo = mp.activo,
                 ultimaEjecucion = mp.ultimaEjecucion,
                 proximaEjecucion = mp.proximaEjecucion,
-                fechaEjecucion = mp.fechaEjecucion
+                fechaEjecucion = mp.fechaEjecucion,
+                anioPreventivo = mp.anioPreventivo
             };
 
             // 4) Retornar el DTO
@@ -566,7 +612,8 @@ namespace Piolax_WebApp.Services.Impl
                 activo = mp.activo,
                 ultimaEjecucion = mp.ultimaEjecucion,
                 proximaEjecucion = mp.proximaEjecucion,
-                fechaEjecucion = mp.fechaEjecucion
+                fechaEjecucion = mp.fechaEjecucion,
+                anioPreventivo = mp.anioPreventivo
             };
         }
 
@@ -593,7 +640,8 @@ namespace Piolax_WebApp.Services.Impl
                 activo = mp.activo,
                 ultimaEjecucion = mp.ultimaEjecucion,
                 proximaEjecucion = mp.proximaEjecucion,
-                fechaEjecucion = mp.fechaEjecucion
+                fechaEjecucion = mp.fechaEjecucion,
+                anioPreventivo = mp.anioPreventivo
             };
         }
 
@@ -619,9 +667,75 @@ namespace Piolax_WebApp.Services.Impl
                 activo = mp.activo,
                 ultimaEjecucion = mp.ultimaEjecucion,
                 proximaEjecucion = mp.proximaEjecucion,
-                fechaEjecucion = mp.fechaEjecucion
+                fechaEjecucion = mp.fechaEjecucion,
+                anioPreventivo = mp.anioPreventivo
             };
         }
+
+        // Agregar a MantenimientoPreventivoService.cs
+        public async Task<bool> CorregirMantenimientosReprogramados()
+        {
+            try
+            {
+                // Consultar todos los mantenimientos preventivos
+                var mantenimientos = await _repository.ConsultarTodosMPs();
+
+                // Filtrar solo los reprogramados con inconsistencias
+                var reprogramadosInconsistentes = mantenimientos
+                    .Where(mp => mp.idEstatusPreventivo == 4 && (mp.semanaOriginalMP == 0 || mp.semanaOriginalMP == mp.semanaPreventivo))
+                    .ToList();
+
+                if (reprogramadosInconsistentes.Count == 0)
+                {
+                    return true; // No hay inconsistencias para corregir
+                }
+
+                // Corregir cada uno de los registros inconsistentes
+                foreach (var mp in reprogramadosInconsistentes)
+                {
+                    // Si la semana original no es válida, estimarla
+                    if (mp.semanaOriginalMP == 0 || mp.semanaOriginalMP == mp.semanaPreventivo)
+                    {
+                        // Estimar una semana original basada en el intervalo de frecuencia
+                        var intervalo = ObtenerIntervaloDeFrecuencia(mp.idFrecuenciaPreventivo);
+
+                        // Calcular una semana original probable (1 intervalo antes)
+                        mp.semanaOriginalMP = mp.semanaPreventivo - intervalo;
+
+                        // Asegurarse de que la semana sea válida (entre 1 y 53)
+                        if (mp.semanaOriginalMP <= 0)
+                        {
+                            mp.semanaOriginalMP += 52; // Ajustar al año anterior
+                        }
+
+                        // Actualizar en la base de datos
+                        await _repository.Modificar(mp.idMP, mp);
+                    }
+                }
+
+                return true;
+            }
+            catch (Exception ex)
+            {
+                // Registrar el error
+                Console.Error.WriteLine($"Error al corregir mantenimientos reprogramados: {ex.Message}");
+                return false;
+            }
+        }
+
+        // Método auxiliar para obtener el intervalo en semanas según la frecuencia
+        private int ObtenerIntervaloDeFrecuencia(int idFrecuenciaPreventivo)
+        {
+            return idFrecuenciaPreventivo switch
+            {
+                1 => 4,  // Mensual: 4 semanas
+                2 => 8,  // Bimestral: 8 semanas
+                3 => 12, // Trimestral: 12 semanas
+                4 => 52, // Anual: 52 semanas
+                _ => 4   // Valor por defecto: mensual
+            };
+        }
+
 
 
         //Obtener la semana actual
@@ -647,6 +761,8 @@ namespace Piolax_WebApp.Services.Impl
         {
             return startOfWeek.AddDays(6); // Domingo de la misma semana
         }
+
+
 
 
     }

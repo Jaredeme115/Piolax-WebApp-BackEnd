@@ -53,7 +53,7 @@ namespace Piolax_WebApp.Repositories.Impl
                 .ToListAsync();
         }
 
-        public async Task<IEnumerable<Solicitudes>> ObtenerSolicitudesEmpleado(string numNomina)
+        /*public async Task<IEnumerable<Solicitudes>> ObtenerSolicitudesEmpleado(string numNomina)
         {
             return await _context.Solicitudes
            .Include(s => s.Empleado)
@@ -69,6 +69,30 @@ namespace Piolax_WebApp.Repositories.Impl
            .Include(s => s.categoriaTicket)
            .Where(s => s.Empleado.numNomina == numNomina)
            .ToListAsync();
+        }*/
+
+        public async Task<IEnumerable<Solicitudes>> ObtenerSolicitudesEmpleado(string numNomina)
+        {
+            return await _context.Solicitudes
+                .Where(s => s.Empleado.numNomina == numNomina &&
+                            (s.idStatusOrden == 3 || s.idStatusOrden == 6 || s.idStatusOrden == 5 || s.idStatusOrden == 4 || s.idStatusOrden == 2))
+                .Include(s => s.Empleado)
+                    .ThenInclude(e => e.EmpleadoAreaRol)
+                        .ThenInclude(ar => ar.Area)
+                .Include(s => s.Empleado)
+                    .ThenInclude(e => e.EmpleadoAreaRol)
+                        .ThenInclude(ar => ar.Rol)
+                .Include(s => s.Maquina)
+                .Include(s => s.Turno)
+                .Include(s => s.StatusOrden)
+                .Include(s => s.StatusAprobacionSolicitante)
+                .Include(s => s.categoriaTicket)
+                .OrderByDescending(s => s.idStatusOrden == 3 ? s.fechaSolicitud : DateTime.MinValue) // Prioridad a "No tomada"
+                .ThenByDescending(s => s.idStatusOrden == 6 ? s.fechaSolicitud : DateTime.MinValue) // Luego "Rechazada"
+                .ThenByDescending(s => s.idStatusOrden == 5 ? s.fechaSolicitud : DateTime.MinValue) // Luego "Pausada"
+                .ThenByDescending(s => s.idStatusOrden == 4 ? s.fechaSolicitud : DateTime.MinValue) // Luego "Esperando validación"
+                .ThenByDescending(s => s.idStatusOrden == 2 ? s.fechaSolicitud : DateTime.MinValue) // Luego "En proceso"
+                .ToListAsync();
         }
 
         public async Task<SolicitudesDetalleDTO> ModificarEstatusAprobacionSolicitante(int idSolicitud, int idStatusAprobacionSolicitante)
@@ -234,6 +258,30 @@ namespace Piolax_WebApp.Repositories.Impl
             _context.Solicitudes.Remove(solicitud);
             await _context.SaveChangesAsync();
             return true; // Eliminación exitosa
+        }
+
+        public async Task<IEnumerable<Solicitudes>> ObtenerSolicitudesPorAreaYRoles(int idArea, List<int> idRoles)
+        {
+            return await _context.Solicitudes
+                .Where(s => s.idAreaSeleccionada == idArea &&
+                            (s.idStatusOrden == 3 || s.idStatusOrden == 6 || s.idStatusOrden == 5 || s.idStatusOrden == 4 || s.idStatusOrden == 2))
+                .Include(s => s.Empleado)
+                    .ThenInclude(e => e.EmpleadoAreaRol)
+                        .ThenInclude(ar => ar.Area)
+                .Include(s => s.Empleado)
+                    .ThenInclude(e => e.EmpleadoAreaRol)
+                        .ThenInclude(ar => ar.Rol)
+                .Include(s => s.Maquina)
+                .Include(s => s.Turno)
+                .Include(s => s.StatusOrden)
+                .Include(s => s.StatusAprobacionSolicitante)
+                .Include(s => s.categoriaTicket)
+                .OrderByDescending(s => s.idStatusOrden == 3 ? s.fechaSolicitud : DateTime.MinValue) // Prioridad a "No tomada"
+                .ThenByDescending(s => s.idStatusOrden == 6 ? s.fechaSolicitud : DateTime.MinValue) // Luego "Rechazada"
+                .ThenByDescending(s => s.idStatusOrden == 5 ? s.fechaSolicitud : DateTime.MinValue) // Luego "Pausada"
+                .ThenByDescending(s => s.idStatusOrden == 4 ? s.fechaSolicitud : DateTime.MinValue) // Luego "Esperando validación"
+                .ThenByDescending(s => s.idStatusOrden == 2 ? s.fechaSolicitud : DateTime.MinValue) // Luego "En proceso"
+                .ToListAsync();
         }
 
 

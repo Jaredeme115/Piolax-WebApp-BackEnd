@@ -136,6 +136,30 @@ namespace Piolax_WebApp.Hubs
                 .SendAsync("RequestAwaitingValidation", dto);
         }
 
+        // Unirse a un grupo para recibir actualizaciones de KPI por área
+        public async Task JoinAreaKPIGroup(int idArea)
+        {
+            await Groups.AddToGroupAsync(Context.ConnectionId, $"Area_{idArea}");
+            Console.WriteLine($"Cliente {Context.ConnectionId} unido al grupo KPI para área {idArea}");
+        }
+
+        // Unirse a un grupo para recibir actualizaciones de KPI por máquina
+
+
+        public async Task JoinMaquinaKPIGroup(int idMaquina)
+        {
+            await Groups.AddToGroupAsync(Context.ConnectionId, $"Maquina_{idMaquina}");
+            Console.WriteLine($"Cliente {Context.ConnectionId} unido al grupo KPI para máquina {idMaquina}");
+        }
+
+        // Salir de un grupo de KPI
+        public async Task LeaveKPIGroup(string groupName)
+        {
+            await Groups.RemoveFromGroupAsync(Context.ConnectionId, groupName);
+            Console.WriteLine($"Cliente {Context.ConnectionId} salió del grupo KPI {groupName}");
+        }
+
+
 
     }
 }

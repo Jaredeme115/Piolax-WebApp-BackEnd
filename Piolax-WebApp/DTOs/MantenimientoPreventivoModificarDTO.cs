@@ -16,7 +16,10 @@ namespace Piolax_WebApp.DTOs
         public int idEmpleado { get; set; }
 
         public string nombreCompletoTecnicoMP { get; set; }
+
         public int semanaOriginalMP { get; set; } // Semana original del mantenimiento preventivo
+
+        public int anioPreventivo { get; set; }
 
     }
 }

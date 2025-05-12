@@ -165,6 +165,18 @@ namespace Piolax_WebApp.Controllers
             return Ok(mp);
         }
 
+        [HttpPost("corregir-inconsistencias")]
+        public async Task<IActionResult> CorregirInconsistencias()
+        {
+            var resultado = await _service.CorregirMantenimientosReprogramados();
+            if (resultado)
+            {
+                return Ok(new { mensaje = "Inconsistencias corregidas con éxito" });
+            }
+            return BadRequest(new { mensaje = "Error al corregir inconsistencias" });
+        }
+
+
 
     }
 }

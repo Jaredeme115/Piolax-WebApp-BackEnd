@@ -518,5 +518,69 @@ namespace Piolax_WebApp.Services.Impl
             return await _repository.EliminarSolicitud(idSolicitud);
         }
 
+        public async Task<IEnumerable<SolicitudesDetalleDTO>> ObtenerSolicitudesPorAreaYRoles(int idArea, List<int> idRoles)
+        {
+            // Obtener solicitudes con filtro de área y roles, aplicando la prioridad según el status
+            var solicitudes = await _repository.ObtenerSolicitudesPorAreaYRoles(idArea, idRoles);
+            var solicitudesDetalleDTO = new List<SolicitudesDetalleDTO>();
+
+            foreach (var solicitud in solicitudes)
+            {
+                var empleado = solicitud.Empleado;
+                var areasRoles = empleado.EmpleadoAreaRol;
+
+                string nombreArea = "N/A";
+                string nombreRol = "N/A";
+
+                // Gestión del área 19 (caso especial)
+                if (solicitud.idAreaSeleccionada == 19)
+                {
+                    nombreArea = "Servicios Generales";
+                    var rolPrincipal = areasRoles.FirstOrDefault(ar => ar.esAreaPrincipal);
+                    nombreRol = rolPrincipal?.Rol?.nombreRol ?? "N/A";
+                }
+                else
+                {
+                    var areaSeleccionada = areasRoles.FirstOrDefault(ar => ar.idArea == solicitud.idAreaSeleccionada);
+                    var rolSeleccionado = areasRoles.FirstOrDefault(ar => ar.idRol == solicitud.idRolSeleccionado && ar.idArea == solicitud.idAreaSeleccionada);
+
+                    nombreArea = areaSeleccionada?.Area?.nombreArea ?? "N/A";
+                    nombreRol = rolSeleccionado?.Rol?.nombreRol ?? "N/A";
+                }
+
+                // Obtener detalles adicionales
+                var maquina = await _maquinasService.Consultar(solicitud.idMaquina);
+                var turno = await _turnoService.Consultar(solicitud.idTurno);
+                var statusOrden = await _statusOrdenService.Consultar(solicitud.idStatusOrden);
+                var statusAprobacionSolicitante = await _statusAprobacionSolicitanteService.Consultar(solicitud.idStatusAprobacionSolicitante);
+                var categoriaTicket = await _categoriaTicketService.Consultar(solicitud.idCategoriaTicket);
+
+                var solicitudDetalleDTO = new SolicitudesDetalleDTO
+                {
+                    idSolicitud = solicitud.idSolicitud,
+                    descripcion = solicitud.descripcion,
+                    fechaSolicitud = solicitud.fechaSolicitud,
+                    nombreCompletoEmpleado = $"{empleado.nombre} {empleado.apellidoPaterno} {empleado.apellidoMaterno}",
+                    idMaquina = solicitud.idMaquina,
+                    idTurno = solicitud.idTurno,
+                    idStatusOrden = solicitud.idStatusOrden,
+                    idStatusAprobacionSolicitante = solicitud.idStatusAprobacionSolicitante,
+                    area = nombreArea,
+                    rol = nombreRol,
+                    idCategoriaTicket = solicitud.idCategoriaTicket,
+                    nombreMaquina = maquina.nombreMaquina,
+                    nombreTurno = turno.descripcion,
+                    nombreStatusOrden = statusOrden.descripcionStatusOrden,
+                    nombreStatusAprobacionSolicitante = statusAprobacionSolicitante.descripcionStatusAprobacionSolicitante,
+                    nombreCategoriaTicket = categoriaTicket.descripcionCategoriaTicket
+                };
+
+                solicitudesDetalleDTO.Add(solicitudDetalleDTO);
+            }
+
+            return solicitudesDetalleDTO;
+        }
+
+
     }
 }

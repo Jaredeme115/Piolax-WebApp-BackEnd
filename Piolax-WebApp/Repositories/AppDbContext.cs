@@ -55,6 +55,7 @@ namespace Piolax_WebApp.Repositories
         //KPI´s Mantenimiento Correctivo
         public DbSet<KpisMantenimiento> KpisMantenimiento { get; set; } = default!;
         public DbSet<KpisDetalle> KpisDetalle { get; set; } = default!;
+        public DbSet<KpiObjetivos> KpiObjetivos { get; set; } = default!;
 
         //KPI´s Mantenimiento Preventivo
         public DbSet<KpisMP> KpisMP { get; set; } = default!;
@@ -297,6 +298,12 @@ namespace Piolax_WebApp.Repositories
                 .HasOne(kd => kd.KpisMP)
                 .WithMany(km => km.KpisMPDetalle)
                 .HasForeignKey(kd => kd.idKPIMP);
+
+            // Configurar la relación entre KpiObjetivos y Areas
+            modelBuilder.Entity<KpiObjetivos>()
+                .HasOne(ko => ko.Areas)
+                .WithMany(a => a.KpiObjetivos)
+                .HasForeignKey(ko => ko.idArea);
 
 
 

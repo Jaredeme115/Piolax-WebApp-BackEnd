@@ -34,6 +34,8 @@ namespace Piolax_WebApp.Models
 
         public int semanaOriginalMP { get; set; } // Semana original del mantenimiento preventivo
 
+        public int anioPreventivo { get; set; }
+
         public DateTime? ultimaEjecucion { get; set; }
         public DateTime? proximaEjecucion { get; set; }
         public DateTime? fechaEjecucion { get; set; }

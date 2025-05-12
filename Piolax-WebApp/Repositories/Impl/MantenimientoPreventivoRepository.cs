@@ -42,6 +42,7 @@ namespace Piolax_WebApp.Repositories.Impl
             mantenimientoExistente.ultimaEjecucion = mantenimientoPreventivo.ultimaEjecucion;
             mantenimientoExistente.proximaEjecucion = mantenimientoPreventivo.proximaEjecucion;
             mantenimientoExistente.semanaOriginalMP = mantenimientoPreventivo.semanaOriginalMP;
+            mantenimientoExistente.anioPreventivo = mantenimientoPreventivo.anioPreventivo;
 
             await _context.SaveChangesAsync();
             return mantenimientoExistente; // Retorna el mantenimiento actualizado
@@ -83,7 +84,7 @@ namespace Piolax_WebApp.Repositories.Impl
              .ToListAsync();
         }
 
-        public async Task<IEnumerable<MantenimientoPreventivo>> ConsultarMantenimientosPorPeriodo(DateTime inicio, DateTime fin)
+        /*public async Task<IEnumerable<MantenimientoPreventivo>> ConsultarMantenimientosPorPeriodo(DateTime inicio, DateTime fin)
         {
             return await _context.MantenimientoPreventivo
                 .Include(mp => mp.Area)
@@ -91,6 +92,17 @@ namespace Piolax_WebApp.Repositories.Impl
                 .Include(mp => mp.FrecuenciaMP)
                 .Include(mp => mp.EstatusPreventivo)
                 .Where(mp => mp.fechaEjecucion >= inicio && mp.fechaEjecucion <= fin)
+                .ToListAsync();
+        }*/
+
+        public async Task<IEnumerable<MantenimientoPreventivo>> ConsultarMantenimientosPorPeriodo(DateTime inicio, DateTime fin)
+        {
+            return await _context.MantenimientoPreventivo
+                .Include(mp => mp.Area)
+                .Include(mp => mp.Maquina)
+                .Include(mp => mp.FrecuenciaMP)
+                .Include(mp => mp.EstatusPreventivo)
+                .Where(mp => mp.proximaEjecucion >= inicio && mp.proximaEjecucion <= fin)
                 .ToListAsync();
         }
 

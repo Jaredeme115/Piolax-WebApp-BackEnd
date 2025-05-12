@@ -16,6 +16,10 @@ namespace Piolax_WebApp.Services
         Task<IEnumerable<SolicitudesDetalleDTO>> ObtenerSolicitudesConPrioridadAsync();
         Task<bool> EliminarSolicitud(int idSolicitud);
 
+        //Metodo para obtener las solicitudes por area
+        Task<IEnumerable<SolicitudesDetalleDTO>> ObtenerSolicitudesPorAreaYRoles(int idArea, List<int> idRoles);
+
+
 
     }
 }
