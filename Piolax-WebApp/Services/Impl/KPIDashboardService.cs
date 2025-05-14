@@ -152,9 +152,9 @@ namespace Piolax_WebApp.Services.Impl
         /// Obtiene el MTTA filtrado por 
         /// área y/o máquina
         /// </summary>
-        public async Task<KPIResponseDTO> ObtenerMTTA(int? idArea = null, int? idMaquina = null, int? anio = null, int? mes = null, int? semana = null, int? diaSemana = null)
+        public async Task<KPIResponseDTO> ObtenerMTTA(int? idArea = null, int? idMaquina = null, int? anio = null, int? mes = null)
         {
-            var kpiDetalles = await _repository.ConsultarMTTA(idArea, idMaquina, anio, mes, semana, diaSemana);
+            var kpiDetalles = await _repository.ConsultarMTTA(idArea, idMaquina, anio, mes);
             if (!kpiDetalles.Any())
                 return new KPIResponseDTO { Nombre = "MTTA", Valor = 0, UnidadMedida = "minutos" };
 
@@ -170,67 +170,32 @@ namespace Piolax_WebApp.Services.Impl
         }
         ////////// FILTROS MTT  //////////////////
         public async Task<List<KpiSegmentadoDTO>> ObtenerMTTASegmentado(
-          int? idArea = null,
-          int? idMaquina = null,
-          int? anio = null,
-          int? mes = null,
-          int? semana = null,
-          int? diaSemana = null)
+            int? idArea = null,
+            int? idMaquina = null,
+            int? anio = null,
+            int? mes = null)
         {
-            var kpiDetalles = await _repository.ConsultarMTTA(idArea, idMaquina, anio, mes, semana, diaSemana);
+            var kpiDetalles = await _repository.ConsultarMTTA(idArea, idMaquina, anio, mes);
 
             if (!kpiDetalles.Any())
                 return new List<KpiSegmentadoDTO>();
 
-            if (semana.HasValue && diaSemana.HasValue)
+            if (anio.HasValue && mes.HasValue)
             {
-                // 1) Filtrar por SEMANA exacta
-                // 2) Filtrar por DÍA de la semana dentro de esa misma semana
-                return kpiDetalles
-                    .Where(k =>
-                        System.Globalization.ISOWeek.GetWeekOfYear(k.KpisMantenimiento.fechaCalculo) == semana.Value
-                     && (int)k.KpisMantenimiento.fechaCalculo.DayOfWeek == diaSemana.Value
-                    )
-                    .GroupBy(k => k.KpisMantenimiento.fechaCalculo.Date)
-                    .Select(g => new KpiSegmentadoDTO
-                    {
-                        etiqueta = g.Key.ToString("dd/MM/yyyy"),
-                        valor = g.Average(x => x.kpiValor)
-                    })
-                    .ToList();
+                // Año + Mes: retornar valor único del mes completo
+                float promedio = kpiDetalles.Average(k => k.kpiValor);
+                return new List<KpiSegmentadoDTO>
+        {
+            new KpiSegmentadoDTO
+            {
+                etiqueta = $"Mes {mes}",
+                valor = promedio
             }
-            else if (semana.HasValue)
-            {
-                // Filtrar solo por SEMANA: agrupar por días de la semana
-                return kpiDetalles
-                    .Where(k =>
-                        System.Globalization.ISOWeek.GetWeekOfYear(k.KpisMantenimiento.fechaCalculo) == semana.Value
-                    )
-                    .GroupBy(k => k.KpisMantenimiento.fechaCalculo.DayOfWeek)
-                    .Select(g => new KpiSegmentadoDTO
-                    {
-                        etiqueta = g.Key.ToString(), // Lunes, Martes...
-                        valor = g.Average(x => x.kpiValor)
-                    })
-                    .OrderBy(g => g.etiqueta)
-                    .ToList();
-            }
-            else if (mes.HasValue)
-            {
-                // Filtrar por MES: agrupar por semanas ISO
-                return kpiDetalles
-                    .GroupBy(k => System.Globalization.ISOWeek.GetWeekOfYear(k.KpisMantenimiento.fechaCalculo))
-                    .Select(g => new KpiSegmentadoDTO
-                    {
-                        etiqueta = $"Semana {g.Key}",
-                        valor = g.Average(x => x.kpiValor)
-                    })
-                    .OrderBy(g => g.etiqueta)
-                    .ToList();
+        };
             }
             else if (anio.HasValue)
             {
-                // Filtrar por AÑO: agrupar por meses
+                // Solo año: agrupar por mes
                 return kpiDetalles
                     .GroupBy(k => k.KpisMantenimiento.fechaCalculo.Month)
                     .Select(g => new KpiSegmentadoDTO
@@ -238,24 +203,17 @@ namespace Piolax_WebApp.Services.Impl
                         etiqueta = $"Mes {g.Key}",
                         valor = g.Average(x => x.kpiValor)
                     })
-                    .OrderBy(g => g.etiqueta)
+                    .OrderBy(x => x.etiqueta)
                     .ToList();
             }
-            else
-            {
-                // Promedio general si no hay filtros de tiempo
-                float promedio = kpiDetalles.Average(x => x.kpiValor);
-                return new List<KpiSegmentadoDTO>
-        {
-            new KpiSegmentadoDTO { etiqueta = "Promedio General", valor = promedio }
-        };
-            }
+
+            return new List<KpiSegmentadoDTO>();
         }
 
         /// Obtiene el MTTR filtrado por área, máquina y/o técnico
-        public async Task<KPIResponseDTO> ObtenerMTTR(int? idArea = null, int? idMaquina = null, int? idEmpleado = null, int? anio = null, int? mes = null, int? semana = null, int? diaSemana = null)
+        public async Task<KPIResponseDTO> ObtenerMTTR(int? idArea = null, int? idMaquina = null, int? idEmpleado = null, int? anio = null, int? mes = null)
         {
-            var kpiDetalles = await _repository.ConsultarMTTR(idArea, idMaquina, idEmpleado, anio, mes, semana, diaSemana);
+            var kpiDetalles = await _repository.ConsultarMTTR(idArea, idMaquina, idEmpleado, anio, mes);
             if (!kpiDetalles.Any())
                 return new KPIResponseDTO { Nombre = "MTTR", Valor = 0, UnidadMedida = "minutos" };
 
@@ -275,65 +233,29 @@ namespace Piolax_WebApp.Services.Impl
          int? idMaquina = null,
          int? idEmpleado = null,
          int? anio = null,
-         int? mes = null,
-         int? semana = null,
-         int? diaSemana = null)
+         int? mes = null)
         {
-            var kpiDetalles = await _repository.ConsultarMTTR(
-                idArea, idMaquina, idEmpleado, anio, mes, semana, diaSemana);
+            var kpiDetalles = await _repository.ConsultarMTTR(idArea, idMaquina, idEmpleado, anio, mes);
 
             if (!kpiDetalles.Any())
                 return new List<KpiSegmentadoDTO>();
 
-            if (semana.HasValue && diaSemana.HasValue)
+            if (anio.HasValue && mes.HasValue)
             {
-                // 1) Filtrar por SEMANA exacta
-                // 2) Filtrar por DÍA de la semana dentro de esa misma semana
-                return kpiDetalles
-                    .Where(k =>
-                        System.Globalization.ISOWeek.GetWeekOfYear(k.KpisMantenimiento.fechaCalculo) == semana.Value
-                     && (int)k.KpisMantenimiento.fechaCalculo.DayOfWeek == diaSemana.Value
-                    )
-                    .GroupBy(k => k.KpisMantenimiento.fechaCalculo.Date)
-                    .Select(g => new KpiSegmentadoDTO
-                    {
-                        etiqueta = g.Key.ToString("dd/MM/yyyy"),
-                        valor = g.Average(x => x.kpiValor)
-                    })
-                    .ToList();
-            }
-            else if (semana.HasValue)
-            {
-                // Filtrar solo por SEMANA: agrupar por día de la semana
-                return kpiDetalles
-                    .Where(k =>
-                        System.Globalization.ISOWeek.GetWeekOfYear(k.KpisMantenimiento.fechaCalculo) == semana.Value
-                    )
-                    .GroupBy(k => k.KpisMantenimiento.fechaCalculo.DayOfWeek)
-                    .Select(g => new KpiSegmentadoDTO
-                    {
-                        etiqueta = g.Key.ToString(), // Lunes, Martes...
-                        valor = g.Average(x => x.kpiValor)
-                    })
-                    .OrderBy(g => g.etiqueta)
-                    .ToList();
-            }
-            else if (mes.HasValue)
-            {
-                // Filtrar por MES: agrupar por semanas
-                return kpiDetalles
-                    .GroupBy(k => System.Globalization.ISOWeek.GetWeekOfYear(k.KpisMantenimiento.fechaCalculo))
-                    .Select(g => new KpiSegmentadoDTO
-                    {
-                        etiqueta = $"Semana {g.Key}",
-                        valor = g.Average(x => x.kpiValor)
-                    })
-                    .OrderBy(g => g.etiqueta)
-                    .ToList();
+                // ✅ Año + Mes: retornar valor único del mes completo
+                float promedio = kpiDetalles.Average(k => k.kpiValor);
+                return new List<KpiSegmentadoDTO>
+      {
+          new KpiSegmentadoDTO
+          {
+              etiqueta = $"Mes {mes}",
+              valor = promedio
+          }
+      };
             }
             else if (anio.HasValue)
             {
-                // Filtrar por AÑO: agrupar por mes
+                // ✅ Solo año: agrupar por mes
                 return kpiDetalles
                     .GroupBy(k => k.KpisMantenimiento.fechaCalculo.Month)
                     .Select(g => new KpiSegmentadoDTO
@@ -341,18 +263,12 @@ namespace Piolax_WebApp.Services.Impl
                         etiqueta = $"Mes {g.Key}",
                         valor = g.Average(x => x.kpiValor)
                     })
-                    .OrderBy(g => g.etiqueta)
+                    .OrderBy(x => x.etiqueta)
                     .ToList();
             }
-            else
-            {
-                // Promedio general si no hay filtro de tiempo
-                float promedio = kpiDetalles.Average(x => x.kpiValor);
-                return new List<KpiSegmentadoDTO>
-        {
-            new KpiSegmentadoDTO { etiqueta = "Promedio General", valor = promedio }
-        };
-            }
+
+            // ❌ Sin año no se devuelve nada
+            return new List<KpiSegmentadoDTO>();
         }
 
 
@@ -395,29 +311,24 @@ namespace Piolax_WebApp.Services.Impl
             };
         }
 
-        /// <summary>
         /// Calcula el tiempo total de inactividad (TotalDowntime) filtrado por área, máquina y período de tiempo
-        /// </summary>
-        public async Task<KPIResponseDTO> ObtenerTotalDowntime(int? idArea = null, int? idMaquina = null, int? año = null, int? mes = null, int? semana = null, int? diaSemana = null)
+        public async Task<KPIResponseDTO> ObtenerTotalDowntime(int? idArea = null, int? idMaquina = null, int? anio = null, int? mes = null, int? semana = null, int? diaSemana = null)
         {
-            // Obtenemos los KPIs de mantenimiento filtrados
-            var kpisMantenimiento = await _repository.ConsultarTotalDowntime(idArea, idMaquina, año, mes, semana, diaSemana);
+            var mantenimientos = await _repository.ConsultarTotalDowntime(
+                idArea, idMaquina, anio, mes, semana, diaSemana);
 
-            if (!kpisMantenimiento.Any())
-                return new KPIResponseDTO { Nombre = "TotalDowntime", Valor = 0, UnidadMedida = "minutos" };
-
-            float totalDowntime = 0;
-
-            // Para cada KPI de mantenimiento, obtenemos sus detalles y sumamos los tiempos de MTTR
-            foreach (var kpi in kpisMantenimiento)
-            {
-                // Asumimos que MTTR está en los detalles de cada KPI
-                var mttrDetalle = kpi.KpisDetalle.FirstOrDefault(d => d.kpiNombre == "MTTR");
-                if (mttrDetalle != null)
+            if (!mantenimientos.Any())
+                return new KPIResponseDTO
                 {
-                    totalDowntime += mttrDetalle.kpiValor;
-                }
-            }
+                    Nombre = "TotalDowntime",
+                    Valor = 0,
+                    UnidadMedida = "minutos"
+                };
+
+            float totalDowntime = mantenimientos
+                .SelectMany(m => m.KpisDetalle)
+                .Where(d => d.kpiNombre == "MTTR")
+                .Sum(d => d.kpiValor);
 
             return new KPIResponseDTO
             {
@@ -425,6 +336,99 @@ namespace Piolax_WebApp.Services.Impl
                 Valor = totalDowntime,
                 UnidadMedida = "minutos"
             };
+        }
+
+        /// Devuelve una serie segmentada de Total Downtime para graficar.
+        public async Task<List<KpiSegmentadoDTO>> ObtenerTotalDowntimeSegmentado(
+            int? idArea = null,
+            int? idMaquina = null,
+            int? anio = null,
+            int? mes = null,
+            int? semana = null,
+            int? diaSemana = null)
+        {
+            var mantenimientos = await _repository.ConsultarTotalDowntime(
+                idArea, idMaquina, anio, mes, semana, diaSemana);
+
+            var detallesMttr = mantenimientos
+                .SelectMany(m => m.KpisDetalle)
+                .Where(d => d.kpiNombre == "MTTR")
+                .ToList();
+
+            if (!detallesMttr.Any())
+                return new List<KpiSegmentadoDTO>();
+
+            // Día X de la semana Y
+            if (semana.HasValue && diaSemana.HasValue)
+            {
+                return detallesMttr
+                    .Where(d =>
+                        ISOWeek.GetWeekOfYear(d.KpisMantenimiento.fechaCalculo) == semana.Value &&
+                        (int)d.KpisMantenimiento.fechaCalculo.DayOfWeek == diaSemana.Value
+                    )
+                    .GroupBy(d => d.KpisMantenimiento.fechaCalculo.Date)
+                    .Select(g => new KpiSegmentadoDTO
+                    {
+                        etiqueta = g.Key.ToString("dd/MM/yyyy"),
+                        valor = g.Sum(x => x.kpiValor)
+                    })
+                    .ToList();
+            }
+            // Por día de la semana dentro de esa semana
+            else if (semana.HasValue)
+            {
+                return detallesMttr
+                    .Where(d => ISOWeek.GetWeekOfYear(d.KpisMantenimiento.fechaCalculo) == semana.Value)
+                    .GroupBy(d => d.KpisMantenimiento.fechaCalculo.DayOfWeek)
+                    .Select(g => new KpiSegmentadoDTO
+                    {
+                        etiqueta = g.Key.ToString(),
+                        valor = g.Sum(x => x.kpiValor)
+                    })
+                    .OrderBy(g => (int)Enum.Parse(typeof(DayOfWeek), g.etiqueta)) // 🔹 ordena por DayOfWeek real
+                    .ToList();
+            }
+            // Por semana ISO dentro del mes
+            else if (mes.HasValue)
+            {
+                return detallesMttr
+                    .GroupBy(d => ISOWeek.GetWeekOfYear(d.KpisMantenimiento.fechaCalculo))
+                    .Select(g => new KpiSegmentadoDTO
+                    {
+                        etiqueta = $"Semana {g.Key}",
+                        valor = g.Sum(x => x.kpiValor)
+                    })
+                    .OrderBy(x => x.etiqueta)
+                    .ToList();
+            }
+            // Por mes dentro del año
+            else if (anio.HasValue)
+            {
+                var raw = detallesMttr
+                    .GroupBy(d => d.KpisMantenimiento.fechaCalculo.Month)
+                    .Select(g => new KpiSegmentadoDTO
+                    {
+                        etiqueta = $"Mes {g.Key}",
+                        valor = g.Sum(x => x.kpiValor)
+                    })
+                    .ToList();
+
+                // Asegura siempre tener 12 meses
+                return Enumerable.Range(1, 12)
+                    .Select(m =>
+                        raw.FirstOrDefault(r => r.etiqueta == $"Mes {m}")
+                        ?? new KpiSegmentadoDTO { etiqueta = $"Mes {m}", valor = 0 }
+                    )
+                    .ToList();
+            }
+            // Sin segmentación temporal: un único punto
+            else
+            {
+                float total = detallesMttr.Sum(d => d.kpiValor);
+                return new List<KpiSegmentadoDTO> {
+            new KpiSegmentadoDTO { etiqueta = "Total Downtime", valor = total }
+        };
+            }
         }
 
 
@@ -608,52 +612,7 @@ namespace Piolax_WebApp.Services.Impl
             };
         }
 
-        /// <summary>
-        /// Obtiene el TotalDowntime segmentado por diferentes períodos (día, semana, mes) según los filtros aplicados
-        /// </summary>
-        public async Task<List<KpiSegmentadoDTO>> ObtenerTotalDowntimeSegmentado(
-            int? idArea = null,
-            int? idMaquina = null,
-            int? anio = null,
-            int? mes = null,
-            int? semana = null,
-            int? diaSemana = null)
-        {
-            // Obtener los datos de downtime filtrados
-            var kpisMantenimiento = await _repository.ConsultarTotalDowntime(
-                idArea, idMaquina, anio, mes, semana, diaSemana);
-
-            if (!kpisMantenimiento.Any())
-                return new List<KpiSegmentadoDTO>();
-
-            // Determinar el tipo de segmentación según los filtros aplicados
-            if (semana.HasValue && diaSemana.HasValue)
-            {
-                // Segmentación por hora del día (para un día específico de una semana)
-                return SegmentarPorHoraDelDia(kpisMantenimiento);
-            }
-            else if (semana.HasValue)
-            {
-                // Segmentación por día de la semana (para una semana específica)
-                return SegmentarPorDiaDeLaSemana(kpisMantenimiento);
-            }
-            else if (mes.HasValue)
-            {
-                // Segmentación por semana (para un mes específico)
-                return SegmentarPorSemanasDelMes(kpisMantenimiento);
-            }
-            else if (anio.HasValue)
-            {
-                // Segmentación por mes del año
-                return SegmentarPorMesDelAnio(kpisMantenimiento);
-            }
-            else
-            {
-                // Segmentación por año
-                return SegmentarPorAnio(kpisMantenimiento);
-            }
-        }
-
+        
         /// Métodos para KPI Objetivos
 
         public async Task GuardarObjetivo(int idArea, int anio, int mes, float valorHoras)

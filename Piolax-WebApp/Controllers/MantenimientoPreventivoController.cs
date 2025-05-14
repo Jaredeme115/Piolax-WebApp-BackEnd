@@ -99,8 +99,8 @@ namespace Piolax_WebApp.Controllers
             }
         }
 
-        /*[HttpGet("MostrarMPsAsignados/{idEmpleado}")]
-        public async Task<IEnumerable<MantenimientoPreventivoDetallesDTO>> MostrarMPsAsignados(int idEmpleado)
+        [HttpGet("MostrarMPsAsignados/{idEmpleado}")]
+        public async Task<ActionResult<IEnumerable<MantenimientoPreventivoDetallesDTO>>> MostrarMPsAsignados(int idEmpleado)
         {
             try
             {
@@ -111,8 +111,8 @@ namespace Piolax_WebApp.Controllers
             {
                 return StatusCode(500, $"Error interno del servidor: {ex.Message}");
             }
+        }
 
-        }*/
 
         [HttpPut("ActivarMP/{idMP}")]
         public async Task<IActionResult> ActivarMP(int idMP)

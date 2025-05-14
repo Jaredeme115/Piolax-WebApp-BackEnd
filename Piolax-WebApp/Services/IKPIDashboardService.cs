@@ -14,8 +14,8 @@ namespace Piolax_WebApp.Services
             int? idArea = null, int? idMaquina = null, int? idEmpleado = null,
             int? año = null, int? mes = null, int? semana = null, int? diaSemana = null);*/
 
-        Task<KPIResponseDTO> ObtenerMTTA(int? idArea = null, int? idMaquina = null, int? anio = null, int? mes = null, int? semana = null, int? diaSemana = null);
-        Task<KPIResponseDTO> ObtenerMTTR(int? idArea = null, int? idMaquina = null, int? idEmpleado = null, int? anio = null, int? mes = null, int? semana = null, int? diaSemana = null);
+        Task<KPIResponseDTO> ObtenerMTTA(int? idArea = null, int? idMaquina = null, int? anio = null, int? mes = null);
+        Task<KPIResponseDTO> ObtenerMTTR(int? idArea = null, int? idMaquina = null, int? idEmpleado = null, int? anio = null, int? mes = null);
 
         Task<KPIResponseDTO> ObtenerMTBF(int? idArea = null);
         Task<KPIResponseDTO> ObtenerTotalDowntime(int? idArea = null, int? idMaquina = null, int? anio = null, int? mes = null, int? semana = null, int? diaSemana = null);
@@ -33,9 +33,7 @@ namespace Piolax_WebApp.Services
         int? idMaquina = null,
         int? idEmpleado = null,
         int? anio = null,
-        int? mes = null,
-        int? semana = null,
-        int? diaSemana = null);
+        int? mes = null);
 
 
         // Método para obtener MTTA segmentado
@@ -43,9 +41,7 @@ namespace Piolax_WebApp.Services
         int? idArea = null,
         int? idMaquina = null,
         int? anio = null,
-        int? mes = null,
-        int? semana = null,
-        int? diaSemana = null);
+        int? mes = null);
 
         //Retorna para cada área la serie de 12 meses con el MTBF en horas.
         Task<List<KpiAreaMesSeriesDTO>> ObtenerMTBFPorAreaMes(int? anio = null);
@@ -57,12 +53,12 @@ namespace Piolax_WebApp.Services
             int? objetivo = null);
 
         Task<List<KpiSegmentadoDTO>> ObtenerTotalDowntimeSegmentado(
-            int? idArea = null,
-            int? idMaquina = null,
-            int? anio = null,
-            int? mes = null,
-            int? semana = null,
-            int? diaSemana = null);
+        int? idArea = null,
+        int? idMaquina = null,
+        int? anio = null,
+        int? mes = null,
+        int? semana = null,
+        int? diaSemana = null);
 
         // Métodos para los KPI Objetivos
 

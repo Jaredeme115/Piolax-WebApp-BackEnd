@@ -117,6 +117,10 @@ builder.Services.AddScoped<IEstatusPreventivoService, EstatusPreventivoService>(
 builder.Services.AddScoped<IMantenimientoPreventivoPDFsRepository, MantenimientoPreventivoPDFsRepository>();
 builder.Services.AddScoped<IMantenimientoPreventivoPDFsService, MantenimientoPreventivoPDFsService>();
 
+//MantenimientoPreventivoEjecucion
+builder.Services.AddScoped<IMantenimientoPreventivoEjecucionRepository, MantenimientoPreventivoEjecucionRepository>();
+builder.Services.AddScoped<IMantenimientoPreventivoEjecucionService, MantenimientoPreventivoEjecucionService>();
+
 //MantenimientoPreventivoRefacciones
 builder.Services.AddScoped<IMantenimientoPreventivoRefaccionesRepository, MantenimientoPreventivoRefaccionesRepository>();
 builder.Services.AddScoped<IMantenimientoPreventivoRefaccionesService, MantenimientoPreventivoRefaccionService>();

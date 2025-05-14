@@ -24,11 +24,9 @@ namespace Piolax_WebApp.Controllers
             int? idArea = null,
             int? idMaquina = null,
             int? anio = null,
-            int? mes = null,
-            int? semana = null,
-            int? diaSemana = null)
+            int? mes = null)
         {
-            var result = await _service.ObtenerMTTA(idArea, idMaquina, anio, mes, semana, diaSemana);
+            var result = await _service.ObtenerMTTA(idArea, idMaquina, anio, mes);
             return Ok(result);
         }
 
@@ -40,11 +38,9 @@ namespace Piolax_WebApp.Controllers
             int? idArea = null,
             int? idMaquina = null,
             int? anio = null,
-            int? mes = null,
-            int? semana = null,
-            int? diaSemana = null)
+            int? mes = null)
         {
-            var resultado = await _service.ObtenerMTTASegmentado(idArea, idMaquina, anio, mes, semana, diaSemana);
+            var resultado = await _service.ObtenerMTTASegmentado(idArea, idMaquina, anio, mes);
             return Ok(resultado);
         }
         #endregion
@@ -59,11 +55,9 @@ namespace Piolax_WebApp.Controllers
             int? idMaquina = null,
             int? idEmpleado = null,
             int? anio = null,
-            int? mes = null,
-            int? semana = null,
-            int? diaSemana = null)
+            int? mes = null)
         {
-            var result = await _service.ObtenerMTTR(idArea, idMaquina, idEmpleado, anio, mes, semana, diaSemana);
+            var result = await _service.ObtenerMTTR(idArea, idMaquina, idEmpleado, anio, mes);
             return Ok(result);
         }
 
@@ -76,11 +70,9 @@ namespace Piolax_WebApp.Controllers
             int? idMaquina = null,
             int? idEmpleado = null,
             int? anio = null,
-            int? mes = null,
-            int? semana = null,
-            int? diaSemana = null)
+            int? mes = null)
         {
-            var resultado = await _service.ObtenerMTTRSegmentado(idArea, idMaquina, idEmpleado, anio, mes, semana, diaSemana);
+            var resultado = await _service.ObtenerMTTRSegmentado(idArea, idMaquina, idEmpleado, anio, mes);
             return Ok(resultado);
         }
         #endregion
@@ -174,80 +166,30 @@ namespace Piolax_WebApp.Controllers
 
         #endregion
 
-        #region TotalDowntime Endpoints
-        /// <summary>
-        /// Obtiene el indicador TotalDowntime (Tiempo total de inactividad) aplicando los filtros especificados
-        /// </summary>
         [HttpGet("totaldowntime")]
         public async Task<IActionResult> GetTotalDowntime(
-            int? idArea = null,
-            int? idMaquina = null,
-            int? anio = null,
-            int? mes = null,
-            int? semana = null,
-            int? diaSemana = null)
+            int? idArea = null, int? idMaquina = null,
+            int? anio = null, int? mes = null, int? semana = null, int? diaSemana = null)
         {
             var result = await _service.ObtenerTotalDowntime(
                 idArea, idMaquina, anio, mes, semana, diaSemana);
             return Ok(result);
         }
 
-        /// <summary>
-        /// Obtiene el TotalDowntime segmentado por períodos para visualización en gráficos
-        /// </summary>
         [HttpGet("totaldowntime/segmentado")]
         public async Task<ActionResult<List<KpiSegmentadoDTO>>> GetTotalDowntimeSegmentado(
-            int? idArea = null,
-            int? idMaquina = null,
-            int? anio = null,
-            int? mes = null,
-            int? semana = null)
+        int? idArea = null,
+        int? idMaquina = null,
+        int? anio = null,
+        int? mes = null,
+        int? semana = null,
+        int? diaSemana = null)
         {
-            // Crear datos de ejemplo para TotalDowntime segmentado (a implementar en el servicio)
-            var downtimeSegmentado = new List<KpiSegmentadoDTO>();
-
-            // Dependiendo de los filtros, cambiamos la granularidad
-            if (semana.HasValue)
-            {
-                // Por día de la semana
-                string[] diasSemana = { "Lunes", "Martes", "Miércoles", "Jueves", "Viernes", "Sábado", "Domingo" };
-                for (int i = 0; i < diasSemana.Length; i++)
-                {
-                    downtimeSegmentado.Add(new KpiSegmentadoDTO
-                    {
-                        etiqueta = diasSemana[i],
-                        valor = 30 + (i * 10) // Simulación
-                    });
-                }
-            }
-            else if (mes.HasValue)
-            {
-                // Por semana del mes
-                for (int i = 1; i <= 4; i++)
-                {
-                    downtimeSegmentado.Add(new KpiSegmentadoDTO
-                    {
-                        etiqueta = $"Semana {i}",
-                        valor = 50 + (i * 20) // Simulación
-                    });
-                }
-            }
-            else
-            {
-                // Por mes del año
-                for (int i = 1; i <= 12; i++)
-                {
-                    downtimeSegmentado.Add(new KpiSegmentadoDTO
-                    {
-                        etiqueta = $"Mes {i}",
-                        valor = 150 + (i * 15) // Simulación
-                    });
-                }
-            }
-
-            return Ok(downtimeSegmentado);
+            var resultado = await _service.ObtenerTotalDowntimeSegmentado(
+                idArea, idMaquina, anio, mes, semana, diaSemana);
+            return Ok(resultado);
         }
-        #endregion
+
 
         #region Dashboard y Resúmenes
         /// <summary>
@@ -257,10 +199,10 @@ namespace Piolax_WebApp.Controllers
         public async Task<IActionResult> GetResumenKPIs(
             // Parámetros MTTA
             int? idAreaMTTA = null, int? idMaquinaMTTA = null,
-            int? anioMTTA = null, int? mesMTTA = null, int? semanaMTTA = null, int? diaSemanaMTTA = null,
+            int? anioMTTA = null, int? mesMTTA = null,
             // Parámetros MTTR
             int? idAreaMTTR = null, int? idMaquinaMTTR = null, int? idEmpleadoMTTR = null,
-            int? anioMTTR = null, int? mesMTTR = null, int? semanaMTTR = null, int? diaSemanaMTTR = null,
+            int? anioMTTR = null, int? mesMTTR = null,
             // Parámetros MTBF
             int? idAreaMTBF = null, int? objetivoMTBF = null,
             // Parámetros TotalDowntime
@@ -268,8 +210,8 @@ namespace Piolax_WebApp.Controllers
             int? anioDowntime = null, int? mesDowntime = null, int? semanaDowntime = null, int? diaSemanaDowntime = null)
         {
             var result = await _service.ObtenerResumenKPIs(
-                idAreaMTTA, idMaquinaMTTA, anioMTTA, mesMTTA, semanaMTTA, diaSemanaMTTA,
-                idAreaMTTR, idMaquinaMTTR, idEmpleadoMTTR, anioMTTR, mesMTTR, semanaMTTR, diaSemanaMTTR,
+                idAreaMTTA, idMaquinaMTTA, anioMTTA, mesMTTA,
+                idAreaMTTR, idMaquinaMTTR, idEmpleadoMTTR, anioMTTR, mesMTTR,
                 idAreaMTBF,
                 idAreaDowntime, idMaquinaDowntime,
                 anioDowntime, mesDowntime, semanaDowntime, diaSemanaDowntime);

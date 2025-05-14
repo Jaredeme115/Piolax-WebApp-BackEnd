@@ -315,7 +315,7 @@ namespace Piolax_WebApp.Repositories.Impl
             await _context.SaveChangesAsync();
         }
 
-        public async Task<IEnumerable<KpisDetalle>> ConsultarMTTA(int? idArea = null, int? idMaquina = null, int? anio = null, int? mes = null, int? semana = null, int? diaSemana = null)
+        public async Task<IEnumerable<KpisDetalle>> ConsultarMTTA(int? idArea = null, int? idMaquina = null, int? anio = null, int? mes = null)
         {
             var query = _context.KpisDetalle
                 .Include(kd => kd.KpisMantenimiento)
@@ -342,26 +342,11 @@ namespace Piolax_WebApp.Repositories.Impl
 
             var resultados = await query.ToListAsync();
 
-            // 🔥 Aquí filtramos por semana
-            if (semana.HasValue)
-            {
-                resultados = resultados
-                    .Where(kd => System.Globalization.ISOWeek.GetWeekOfYear(kd.KpisMantenimiento.fechaCalculo) == semana.Value)
-                    .ToList();
-            }
-
-            // 🔥 Aquí filtramos por día de la semana
-            if (diaSemana.HasValue)
-            {
-                resultados = resultados
-                    .Where(kd => (int)kd.KpisMantenimiento.fechaCalculo.DayOfWeek == diaSemana.Value)
-                    .ToList();
-            }
 
             return resultados;
         }
 
-        public async Task<IEnumerable<KpisDetalle>> ConsultarMTTR(int? idArea = null, int? idMaquina = null, int? idEmpleado = null, int? anio = null, int? mes = null, int? semana = null, int? diaSemana = null)
+        public async Task<IEnumerable<KpisDetalle>> ConsultarMTTR(int? idArea = null, int? idMaquina = null, int? idEmpleado = null, int? anio = null, int? mes = null)
         {
             var query = _context.KpisDetalle
                 .Include(kd => kd.KpisMantenimiento)
@@ -392,22 +377,6 @@ namespace Piolax_WebApp.Repositories.Impl
 
             var resultados = await query.ToListAsync();
 
-            // 🔥 Aquí filtramos por semana
-            if (semana.HasValue)
-            {
-                resultados = resultados
-                    .Where(kd => System.Globalization.ISOWeek.GetWeekOfYear(kd.KpisMantenimiento.fechaCalculo) == semana.Value)
-                    .ToList();
-            }
-
-            // 🔥 Aquí filtramos por día de la semana
-            if (diaSemana.HasValue)
-            {
-                resultados = resultados
-                    .Where(kd => (int)kd.KpisMantenimiento.fechaCalculo.DayOfWeek == diaSemana.Value)
-                    .ToList();
-            }
-
             return resultados;
         }
 
@@ -425,45 +394,51 @@ namespace Piolax_WebApp.Repositories.Impl
             return await query.ToListAsync();
         }
 
-        public async Task<IEnumerable<KpisMantenimiento>> ConsultarTotalDowntime(int? idArea = null, int? idMaquina = null, int? anio = null, int? mes = null, int? semana = null, int? diaSemana = null)
+        public async Task<IEnumerable<KpisMantenimiento>> ConsultarTotalDowntime(
+        int? idArea = null,
+        int? idMaquina = null,
+        int? anio = null,
+        int? mes = null,
+        int? semana = null,
+        int? diaSemana = null)
         {
+            // 1) Filtros traducibles a SQL
             var query = _context.KpisMantenimiento
                 .Include(km => km.KpisDetalle)
                 .AsQueryable();
 
             if (idArea.HasValue)
-            {
                 query = query.Where(km => km.idArea == idArea.Value);
-            }
 
             if (idMaquina.HasValue)
-            {
                 query = query.Where(km => km.idMaquina == idMaquina.Value);
-            }
 
             if (anio.HasValue)
-            {
                 query = query.Where(km => km.fechaCalculo.Year == anio.Value);
-            }
 
             if (mes.HasValue)
-            {
                 query = query.Where(km => km.fechaCalculo.Month == mes.Value);
-            }
 
+            // 2) Materializar la lista
+            var lista = await query.ToListAsync();
+
+            // 3) Filtrar por semana en memoria
             if (semana.HasValue)
             {
-                // Aplicar el filtro por semana del año
-                query = query.Where(km => GetWeekOfYear(km.fechaCalculo) == semana.Value);
+                lista = lista
+                    .Where(km => System.Globalization.ISOWeek.GetWeekOfYear(km.fechaCalculo) == semana.Value)
+                    .ToList();
             }
 
+            // 4) Filtrar por día de la semana en memoria
             if (diaSemana.HasValue)
             {
-                // Aplicar el filtro por día de la semana (1=Lunes, 7=Domingo)
-                query = query.Where(km => (int)km.fechaCalculo.DayOfWeek == (diaSemana.Value % 7));
+                lista = lista
+                    .Where(km => (int)km.fechaCalculo.DayOfWeek == diaSemana.Value)
+                    .ToList();
             }
 
-            return await query.ToListAsync();
+            return lista;
         }
 
         public async Task<List<MTBFPorAreaMesDTO>> ConsultarMTBFPorAreaMes(int anio)

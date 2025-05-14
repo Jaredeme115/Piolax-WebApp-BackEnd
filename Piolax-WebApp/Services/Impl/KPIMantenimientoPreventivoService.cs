@@ -92,17 +92,27 @@ namespace Piolax_WebApp.Services.Impl
             if (año.HasValue)
                 mps = mps.Where(mp => mp.anioPreventivo == año.Value).ToList();
 
-            if (mes.HasValue)
+            if (mes.HasValue && año.HasValue)
             {
                 mps = mps.Where(mp =>
                 {
-                    // Caso 1: Tiene próxima ejecución -> Usar su mes
-                    if (mp.proximaEjecucion.HasValue)
-                        return mp.proximaEjecucion.Value.Month == mes.Value;
+                    DateTime fecha;
 
-                    // Caso 2: Pendiente -> Calcular mes desde semanaPreventivo
-                    var fechaSemana = GetStartOfWeek(mp.anioPreventivo, mp.semanaPreventivo);
-                    return fechaSemana.Month == mes.Value;
+                    if (mp.proximaEjecucion.HasValue)
+                        fecha = mp.proximaEjecucion.Value;
+                    else
+                    {
+                        try
+                        {
+                            fecha = GetStartOfWeek(mp.anioPreventivo, mp.semanaPreventivo);
+                        }
+                        catch
+                        {
+                            return false;
+                        }
+                    }
+
+                    return fecha.Year == año.Value && fecha.Month == mes.Value;
                 }).ToList();
             }
 

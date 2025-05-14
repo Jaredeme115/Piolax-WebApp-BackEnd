@@ -46,5 +46,7 @@ namespace Piolax_WebApp.Models
         
         public virtual ICollection<MantenimientoPreventivo_Refacciones> MantenimientoPreventivo_Refacciones { get; set; } = new List<MantenimientoPreventivo_Refacciones>(); // Lista de MantenimientoPreventivo_Refacciones asociados a Mantenimiento Preventivo
 
+        public virtual ICollection<MantenimientoPreventivoEjecuciones> MantenimientoPreventivoEjecucion { get; set; } = new List<MantenimientoPreventivoEjecuciones>(); // Lista de MantenimientoPreventivoEjecucion asociados a Mantenimiento Preventivo
+
     }
 }
