@@ -303,145 +303,6 @@ namespace Piolax_WebApp.Controllers
             });
         }
 
-        //Método para registrar empleados desde un archivo Excel
-        [Authorize(Policy = "AdminOnly")]
-        [HttpPost("RegistrarDesdeExcel")]
-        public async Task<IActionResult> RegistrarDesdeExcel(IFormFile file)
-        {
-            ExcelPackage.LicenseContext = LicenseContext.NonCommercial;
-
-            if (file == null || file.Length == 0)
-            {
-                return BadRequest("Por favor, sube un archivo Excel válido.");
-            }
-
-            var empleadosRegistrados = new List<string>();
-            var empleadosNoRegistrados = new List<string>();
-
-            try
-            {
-                using var stream = file.OpenReadStream();
-                using var package = new ExcelPackage(stream); // Carga el archivo Excel usando EPPlus
-                var worksheet = package.Workbook.Worksheets[0]; // Usa la primera hoja del archivo
-
-                int rowCount = worksheet.Dimension.Rows; // Obtiene el número de filas en la hoja
-                for (int row = 2; row <= rowCount; row++) // Empieza en la fila 2 (asumiendo encabezados en la fila 1)
-                {
-                    try
-                    {
-                        var numNomina = worksheet.Cells[row, 1]?.Text?.Trim(); // Columna A: Número de nómina
-                        if (string.IsNullOrWhiteSpace(numNomina))
-                        {
-                            empleadosNoRegistrados.Add($"Fila {row}: El número de nómina está vacío o no es válido.");
-                            continue;
-                        }
-                        var nombre = worksheet.Cells[row, 2]?.Text?.Trim(); // Columna B: Nombre
-                        if (string.IsNullOrWhiteSpace(nombre))
-                        {
-                            empleadosNoRegistrados.Add($"Fila {row}: El nombre está vacío o no es válido.");
-                            continue;
-                        }
-                        var apellidoPaterno = worksheet.Cells[row, 3]?.Text?.Trim(); // Columna C: Apellido paterno
-                        if (string.IsNullOrWhiteSpace(apellidoPaterno))
-                        {
-                            empleadosNoRegistrados.Add($"Fila {row}: El apellido paterno está vacío o no es válido.");
-                            continue;
-                        }
-                        var apellidoMaterno = worksheet.Cells[row, 4]?.Text?.Trim(); // Columna D: Apellido materno
-                        if (string.IsNullOrWhiteSpace(apellidoMaterno))
-                        {
-                            empleadosNoRegistrados.Add($"Fila {row}: El apellido materno está vacío o no es válido.");
-                            continue;
-                        }
-                        var telefono = worksheet.Cells[row, 5]?.Text?.Trim(); // Columna E: Teléfono
-                        if (string.IsNullOrWhiteSpace(telefono))
-                        {
-                            empleadosNoRegistrados.Add($"Fila {row}: El telefono está vacío o no es válido.");
-                            continue;
-                        }
-                        var email = worksheet.Cells[row, 6]?.Text?.Trim(); // Columna F: Email
-                        if (string.IsNullOrWhiteSpace(email))
-                        {
-                            empleadosNoRegistrados.Add($"Fila {row}: El email está vacío o no es válido.");
-                            continue;
-                        }
-                        var fechaIngreso = DateOnly.FromDateTime(DateTime.Parse(worksheet.Cells[row, 7]?.Text?.Trim())); // Columna G: Fecha de ingreso
-                        var password = worksheet.Cells[row, 8]?.Text?.Trim(); // Columna H: Password
-                        if (string.IsNullOrWhiteSpace(password))
-                        {
-                            empleadosNoRegistrados.Add($"Fila {row}: El password está vacío o no es válido.");
-                            continue;
-                        }
-                        var idStatusEmpleado = int.Parse(worksheet.Cells[row, 9]?.Text?.Trim() ?? "0"); // Columna I: ID del status
-                        var idArea = int.Parse(worksheet.Cells[row, 10]?.Text?.Trim() ?? "0"); // Columna J: ID del área
-                        var idRol = int.Parse(worksheet.Cells[row, 11]?.Text?.Trim() ?? "0"); // Columna K: ID del rol
-                        var esAreaPrincipal = true;
-
-                        // Validar si el empleado ya tiene un área principal asignada
-                        if (await _empleadoAreaRolService.TieneAreaPrincipal(numNomina))
-                        {
-                            empleadosNoRegistrados.Add($"Fila {row}: El empleado con número de nómina {numNomina} ya tiene un área principal asignada.");
-                            continue;
-                        }
-
-                        //Validar si el empleado existe, seguido de validar si el empleado ya tiene un rol asignado en el area.
-                        //Si existe el empleado y no tiene un rol asignado en el area, se procede a asignar el area y rol al empleado.
-
-                        if (await _service.EmpleadoExiste(numNomina))
-                        {
-
-                            if (await _empleadoAreaRolService.ValidarRolPorEmpleadoYArea(numNomina, idArea))
-                            {
-                                empleadosNoRegistrados.Add($"Fila {row}: El empleado con número de nómina {numNomina} ya existe y cuenta con un rol en el area {idArea}.");
-                            }
-                            else
-                            {
-                                await _empleadoAreaRolService.AsignarAreaRol(numNomina, idArea, idRol, esAreaPrincipal);
-                                empleadosRegistrados.Add($"Fila {row}: Área y rol asignados correctamente al empleado con número de nómina {numNomina}.");
-                            }
-
-                        }
-                        else
-                        {
-
-                            // Registrar empleado
-                            var registroDTO = new RegistroDTO
-                            {
-                                numNomina = numNomina,
-                                nombre = nombre,
-                                apellidoPaterno = apellidoPaterno,
-                                apellidoMaterno = apellidoMaterno,
-                                telefono = telefono,
-                                email = email,
-                                fechaIngreso = fechaIngreso,
-                                password = password,
-                                idArea = idArea,
-                                idRol = idRol,
-                                idStatusEmpleado = 1 // Activo por defecto
-                            };
-
-                            await _empleadoAreaRolService.RegistrarEmpleadoConAreaYRol(registroDTO);
-                            empleadosRegistrados.Add($"Fila {row}: Empleado {nombre} {apellidoPaterno} registrado correctamente.");
-                        }
-                    }
-                    catch (Exception ex)
-                    {
-                        empleadosNoRegistrados.Add($"Fila {row}: Error al procesar el registro. Detalles: {ex.Message}");
-                    }
-                }
-
-                return Ok(new
-                {
-                    Registrados = empleadosRegistrados,
-                    NoRegistrados = empleadosNoRegistrados
-                });
-            }
-            catch (Exception ex)
-            {
-                return BadRequest($"Error al procesar el archivo Excel: {ex.Message}");
-            }
-        }
-
         //Método para consultar lista de empleados en base a un area
 
         [HttpGet("ObtenerEmpleadosPorArea/{idArea}")]
@@ -465,6 +326,25 @@ namespace Piolax_WebApp.Controllers
             }).ToList();
 
             return Ok(empleadosDTO);
+        }
+
+        // Nuevo método: carga masiva desde Excel
+        [Authorize(Policy = "AdminOnly")]
+        [HttpPost("RegistrarDesdeExcel")]
+        public async Task<ActionResult<string>> RegistrarEmpleadosDesdeExcelConAreaRol([FromForm] IFormFile file)
+        {
+            if (file == null || file.Length == 0)
+                return BadRequest("Por favor proporciona un archivo Excel válido.");
+
+            try
+            {
+                var resultado = await _empleadoAreaRolService.RegistrarEmpleadosDesdeExcelConAreaRol(file);
+                return Ok(new { message = resultado });
+            }
+            catch (Exception ex)
+            {
+                return BadRequest(new { message = $"Error al procesar el archivo Excel: {ex.Message}" });
+            }
         }
 
 

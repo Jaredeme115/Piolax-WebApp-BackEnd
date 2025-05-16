@@ -80,6 +80,8 @@ namespace Piolax_WebApp.Controllers
             return Ok(await _service.Eliminar(idMaquina));
         }
 
+        [RequestFormLimits(MultipartBodyLengthLimit = long.MaxValue)]
+        [DisableRequestSizeLimit]
         [HttpPost("RegistrarMaquinasDesdeExcel")]
         public async Task<IActionResult> RegistrarMaquinasDesdeExcel(IFormFile file)
         {

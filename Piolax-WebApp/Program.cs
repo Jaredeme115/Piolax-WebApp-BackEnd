@@ -14,6 +14,9 @@ using Piolax_WebApp.Utilities;
 using System.IdentityModel.Tokens.Jwt;
 using System.Security.Claims;
 
+//Para cargar el archivo de configuración
+using Microsoft.AspNetCore.Http.Features;
+
 
 
 var builder = WebApplication.CreateBuilder(args);
@@ -29,7 +32,7 @@ builder.Services.AddDbContext<AppDbContext>(options =>
 
 builder.Services.AddControllers();
 builder.Services.AddSignalR();
-
+builder.Services.AddHttpContextAccessor();
 
 //Empleado
 builder.Services.AddScoped<IEmpleadoService, EmpleadoService>();
@@ -144,9 +147,12 @@ builder.Services.AddHostedService<LowStockNotificationService>();
 // Añade el servicio de KPIs en tiempo real
 builder.Services.AddHostedService<KPIRealTimeService>();
 
-//Obtener URL dinamicamente
-builder.Services.AddHttpContextAccessor();
 
+builder.Configuration
+    .SetBasePath(Directory.GetCurrentDirectory())
+    .AddJsonFile("appsettings.json", optional: false, reloadOnChange: true)
+    .AddJsonFile($"appsettings.{builder.Environment.EnvironmentName}.json", optional: true)
+    .AddEnvironmentVariables();
 
 
 builder.Services.AddEndpointsApiExplorer();
@@ -199,17 +205,12 @@ string corsConfiguration = "_corsConfiguration";
 
 //Conexion para exponer URL a internet  
 
+// 1) Registrar la política CORS
 builder.Services.AddCors(options =>
 {
     options.AddPolicy(name: corsConfiguration, cors =>
     {
-        cors
-            .SetIsOriginAllowed(origin =>
-            {
-                // Permite localhost y cualquier túnel de Cloudflare (trycloudflare.com)
-                return origin == "http://localhost:4200" ||
-                       new Uri(origin).Host.EndsWith("trycloudflare.com");
-            })
+        cors.WithOrigins("http://192.168.1.95") // cambia a la IP real del servidor
             .AllowAnyHeader()
             .AllowAnyMethod()
             .AllowCredentials();
@@ -225,8 +226,8 @@ var tokenKey = builder.Configuration["TokenKey"];
 if (string.IsNullOrEmpty(tokenKey))
 {
     throw new InvalidOperationException("TokenKey no está configurado en appsettings.json");
-}
 
+}
 builder.Services.AddScoped<ITokenService, TokenService>();
 
 //Localhost
@@ -261,28 +262,22 @@ builder.Services.AddAuthentication(JwtBearerDefaults.AuthenticationScheme)
             ValidateAudience = true,
             ClockSkew = TimeSpan.Zero,
 
-            // Validación dinámica de Issuer
+        
             IssuerValidator = (issuer, token, parameters) =>
             {
-                if (issuer.StartsWith("https://localhost") || issuer.Contains("trycloudflare.com"))
-                {
+                if (issuer.StartsWith("http://localhost") || issuer.StartsWith("http://192.168.1.95"))
                     return issuer;
-                }
 
                 throw new SecurityTokenInvalidIssuerException("Issuer no válido.");
             },
 
-            // Validación dinámica de Audience
             AudienceValidator = (audiences, token, parameters) =>
             {
                 foreach (var audience in audiences)
                 {
-                    if (audience.StartsWith("https://localhost") || audience.Contains("trycloudflare.com"))
-                    {
+                    if (audience.StartsWith("http://localhost") || audience.StartsWith("http://192.168.1.95"))
                         return true;
-                    }
                 }
-
                 return false;
             }
         };
@@ -318,6 +313,7 @@ builder.Services.AddAuthorization(options =>
     //options.AddPolicy("AdminOnly", policy => policy.RequireRole("Admin"));
     options.AddPolicy("AdminOnly", policy =>
         policy.RequireRole(
+            "Admin",         // tu rol original
             "Tecnico",        // tu rol original
             "Supervisor",     // rol adicional
             "Assistant Manager", // otro rol
@@ -327,7 +323,16 @@ builder.Services.AddAuthorization(options =>
     );
 });
 
+builder.Services.Configure<FormOptions>(opts =>
+{
+    opts.MultipartBodyLengthLimit = 50 * 1024 * 1024; // 50 MB
+    // opts.BufferBody = true; // opcional, dependiendo de memoria
+});
+
+
 var app = builder.Build();
+
+//app.UseDeveloperExceptionPage();
 
 
 if (app.Environment.IsDevelopment())
@@ -337,18 +342,7 @@ if (app.Environment.IsDevelopment())
 }
 
 
-// Permitir al CORS para archivos estáticos
 /*app.UseStaticFiles(new StaticFileOptions
-{
-    OnPrepareResponse = ctx =>
-    {
-        ctx.Context.Response.Headers.Append("Access-Control-Allow-Origin", "http://localhost:4200");
-        ctx.Context.Response.Headers.Append("Access-Control-Allow-Methods", "GET, OPTIONS");
-        ctx.Context.Response.Headers.Append("Access-Control-Allow-Headers", "Content-Type, Authorization");
-    }
-});*/
-
-app.UseStaticFiles(new StaticFileOptions
 {
     OnPrepareResponse = ctx =>
     {
@@ -367,17 +361,37 @@ app.UseStaticFiles(new StaticFileOptions
             response.Headers.Append("Access-Control-Allow-Headers", "Content-Type, Authorization");
         }
     }
-});
+});*/
 
+app.UseStaticFiles(new StaticFileOptions
+{
+    OnPrepareResponse = ctx =>
+    {
+        var request = ctx.Context.Request;
+        var response = ctx.Context.Response;
+
+        // Tomamos el origen de la petición
+        var origin = request.Headers["Origin"].FirstOrDefault();
+
+        // Si viene de localhost:4200 o contiene "trycloudflare.com", lo permitimos
+        if (!string.IsNullOrEmpty(origin) &&
+            (origin.StartsWith("http://192.168.")))
+        {
+            response.Headers.Append("Access-Control-Allow-Origin", origin);
+            response.Headers.Append("Access-Control-Allow-Methods", "GET, OPTIONS");
+            response.Headers.Append("Access-Control-Allow-Headers", "Content-Type, Authorization");
+        }
+    }
+});
 
 
 // Permitir servir archivos estáticos
 app.UseStaticFiles();
 
-app.UseHttpsRedirection();
-
 //Para conexion con localhost y url publica
 app.UseCors(corsConfiguration);
+
+//app.UseHttpsRedirection();
 
 //Para exponer URL publica
 //app.UseCors("AllowLocalTunnel");

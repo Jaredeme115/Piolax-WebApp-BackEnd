@@ -16,8 +16,5 @@ namespace Piolax_WebApp.Services
         ResultadoLogin EmpleadoExisteLogin(LoginDTO login);
         Task<Empleado> ConsultarPorId(int idEmpleado);
 
-        //Carga masiva de empleados
-        Task<string> RegistrarEmpleadosDesdeExcel(IFormFile filePath);
-
     }
 }

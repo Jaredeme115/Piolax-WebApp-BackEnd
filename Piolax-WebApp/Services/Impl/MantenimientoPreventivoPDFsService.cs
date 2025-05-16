@@ -9,9 +9,6 @@ namespace Piolax_WebApp.Services.Impl
         private readonly IMantenimientoPreventivoPDFsRepository _repository = repository;
         private readonly IHttpContextAccessor _httpContextAccessor = httpContextAccessor;
 
-        //private readonly string _pdfBaseUrl = "https://localhost:7208"; // Ajusta si tu backend está en otro puerto
-
-        // Método para obtener la URL base dinámicamente
         private string GetBaseUrl()
         {
             var request = _httpContextAccessor.HttpContext?.Request;
@@ -53,7 +50,7 @@ namespace Piolax_WebApp.Services.Impl
                 nombrePDF = mppdf.nombrePDF,
                 //rutaPDF = mppdf.rutaPDF
                 //rutaPDF = $"{_pdfBaseUrl}{mppdf.rutaPDF}"
-                rutaPDF = $"{mppdf.rutaPDF}"
+                rutaPDF = mppdf.rutaPDF
             });
         }
 
@@ -114,7 +111,7 @@ namespace Piolax_WebApp.Services.Impl
                 idMP = mppdf.idMP,
                 nombrePDF = mppdf.nombrePDF,
                 //rutaPDF = $"{_pdfBaseUrl}{mppdf.rutaPDF}" // 👈 Devuelve la URL completa
-                rutaPDF = $"{mppdf.rutaPDF}"
+                rutaPDF = mppdf.rutaPDF
             });
         }
 

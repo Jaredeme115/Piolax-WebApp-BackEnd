@@ -36,5 +36,7 @@ namespace Piolax_WebApp.Services
 
         Task<IEnumerable<EmpleadoNombreCompletoDTO>> ObtenerEmpleadosPorArea(int idArea);
 
+        Task<string> RegistrarEmpleadosDesdeExcelConAreaRol(IFormFile filePath);
+
     }
 }

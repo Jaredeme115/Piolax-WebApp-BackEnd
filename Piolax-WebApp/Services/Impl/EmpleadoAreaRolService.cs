@@ -1,5 +1,6 @@
 ﻿using Microsoft.AspNetCore.Identity;
 using Microsoft.EntityFrameworkCore;
+using OfficeOpenXml;
 using Piolax_WebApp.DTOs;
 using Piolax_WebApp.Models;
 using Piolax_WebApp.Repositories;
@@ -152,6 +153,57 @@ namespace Piolax_WebApp.Services.Impl
         public async Task<IEnumerable<EmpleadoNombreCompletoDTO>> ObtenerEmpleadosPorArea(int idArea)
         {
             return await _repository.ObtenerEmpleadosPorArea(idArea);
+        }
+
+        // Nuevo método de importación masiva
+        public async Task<string> RegistrarEmpleadosDesdeExcelConAreaRol(IFormFile file)
+        {
+            // Validaciones de archivo, EPPlus.LicenseContext, etc.
+            using var stream = file.OpenReadStream();
+            using var package = new ExcelPackage(stream);
+            var sheet = package.Workbook.Worksheets.FirstOrDefault()
+                        ?? throw new ApplicationException("No hay hojas en el Excel.");
+
+            var rowCount = sheet.Dimension.End.Row;
+            var errores = new List<string>();
+            int cargados = 0;
+
+            for (int row = 2; row <= rowCount; row++)
+            {
+                try
+                {
+                    // Leer celdas igual que hoy lo haces en EmpleadoService…
+                    var registroDTO = new RegistroDTO
+                    {
+                        numNomina = sheet.Cells[row, 1].Text.Trim(),
+                        nombre = sheet.Cells[row, 2].Text.Trim(),
+                        apellidoPaterno = sheet.Cells[row, 3].Text.Trim(),
+                        apellidoMaterno = sheet.Cells[row, 4].Text.Trim(),
+                        telefono = sheet.Cells[row, 5].Text.Trim(),
+                        email = sheet.Cells[row, 6].Text.Trim(),
+                        fechaIngreso = DateOnly.Parse(sheet.Cells[row, 7].Text.Trim()),
+                        idArea = int.Parse(sheet.Cells[row, 8].Text.Trim()),
+                        idRol = int.Parse(sheet.Cells[row, 9].Text.Trim()),
+                        password = sheet.Cells[row, 10].Text.Trim(),
+                        idStatusEmpleado = 1,
+                        esAreaPrincipal = true
+                    };
+
+                    // Reutilizas tu método existente
+                    await RegistrarEmpleadoConAreaYRol(registroDTO);
+                    cargados++;
+                }
+                catch (Exception exRow)
+                {
+                    errores.Add($"Fila {row}: {exRow.Message}");
+                }
+            }
+
+            var resultado = $"{cargados} de {rowCount - 1} cargados correctamente.";
+            if (errores.Any())
+                resultado += $" Errores en {errores.Count} filas: {string.Join("; ", errores)}";
+
+            return resultado;
         }
 
 

@@ -2,6 +2,7 @@
 using Piolax_WebApp.Models;
 using Piolax_WebApp.Repositories;
 using Piolax_WebApp.Repositories.Impl;
+using OfficeOpenXml;
 
 namespace Piolax_WebApp.Services.Impl
 {
@@ -762,7 +763,96 @@ namespace Piolax_WebApp.Services.Impl
             return startOfWeek.AddDays(6); // Domingo de la misma semana
         }
 
+        public async Task<string> RegistrarPreventivosDesdeExcel(IFormFile filePath)
+        {
+            if (filePath == null || filePath.Length == 0)
+                throw new ArgumentException("El archivo proporcionado es inválido o está vacío.");
 
+            if (!filePath.FileName.EndsWith(".xlsx", StringComparison.OrdinalIgnoreCase))
+                throw new ArgumentException("El archivo debe tener extensión .xlsx");
+
+            // EPPlus necesita definir el contexto de licencia:
+            ExcelPackage.LicenseContext = LicenseContext.NonCommercial;
+
+            var errores = new List<string>();
+            int registrosCargados = 0;
+            int filasProcesadas = 0;
+
+            try
+            {
+                using var stream = filePath.OpenReadStream();
+                using var package = new ExcelPackage(stream);
+                var workbook = package.Workbook;
+
+                if (workbook.Worksheets.Count == 0)
+                    throw new ApplicationException("El archivo Excel no contiene hojas.");
+
+                var sheet = workbook.Worksheets.First();
+                var rowCount = sheet.Dimension?.End.Row ?? 0;
+
+                for (int row = 2; row <= rowCount; row++)
+                {
+                    filasProcesadas++;
+                    try
+                    {
+                        // Leer y validar cada columna
+                        var idAreaText = sheet.Cells[row, 1].Text?.Trim();
+                        var idMaquinaText = sheet.Cells[row, 2].Text?.Trim();
+                        var idFrecuenciaText = sheet.Cells[row, 3].Text?.Trim();
+                        var idEstatusText = sheet.Cells[row, 4].Text?.Trim();
+                        var semanaText = sheet.Cells[row, 5].Text?.Trim();  // CW
+                        var activoText = sheet.Cells[row, 6].Text?.Trim();
+                        var idEmpleadoText = sheet.Cells[row, 8].Text?.Trim();  // Técnico
+
+                        // Verificaciones básicas
+                        if (!int.TryParse(idAreaText, out var idArea) ||
+                            !int.TryParse(idMaquinaText, out var idMaquina) ||
+                            !int.TryParse(idFrecuenciaText, out var idFrecuencia) ||
+                            !int.TryParse(idEstatusText, out var idEstatus) ||
+                            !int.TryParse(semanaText, out var semanaPreventivo) ||
+                            !int.TryParse(activoText, out var activoFlag) ||
+                            !int.TryParse(idEmpleadoText, out var idEmpleado))
+                        {
+                            errores.Add($"Fila {row}: Algún valor numérico no es válido.");
+                            continue;
+                        }
+
+                        bool activo = activoFlag == 1;
+
+                        // Prepara DTO
+                        var dto = new MantenimientoPreventivoCreateDTO
+                        {
+                            idArea = idArea,
+                            idMaquina = idMaquina,
+                            idFrecuenciaPreventivo = idFrecuencia,
+                            idEstatusPreventivo = idEstatus,
+                            semanaPreventivo = semanaPreventivo,
+                            activo = activo,
+                            idEmpleado = idEmpleado
+                        };
+
+                        // Llama al método existente para crear el MP
+                        await CrearMantenimientoPreventivo(dto);
+                        registrosCargados++;
+                    }
+                    catch (Exception exRow)
+                    {
+                        errores.Add($"Fila {row}: Error inesperado → {exRow.Message}");
+                    }
+                }
+
+                // Armar resultado
+                var resultado = $"{registrosCargados} registro(s) cargado(s) de {filasProcesadas} fila(s).";
+                if (errores.Any())
+                    resultado += $" Se encontraron errores en {errores.Count} fila(s): {string.Join("; ", errores)}";
+
+                return resultado;
+            }
+            catch (Exception ex)
+            {
+                throw new ApplicationException("Error al procesar el archivo Excel.", ex);
+            }
+        }
 
 
     }

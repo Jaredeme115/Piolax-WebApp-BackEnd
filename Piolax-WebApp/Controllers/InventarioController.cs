@@ -227,8 +227,9 @@ namespace Piolax_WebApp.Controllers
 
 
         // Metodo para cargar refacciones desde un archivo Excel
-       [HttpPost("CargarRefaccionesDesdeExcel")]
-       [Consumes("multipart/form-data")] // Indica que acepta archivos
+        [RequestFormLimits(MultipartBodyLengthLimit = long.MaxValue)]
+        [DisableRequestSizeLimit]
+        [HttpPost("CargarRefaccionesDesdeExcel")]
         public async Task<IActionResult> SubirInventarioDesdeExcel(IFormFile file)
         {
             try

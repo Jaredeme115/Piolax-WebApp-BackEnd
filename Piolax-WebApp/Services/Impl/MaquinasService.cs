@@ -1,11 +1,11 @@
-﻿using IronXL;
-using Piolax_WebApp.DTOs;
+﻿using Piolax_WebApp.DTOs;
 using Piolax_WebApp.Models;
 using Piolax_WebApp.Repositories;
 using QRCoder;
 using System.Drawing;
 using System.Drawing.Imaging;
 using System.IO;
+using OfficeOpenXml;
 
 namespace Piolax_WebApp.Services.Impl
 {
@@ -75,38 +75,58 @@ namespace Piolax_WebApp.Services.Impl
             if (filePath == null || filePath.Length == 0)
                 throw new ArgumentException("El archivo proporcionado es inválido o está vacío.");
 
+            if (!filePath.FileName.EndsWith(".xlsx", StringComparison.OrdinalIgnoreCase))
+                throw new ArgumentException("El archivo debe tener formato .xlsx");
+
+            // EPPlus requiere declarar el contexto de licencia
+            ExcelPackage.LicenseContext = LicenseContext.NonCommercial;
+
             var errores = new List<string>();
             int maquinasCargadas = 0;
             int filasProcesadas = 0;
 
             try
             {
-                if (!filePath.FileName.EndsWith(".xlsx", StringComparison.OrdinalIgnoreCase))
-                    throw new ArgumentException("El archivo debe tener formato .xlsx");
+                using var stream = filePath.OpenReadStream();
+                using var package = new ExcelPackage(stream);
 
-                var workbook = WorkBook.Load(filePath.OpenReadStream());
-                if (workbook.WorkSheets.Count == 0)
+                var workbook = package.Workbook;
+                if (workbook.Worksheets.Count == 0)
                     throw new ApplicationException("El archivo Excel no contiene hojas.");
 
-                var worksheet = workbook.WorkSheets[1];
+                // Obtengo la primera hoja
+                var worksheet = workbook.Worksheets.First();
 
-                for (int row = 2; row <= worksheet.RowCount; row++)
+                // Determino cuántas filas hay con datos
+                var rowCount = worksheet.Dimension?.End.Row ?? 0;
+
+                for (int row = 2; row <= rowCount; row++)
                 {
                     filasProcesadas++;
                     try
                     {
-                        if (string.IsNullOrWhiteSpace(worksheet[$"A{row}"].StringValue) ||
-                            string.IsNullOrWhiteSpace(worksheet[$"B{row}"].StringValue))
+                        // Leo celdas A y B
+                        var descripcion = worksheet.Cells[row, 1].Text?.Trim();
+                        var idAreaText = worksheet.Cells[row, 2].Text?.Trim();
+
+                        if (string.IsNullOrWhiteSpace(descripcion) ||
+                            string.IsNullOrWhiteSpace(idAreaText))
                         {
                             errores.Add($"Fila {row}: Una o más celdas requeridas están vacías.");
                             continue;
                         }
 
+                        if (!int.TryParse(idAreaText, out var idArea))
+                        {
+                            errores.Add($"Fila {row}: El ID de área '{idAreaText}' no es un número válido.");
+                            continue;
+                        }
+
                         var maquinaDTO = new MaquinaDTO
                         {
-                            idArea = int.Parse(worksheet[$"A{row}"].StringValue),
-                            descripcion = worksheet[$"B{row}"].StringValue,
-                            codigoQR = worksheet[$"B{row}"].StringValue // Genera el QR desde el servicio
+                            descripcion = descripcion,
+                            idArea = idArea,
+                            codigoQR = descripcion // Generación de QR en tu servicio
                         };
 
                         if (await MaquinaExisteRegistro(maquinaDTO.descripcion))
@@ -136,10 +156,10 @@ namespace Piolax_WebApp.Services.Impl
             }
             catch (Exception ex)
             {
+                // Propago con detalle interno
                 throw new ApplicationException("Error al procesar el archivo Excel.", ex);
             }
         }
-
 
         //Metodo para generar el codigo QR para cada maquina cuando sea necesario
         public byte[] GenerateQRCodeBytes(string text)

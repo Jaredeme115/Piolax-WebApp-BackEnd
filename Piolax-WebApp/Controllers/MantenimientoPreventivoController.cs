@@ -176,6 +176,45 @@ namespace Piolax_WebApp.Controllers
             return BadRequest(new { mensaje = "Error al corregir inconsistencias" });
         }
 
+        [RequestFormLimits(MultipartBodyLengthLimit = long.MaxValue)]
+        [DisableRequestSizeLimit]
+        [HttpPost("RegistrarPreventivosDesdeExcel")]
+
+        public async Task<IActionResult> RegistrarPreventivosDesdeExcel(IFormFile file)
+        {
+            if (file == null || file.Length == 0)
+                return BadRequest(new { Error = "Por favor, sube un archivo Excel válido." });
+
+            try
+            {
+                var resultado = await _service.RegistrarPreventivosDesdeExcel(file);
+                return Ok(new { Message = resultado });
+            }
+            catch (ArgumentException ex)
+            {
+                // errores de validación (archivo inválido, extensión, etc.)
+                return BadRequest(new { Error = ex.Message });
+            }
+            catch (ApplicationException ex)
+            {
+                // errores durante el procesamiento (detalles de EPPlus, formato de celdas, etc.)
+                return StatusCode(500, new
+                {
+                    Error = ex.Message,
+                    Details = ex.InnerException?.Message ?? "Sin detalles adicionales"
+                });
+            }
+            catch (Exception ex)
+            {
+                // cualquier otro error inesperado
+                return StatusCode(500, new
+                {
+                    Error = "Error inesperado procesando el Excel.",
+                    Details = ex.Message
+                });
+            }
+        }
+
 
 
     }

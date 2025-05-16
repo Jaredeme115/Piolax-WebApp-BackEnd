@@ -17,5 +17,6 @@ namespace Piolax_WebApp.Services
         Task<MantenimientoPreventivoDetallesDTO> CambiarEstatusEnProceso(int idMP);
         Task<MantenimientoPreventivoDetallesDTO> CancelarMantenimientoEnProceso(int idMP);
         Task<bool> CorregirMantenimientosReprogramados();
+        Task<string> RegistrarPreventivosDesdeExcel(IFormFile file);
     }
 }
