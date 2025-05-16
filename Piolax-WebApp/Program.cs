@@ -190,22 +190,9 @@ builder.Services.AddSwaggerGen(options =>
 
 string corsConfiguration = "_corsConfiguration";
 
+// Conexión para exponer URL a la Red Empresarial
 
-//Conexion con Localhost
-
-/*builder.Services.AddCors(options =>
-    options.AddPolicy(name: corsConfiguration,
-        cors => cors.WithOrigins("http://localhost:4200")
-        .AllowAnyHeader()
-        .AllowAnyMethod()
-        .AllowCredentials()
-    )
-);*/
-
-
-//Conexion para exponer URL a internet  
-
-// 1) Registrar la política CORS
+// Registrar la política CORS
 builder.Services.AddCors(options =>
 {
     options.AddPolicy(name: corsConfiguration, cors =>
@@ -230,21 +217,6 @@ if (string.IsNullOrEmpty(tokenKey))
 }
 builder.Services.AddScoped<ITokenService, TokenService>();
 
-//Localhost
-/*builder.Services.AddAuthentication(JwtBearerDefaults.AuthenticationScheme)
-                .AddJwtBearer(option =>
-                {
-                    option.TokenValidationParameters = new TokenValidationParameters
-                    {
-                        ValidateIssuerSigningKey = true,
-                        IssuerSigningKey = new SymmetricSecurityKey(Encoding.UTF8.GetBytes(tokenKey)),
-                        ValidateIssuer = true,
-                        ValidIssuer = builder.Configuration["Jwt:Issuer"], // Usar el Issuer configurado
-                        ValidateAudience = true,
-                        ValidAudience = builder.Configuration["Jwt:Audience"], // Usar el Audience configurado
-                        ClockSkew = TimeSpan.Zero
-                    };
-});*/
 
 //Exponer URL a internet
 builder.Services.AddAuthentication(JwtBearerDefaults.AuthenticationScheme)
@@ -326,13 +298,14 @@ builder.Services.AddAuthorization(options =>
 builder.Services.Configure<FormOptions>(opts =>
 {
     opts.MultipartBodyLengthLimit = 50 * 1024 * 1024; // 50 MB
-    // opts.BufferBody = true; // opcional, dependiendo de memoria
 });
 
 
 var app = builder.Build();
 
-//app.UseDeveloperExceptionPage();
+
+
+//Usar esta función unicamente para debugeo en desarrollo, NO DEJAR EN PRODUCCIÓN ==> app.UseDeveloperExceptionPage();
 
 
 if (app.Environment.IsDevelopment())
@@ -341,27 +314,6 @@ if (app.Environment.IsDevelopment())
     app.UseSwaggerUI();
 }
 
-
-/*app.UseStaticFiles(new StaticFileOptions
-{
-    OnPrepareResponse = ctx =>
-    {
-        var request = ctx.Context.Request;
-        var response = ctx.Context.Response;
-
-        // Tomamos el origen de la petición
-        var origin = request.Headers["Origin"].FirstOrDefault();
-
-        // Si viene de localhost:4200 o contiene "trycloudflare.com", lo permitimos
-        if (!string.IsNullOrEmpty(origin) &&
-            (origin == "http://localhost:4200" || origin.Contains("trycloudflare.com")))
-        {
-            response.Headers.Append("Access-Control-Allow-Origin", origin);
-            response.Headers.Append("Access-Control-Allow-Methods", "GET, OPTIONS");
-            response.Headers.Append("Access-Control-Allow-Headers", "Content-Type, Authorization");
-        }
-    }
-});*/
 
 app.UseStaticFiles(new StaticFileOptions
 {
@@ -391,10 +343,7 @@ app.UseStaticFiles();
 //Para conexion con localhost y url publica
 app.UseCors(corsConfiguration);
 
-//app.UseHttpsRedirection();
-
-//Para exponer URL publica
-//app.UseCors("AllowLocalTunnel");
+//Usar esta función solo si la aplicación acepta HTTPS ====> app.UseHttpsRedirection();
 
 app.UseAuthentication();
 
