@@ -197,7 +197,7 @@ builder.Services.AddCors(options =>
 {
     options.AddPolicy(name: corsConfiguration, cors =>
     {
-        cors.WithOrigins("http://192.168.1.95:81") // cambia a la IP real del servidor
+        cors.WithOrigins("http://192.168.1.95") // cambia a la IP real del servidor
             .AllowAnyHeader()
             .AllowAnyMethod()
             .AllowCredentials();
