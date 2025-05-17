@@ -38,5 +38,7 @@ namespace Piolax_WebApp.Repositories
 
         Task<IEnumerable<EmpleadoNombreCompletoDTO>> ObtenerEmpleadosPorArea(int idArea);
 
+        Task ActualizarAreaYRol(EmpleadoAreaRol empleadoAreaRol);
+
     }
 }

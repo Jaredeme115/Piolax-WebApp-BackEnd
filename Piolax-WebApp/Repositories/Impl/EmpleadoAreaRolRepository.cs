@@ -206,6 +206,21 @@ namespace Piolax_WebApp.Repositories.Impl
             .ToListAsync();
         }
 
+        public async Task ActualizarAreaYRol(EmpleadoAreaRol empleadoAreaRol)
+        {
+            var entidad = await _context.EmpleadoAreaRol
+                .FirstOrDefaultAsync(ear =>
+                    ear.idEmpleado == empleadoAreaRol.idEmpleado &&
+                    ear.idArea == empleadoAreaRol.idArea &&
+                    ear.idRol == empleadoAreaRol.idRol);
+
+            if (entidad != null)
+            {
+                entidad.esAreaPrincipal = empleadoAreaRol.esAreaPrincipal;
+                await _context.SaveChangesAsync();
+            }
+        }
+
 
 
     }

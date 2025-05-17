@@ -70,27 +70,44 @@ namespace Piolax_WebApp.Services.Impl
             var areasRolesActuales = await _repository.ObtenerAreasRolesPorEmpleado(numNomina);
             var areaPrincipalActual = areasRolesActuales.FirstOrDefault(ar => ar.esAreaPrincipal);
 
-            if (registroDTO.idArea != 0 && registroDTO.idRol != 0)
+            // Solo procesar si se envían valores válidos
+            if (registroDTO.idArea > 0 && registroDTO.idRol > 0)
             {
-                // 🔹 Eliminar completamente el área y rol anterior
+                // Caso 1: El empleado ya tiene un área principal
                 if (areaPrincipalActual != null)
                 {
-                    await _repository.EliminarAreaYRol(numNomina, areaPrincipalActual.idArea, areaPrincipalActual.idRol);
-                }
-
-                // 🔹 Verificar si la nueva área y rol ya están asignados al empleado
-                var nuevaAreaRol = areasRolesActuales.FirstOrDefault(ar => ar.idArea == registroDTO.idArea && ar.idRol == registroDTO.idRol);
-
-                if (nuevaAreaRol == null)
-                {
-                    // ✅ Si la nueva área y rol NO existen, agregarlos como principal
-                    var nuevoEmpleadoAreaRol = new EmpleadoAreaRol
+                    // Solo actualizar si hay cambios
+                    if (areaPrincipalActual.idArea != registroDTO.idArea || areaPrincipalActual.idRol != registroDTO.idRol)
                     {
-                        idEmpleado = empleadoExistente.idEmpleado,
-                        idArea = registroDTO.idArea,
-                        idRol = registroDTO.idRol,
-                        esAreaPrincipal = true
-                    };
+                        // Eliminar área principal anterior
+                        await _repository.EliminarAreaYRol(numNomina, areaPrincipalActual.idArea, areaPrincipalActual.idRol);
+
+                        // Verificar si la nueva combinación ya existe
+                        var existeNuevaCombinacion = areasRolesActuales.Any(ar =>
+                            ar.idArea == registroDTO.idArea &&
+                            ar.idRol == registroDTO.idRol);
+
+                        if (!existeNuevaCombinacion)
+                        {
+                            // Agregar nueva área principal
+                            await _repository.AgregarAreaYRol(numNomina, registroDTO.idArea, registroDTO.idRol, true);
+                        }
+                        else
+                        {
+                            // Actualizar existente a principal
+                            var areaExistente = areasRolesActuales.First(ar =>
+                                ar.idArea == registroDTO.idArea &&
+                                ar.idRol == registroDTO.idRol);
+
+                            areaExistente.esAreaPrincipal = true;
+                            await _repository.ActualizarAreaYRol(areaExistente);
+                        }
+                    }
+                }
+                // Caso 2: No tiene área principal asignada
+                else
+                {
+                    // Agregar nueva área principal
                     await _repository.AgregarAreaYRol(numNomina, registroDTO.idArea, registroDTO.idRol, true);
                 }
             }
