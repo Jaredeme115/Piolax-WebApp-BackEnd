@@ -134,6 +134,11 @@ namespace Piolax_WebApp.Hubs
                 .SendAsync("RequestAwaitingValidation", dto);
             await Clients.Group($"Area_{idArea}_Supervisor")
                 .SendAsync("RequestAwaitingValidation", dto);
+            // Notificar a admin (idRol 11) y coordinador de producción (idRol 16)
+            await Clients.Group($"Area_{idArea}_Rol_11")
+                .SendAsync("RequestAwaitingValidation", dto);
+            await Clients.Group($"Area_{idArea}_Rol_16")
+                .SendAsync("RequestAwaitingValidation", dto);
         }
 
         // Unirse a un grupo para recibir actualizaciones de KPI por área

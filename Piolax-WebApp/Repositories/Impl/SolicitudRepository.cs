@@ -215,7 +215,7 @@ namespace Piolax_WebApp.Repositories.Impl
             }
         }
 
-        public async Task<IEnumerable<Solicitudes>> ObtenerSolicitudesConPrioridadAsync()
+        /*public async Task<IEnumerable<Solicitudes>> ObtenerSolicitudesConPrioridadAsync()
         {
             return await _context.Solicitudes
                 .Where(s => s.idStatusOrden == 3 || s.idStatusOrden == 6 || s.idStatusOrden == 5 || s.idStatusOrden == 4 || s.idStatusOrden == 2)
@@ -236,7 +236,37 @@ namespace Piolax_WebApp.Repositories.Impl
                 .ThenByDescending(s => s.idStatusOrden == 4 ? s.fechaSolicitud : DateTime.MinValue) // Luego "Esperando validación"
                 .ThenByDescending(s => s.idStatusOrden == 2 ? s.fechaSolicitud : DateTime.MinValue) // Luego "En proceso"
                 .ToListAsync();
+        }*/
+
+        public async Task<IEnumerable<Solicitudes>> ObtenerSolicitudesConPrioridadAsync()
+        {
+            return await _context.Solicitudes
+                .Where(s => s.idStatusOrden == 3 || s.idStatusOrden == 6 || s.idStatusOrden == 5 || s.idStatusOrden == 4 || s.idStatusOrden == 2)
+                .Include(s => s.Empleado)
+                    .ThenInclude(e => e.EmpleadoAreaRol)
+                        .ThenInclude(ar => ar.Area)
+                .Include(s => s.Empleado)
+                    .ThenInclude(e => e.EmpleadoAreaRol)
+                        .ThenInclude(ar => ar.Rol)
+                .Include(s => s.Maquina)
+                .Include(s => s.Turno)
+                .Include(s => s.StatusOrden)
+                .Include(s => s.StatusAprobacionSolicitante)
+                .Include(s => s.categoriaTicket)
+                // Incluir las asignaciones y los técnicos
+                .Include(s => s.Asignaciones)
+                    .ThenInclude(a => a.Asignacion_Tecnico)
+                        .ThenInclude(at => at.Empleado)
+                .OrderByDescending(s => s.idStatusOrden == 3 ? s.fechaSolicitud : DateTime.MinValue) // Prioridad a "No tomada"
+                .ThenByDescending(s => s.idStatusOrden == 6 ? s.fechaSolicitud : DateTime.MinValue) // Luego "Rechazada"
+                .ThenByDescending(s => s.idStatusOrden == 5 ? s.fechaSolicitud : DateTime.MinValue) // Luego "Pausada"
+                .ThenByDescending(s => s.idStatusOrden == 4 ? s.fechaSolicitud : DateTime.MinValue) // Luego "Esperando validación"
+                .ThenByDescending(s => s.idStatusOrden == 2 ? s.fechaSolicitud : DateTime.MinValue) // Luego "En proceso"
+                .ToListAsync();
         }
+
+
+
 
         public async Task<bool> EliminarSolicitud(int idSolicitud)
         {
