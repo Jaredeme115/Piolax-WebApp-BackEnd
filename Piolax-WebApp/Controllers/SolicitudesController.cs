@@ -18,36 +18,12 @@ namespace Piolax_WebApp.Controllers
         private readonly IHubContext<NotificationHub> _hubContext = hubContext;
 
 
-        /*[HttpPost("Registrar")]
-        public async Task<IActionResult> RegistrarSolicitud([FromBody] SolicitudesDTO solicitudesDTO)
-        {
-            try
-            {
-                var solicitudDetalle = await _service.RegistrarSolicitud(solicitudesDTO);
-
-                await _hubContext.Clients.All.SendAsync("ReceiveNewRequest", new
-                {
-                    idSolicitud = solicitudDetalle.idSolicitud,
-                    descripcion = solicitudesDTO.descripcion,
-                    fechaSolicitud = solicitudesDTO.fechaSolicitud
-                });
-                return Ok(solicitudDetalle);
-            }
-            catch (Exception ex)
-            {
-                return BadRequest($"Error al registrar la solicitud: {ex.Message}");
-            }
-        }*/
-
         [HttpPost("Registrar")]
         public async Task<IActionResult> RegistrarSolicitud([FromBody] SolicitudesDTO solicitudesDTO)
         {
             try
             {
                 var solicitudDetalle = await _service.RegistrarSolicitud(solicitudesDTO);
-
-                // Envía la notificación con el mensaje específico
-                //await _hubContext.Clients.Group("Mantenimiento").SendAsync("ReceiveNotification", "Nueva solicitud asignada");
 
                 //Enviar detalles en otro canal para procesar más información si es necesario
                 await _hubContext.Clients.Group("Mantenimiento").SendAsync("ReceiveRequestDetails", new
@@ -109,7 +85,6 @@ namespace Piolax_WebApp.Controllers
             {
                 s.idSolicitud,
                 s.descripcion,
-                //fechaSolicitud = s.fechaSolicitud.ToString("dd/MM/yyyy HH:mm:ss"), // Formatear la fecha
                 fechaSolicitud = s.fechaSolicitud,
                 s.nombreCompletoEmpleado,
                 s.nombreMaquina,
@@ -192,7 +167,6 @@ namespace Piolax_WebApp.Controllers
             {
                 s.idSolicitud,
                 s.descripcion,
-                //fechaSolicitud = s.fechaSolicitud.ToString("dd/MM/yyyy HH:mm:ss"),
                 fechaSolicitud = s.fechaSolicitud,
                 s.nombreCompletoEmpleado,
                 s.nombreMaquina,
@@ -206,6 +180,44 @@ namespace Piolax_WebApp.Controllers
 
             return Ok(solicitudesFormateadas);
         }
+
+        [HttpGet("ConsultarSolicitudesTerminadasPorArea/{numNomina}")]
+        public async Task<ActionResult<IEnumerable<SolicitudesDetalleDTO>>> ConsultarSolicitudesTerminadasPorArea(string numNomina)
+        {
+            try
+            {
+                var solicitudes = await _service.ConsultarSolicitudesTerminadasPorArea(numNomina);
+
+                var solicitudesFormateadas = solicitudes.Select(s => new
+                {
+                    s.idSolicitud,
+                    s.descripcion,
+                    fechaSolicitud = s.fechaSolicitud.ToString("dd/MM/yyyy HH:mm:ss"),
+                    s.nombreCompletoEmpleado,
+                    s.nombreMaquina,
+                    s.nombreTurno,
+                    s.nombreStatusOrden,
+                    s.nombreStatusAprobacionSolicitante,
+                    s.area,
+                    s.rol,
+                    s.nombreCategoriaTicket,
+                    s.nombreCompletoTecnico,
+                    s.solucion,
+                    refacciones = s.Refacciones?.Select(r => new
+                    {
+                        nombreRefaccion = r.NombreRefaccion,
+                        cantidad = r.Cantidad
+                    })
+                });
+
+                return Ok(solicitudesFormateadas);
+            }
+            catch (Exception ex)
+            {
+                return BadRequest($"Error al consultar solicitudes terminadas por área: {ex.Message}");
+            }
+        }
+
 
 
     }

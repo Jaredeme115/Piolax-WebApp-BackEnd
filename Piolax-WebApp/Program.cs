@@ -358,5 +358,6 @@ app.MapControllers();
 // Endpoint de SignalR
 app.MapHub<AsignacionHub>("/AsignacionHub");
 app.MapHub<NotificationHub>("/NotificationHub");
+app.MapHub<SolicitudHub>("/SolicitudHub");
 
 app.Run();
