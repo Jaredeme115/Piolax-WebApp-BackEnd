@@ -442,7 +442,7 @@ namespace Piolax_WebApp.Services.Impl
             await _repository.ActualizarStatusOrden(idSolicitud, idStatusOrden);
         }
 
-        public async Task<IEnumerable<SolicitudesDetalleDTO>> ObtenerSolicitudesConPrioridadAsync()
+        /*public async Task<IEnumerable<SolicitudesDetalleDTO>> ObtenerSolicitudesConPrioridadAsync()
         {
             var solicitudes = await _repository.ObtenerSolicitudesConPrioridadAsync();
             var solicitudesDetalleDTO = new List<SolicitudesDetalleDTO>();
@@ -497,6 +497,101 @@ namespace Piolax_WebApp.Services.Impl
                     nombreStatusOrden = statusOrden.descripcionStatusOrden,
                     nombreStatusAprobacionSolicitante = statusAprobacionSolicitante.descripcionStatusAprobacionSolicitante,
                     nombreCategoriaTicket = solicitud.categoriaTicket.descripcionCategoriaTicket
+                };
+
+                solicitudesDetalleDTO.Add(solicitudDetalleDTO);
+            }
+
+            return solicitudesDetalleDTO;
+        }*/
+
+
+        public async Task<IEnumerable<SolicitudesDetalleDTO>> ObtenerSolicitudesConPrioridadAsync()
+        {
+            var solicitudes = await _repository.ObtenerSolicitudesConPrioridadAsync();
+            var solicitudesDetalleDTO = new List<SolicitudesDetalleDTO>();
+
+            foreach (var solicitud in solicitudes)
+            {
+                var empleado = solicitud.Empleado;
+                var areasRoles = empleado.EmpleadoAreaRol;
+
+                string nombreArea = "N/A";
+                string nombreRol = "N/A";
+
+                // 🟢 CASO EXCEPCIÓN: SI EL ÁREA ES 19, SE SELECCIONA EL ÁREA 19 Y EL ROL PRINCIPAL
+                if (solicitud.idAreaSeleccionada == 19)
+                {
+                    nombreArea = "Servicios Generales";
+                    var rolPrincipal = areasRoles.FirstOrDefault(ar => ar.esAreaPrincipal);
+                    nombreRol = rolPrincipal?.Rol?.nombreRol ?? "N/A";
+                }
+                else
+                {
+                    // 🔹 CASO NORMAL: SE OBTIENE EL ÁREA Y EL ROL ASIGNADO EN LA SOLICITUD
+                    var areaSeleccionada = areasRoles.FirstOrDefault(ar => ar.idArea == solicitud.idAreaSeleccionada);
+                    var rolSeleccionado = areasRoles.FirstOrDefault(ar => ar.idRol == solicitud.idRolSeleccionado && ar.idArea == solicitud.idAreaSeleccionada);
+
+                    nombreArea = areaSeleccionada?.Area?.nombreArea ?? "N/A";
+                    nombreRol = rolSeleccionado?.Rol?.nombreRol ?? "N/A";
+                }
+
+                // 📌 OBTENER DETALLES ADICIONALES
+                var maquina = await _maquinasService.Consultar(solicitud.idMaquina);
+                var turno = await _turnoService.Consultar(solicitud.idTurno);
+                var statusOrden = await _statusOrdenService.Consultar(solicitud.idStatusOrden);
+                var statusAprobacionSolicitante = await _statusAprobacionSolicitanteService.Consultar(solicitud.idStatusAprobacionSolicitante);
+                var categoriaTicket = await _categoriaTicketService.Consultar(solicitud.idCategoriaTicket);
+
+                // 🆕 OBTENER EL TÉCNICO ASIGNADO (si existe)
+                string nombreCompletoTecnico = "No asignado";
+
+                // Verificamos si hay asignaciones para esta solicitud
+                if (solicitud.Asignaciones != null && solicitud.Asignaciones.Any())
+                {
+                    // Buscamos un técnico activo entre todas las asignaciones
+                    var tecnicoActivo = solicitud.Asignaciones
+                        .SelectMany(a => a.Asignacion_Tecnico)
+                        .FirstOrDefault(t => t.esTecnicoActivo);
+
+                    // Si hay un técnico activo, obtenemos su nombre completo
+                    if (tecnicoActivo != null && tecnicoActivo.Empleado != null)
+                    {
+                        nombreCompletoTecnico = $"{tecnicoActivo.Empleado.nombre} {tecnicoActivo.Empleado.apellidoPaterno} {tecnicoActivo.Empleado.apellidoMaterno}";
+                    }
+                    // Si no hay técnico activo pero hay técnicos asignados, tomamos el primero
+                    else
+                    {
+                        var primerTecnico = solicitud.Asignaciones
+                            .SelectMany(a => a.Asignacion_Tecnico)
+                            .FirstOrDefault();
+
+                        if (primerTecnico != null && primerTecnico.Empleado != null)
+                        {
+                            nombreCompletoTecnico = $"{primerTecnico.Empleado.nombre} {primerTecnico.Empleado.apellidoPaterno} {primerTecnico.Empleado.apellidoMaterno}";
+                        }
+                    }
+                }
+
+                var solicitudDetalleDTO = new SolicitudesDetalleDTO
+                {
+                    idSolicitud = solicitud.idSolicitud,
+                    descripcion = solicitud.descripcion,
+                    fechaSolicitud = solicitud.fechaSolicitud,
+                    nombreCompletoEmpleado = $"{empleado.nombre} {empleado.apellidoPaterno} {empleado.apellidoMaterno}",
+                    idMaquina = solicitud.idMaquina,
+                    idTurno = solicitud.idTurno,
+                    idStatusOrden = solicitud.idStatusOrden,
+                    idStatusAprobacionSolicitante = solicitud.idStatusAprobacionSolicitante,
+                    area = nombreArea, // 🔥 AHORA ASIGNA EL ÁREA CORRECTA
+                    rol = nombreRol,   // 🔥 AHORA ASIGNA EL ROL CORRECTO
+                    idCategoriaTicket = solicitud.idCategoriaTicket,
+                    nombreMaquina = maquina.nombreMaquina,
+                    nombreTurno = turno.descripcion,
+                    nombreStatusOrden = statusOrden.descripcionStatusOrden,
+                    nombreStatusAprobacionSolicitante = statusAprobacionSolicitante.descripcionStatusAprobacionSolicitante,
+                    nombreCategoriaTicket = solicitud.categoriaTicket.descripcionCategoriaTicket,
+                    nombreCompletoTecnico = nombreCompletoTecnico // 🆕 AGREGADO: NOMBRE DEL TÉCNICO
                 };
 
                 solicitudesDetalleDTO.Add(solicitudDetalleDTO);

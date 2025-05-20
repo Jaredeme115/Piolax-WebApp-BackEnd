@@ -16,6 +16,7 @@ using System.Security.Claims;
 
 //Para cargar el archivo de configuración
 using Microsoft.AspNetCore.Http.Features;
+using Piolax_WebApp.Services.BackgroundServices;
 
 
 
@@ -146,6 +147,9 @@ builder.Services.AddHostedService<LowStockNotificationService>();
 
 // Añade el servicio de KPIs en tiempo real
 builder.Services.AddHostedService<KPIRealTimeService>();
+
+// Para cerrar orden pasados 15 minutos
+builder.Services.AddHostedService<AutoApprovalService>();
 
 
 builder.Configuration
