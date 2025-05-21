@@ -271,7 +271,9 @@ builder.Services.AddAuthentication(JwtBearerDefaults.AuthenticationScheme)
                 var path = context.HttpContext.Request.Path;
                 if (!string.IsNullOrEmpty(accessToken) &&
                     (path.StartsWithSegments("/NotificationHub") ||
-                     path.StartsWithSegments("/AsignacionHub")))
+                     path.StartsWithSegments("/AsignacionHub") ||
+                     path.StartsWithSegments("/SolicitudHub")))
+
                 {
                     context.Token = accessToken;
                 }
