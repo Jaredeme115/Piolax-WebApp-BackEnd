@@ -14,23 +14,22 @@ namespace Piolax_WebApp.Hubs
 
         public override async Task OnConnectedAsync()
         {
-            var connectionId = Context.ConnectionId;
-            Console.WriteLine($"Solicitud Hub: Nueva conexión establecida: {connectionId}");
+            if (Context.User?.Identity?.IsAuthenticated != true)
+                throw new HubException("No autenticado");
 
-            // Si el usuario está autenticado, unirlo automáticamente a sus grupos de área
-            if (Context.User?.Identity?.IsAuthenticated == true)
+            // Validar que el claim "idArea" existe y es válido
+            var idAreas = Context.User.FindAll("idArea").Select(c => c.Value).ToList();
+            if (!idAreas.Any())
+                throw new HubException("Usuario no tiene áreas asignadas");
+
+            // Reconectar a grupos solo si el token es válido
+            foreach (var areaStr in idAreas)
             {
-                var idAreas = Context.User.FindAll("idArea").Select(c => c.Value).ToList();
-                foreach (var areaStr in idAreas)
+                if (int.TryParse(areaStr, out int idArea))
                 {
-                    if (int.TryParse(areaStr, out int idArea))
-                    {
-                        await UnirseGrupoArea(idArea);
-                    }
+                    await Groups.AddToGroupAsync(Context.ConnectionId, $"Area_{idArea}");
                 }
             }
-
-            await base.OnConnectedAsync();
         }
 
         public override async Task OnDisconnectedAsync(Exception exception)

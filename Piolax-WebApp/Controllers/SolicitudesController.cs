@@ -218,6 +218,44 @@ namespace Piolax_WebApp.Controllers
             }
         }
 
+        [HttpGet("ConsultarSolicitudesTerminadasPorEmpleado/{numNomina}")]
+        public async Task<ActionResult<IEnumerable<SolicitudesDetalleDTO>>> ConsultarSolicitudesTerminadasPorEmpleado(string numNomina)
+        {
+            try
+            {
+                var solicitudes = await _service.ConsultarSolicitudesTerminadasPorEmpleado(numNomina);
+
+                var solicitudesFormateadas = solicitudes.Select(s => new
+                {
+                    s.idSolicitud,
+                    s.descripcion,
+                    fechaSolicitud = s.fechaSolicitud.ToString("dd/MM/yyyy HH:mm:ss"),
+                    s.nombreCompletoEmpleado,
+                    s.nombreMaquina,
+                    s.nombreTurno,
+                    s.nombreStatusOrden,
+                    s.nombreStatusAprobacionSolicitante,
+                    s.area,
+                    s.rol,
+                    s.nombreCategoriaTicket,
+                    s.nombreCompletoTecnico,
+                    s.solucion,
+                    refacciones = s.Refacciones?.Select(r => new
+                    {
+                        nombreRefaccion = r.NombreRefaccion,
+                        cantidad = r.Cantidad
+                    })
+                });
+
+                return Ok(solicitudesFormateadas);
+            }
+            catch (Exception ex)
+            {
+                return BadRequest($"Error al consultar solicitudes terminadas del empleado: {ex.Message}");
+            }
+        }
+
+
 
 
     }

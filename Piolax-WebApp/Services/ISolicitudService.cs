@@ -22,6 +22,9 @@ namespace Piolax_WebApp.Services
         //Metodo para obtener las solicitudes terminadas por area
         Task<IEnumerable<SolicitudesDetalleDTO>> ConsultarSolicitudesTerminadasPorArea(string numNomina);
 
+        //Metodo para obtener las solicitudes terminadas por empleado
+        Task<IEnumerable<SolicitudesDetalleDTO>> ConsultarSolicitudesTerminadasPorEmpleado(string numNomina);
+
 
 
     }
