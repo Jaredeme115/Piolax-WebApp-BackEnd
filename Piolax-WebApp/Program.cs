@@ -201,7 +201,7 @@ builder.Services.AddCors(options =>
 {
     options.AddPolicy(name: corsConfiguration, cors =>
     {
-        cors.WithOrigins("http://192.168.1.95:83") // cambia a la IP real del servidor
+        cors.WithOrigins("https://192.168.1.95") // cambia a la IP real del servidor
             .AllowAnyHeader()
             .AllowAnyMethod()
             .AllowCredentials();
@@ -241,7 +241,7 @@ builder.Services.AddAuthentication(JwtBearerDefaults.AuthenticationScheme)
         
             IssuerValidator = (issuer, token, parameters) =>
             {
-                if (issuer.StartsWith("http://localhost") || issuer.StartsWith("http://192.168.1.95"))
+                if (issuer.StartsWith("https://localhost") || issuer.StartsWith("https://192.168.1.95"))
                     return issuer;
 
                 throw new SecurityTokenInvalidIssuerException("Issuer no válido.");
@@ -251,7 +251,7 @@ builder.Services.AddAuthentication(JwtBearerDefaults.AuthenticationScheme)
             {
                 foreach (var audience in audiences)
                 {
-                    if (audience.StartsWith("http://localhost") || audience.StartsWith("http://192.168.1.95"))
+                    if (audience.StartsWith("https://localhost") || audience.StartsWith("https://192.168.1.95"))
                         return true;
                 }
                 return false;
@@ -333,7 +333,7 @@ app.UseStaticFiles(new StaticFileOptions
 
         // Si viene de localhost:4200 o contiene "trycloudflare.com", lo permitimos
         if (!string.IsNullOrEmpty(origin) &&
-            (origin.StartsWith("http://192.168.")))
+            (origin.StartsWith("https://192.168.")))
         {
             response.Headers.Append("Access-Control-Allow-Origin", origin);
             response.Headers.Append("Access-Control-Allow-Methods", "GET, OPTIONS");
