@@ -18,30 +18,45 @@ namespace Piolax_WebApp.Hubs
 
         public override async Task OnConnectedAsync()
         {
-            if (Context.User?.Identity?.IsAuthenticated != true)
-                throw new HubException("Usuario no autenticado");
-
-            // Obtener el identificador de usuario (string)
+            // 1. Registra información sobre la identidad del usuario
             var userId = Context.UserIdentifier;
-            // Obtener todas las áreas del claim "idArea"
-            var areaClaims = Context.User
+            _logger.LogInformation("SolicitudHub: Conexión para usuario {UserId}", userId);
+
+            // 2. Registra todos los claims para depuración
+            var allClaims = Context.User?.Claims.Select(c => $"{c.Type}: {c.Value}").ToList();
+            _logger.LogInformation("SolicitudHub: Claims disponibles: {Claims}",
+                allClaims?.Any() == true ? string.Join(", ", allClaims) : "ninguno");
+
+            // 3. Obtener todas las áreas del claim "idArea"
+            var areaClaims = Context.User?
                                     .FindAll("idArea")
                                     .Select(c => c.Value)
-                                    .Distinct();
+                                    .Distinct() ?? Enumerable.Empty<string>();
 
-            if (!areaClaims.Any())
-                throw new HubException("Usuario sin áreas asignadas");
+            _logger.LogInformation("SolicitudHub: Áreas encontradas: {Areas}",
+                areaClaims.Any() ? string.Join(", ", areaClaims) : "ninguna");
 
-            // Construir lista de grupos a los que unirse
+            // 4. Construir lista de grupos a los que unirse
             var groups = new HashSet<string>(StringComparer.OrdinalIgnoreCase);
 
-            // 1) Grupo individual del usuario
-            groups.Add($"User_{userId}");
-
-            // 2) Grupo por cada área
-            foreach (var area in areaClaims)
+            // Siempre agregar al grupo individual del usuario si hay ID
+            if (!string.IsNullOrEmpty(userId))
             {
-                groups.Add($"Area_{area}");
+                groups.Add($"User_{userId}");
+            }
+
+            // Agregar a grupos de área si hay áreas
+            if (areaClaims.Any())
+            {
+                foreach (var area in areaClaims)
+                {
+                    groups.Add($"Area_{area}");
+                }
+            }
+            else
+            {
+                _logger.LogWarning("SolicitudHub: Usuario {UserId} sin áreas asignadas", userId);
+                // NO lanzar excepción, permitir continuar con al menos el grupo de usuario
             }
 
             _logger.LogInformation(
@@ -50,9 +65,12 @@ namespace Piolax_WebApp.Hubs
                 string.Join(", ", groups)
             );
 
-            // Añadir a todos los grupos en paralelo
-            await Task.WhenAll(groups
-                .Select(g => Groups.AddToGroupAsync(Context.ConnectionId, g)));
+            // Añadir a todos los grupos en paralelo si hay alguno
+            if (groups.Any())
+            {
+                await Task.WhenAll(groups
+                    .Select(g => Groups.AddToGroupAsync(Context.ConnectionId, g)));
+            }
 
             await base.OnConnectedAsync();
         }

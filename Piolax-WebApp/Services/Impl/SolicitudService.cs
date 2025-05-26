@@ -4,6 +4,7 @@ using Piolax_WebApp.Repositories;
 using Piolax_WebApp.Repositories.Impl;
 using Microsoft.AspNetCore.SignalR;
 using Piolax_WebApp.Hubs;
+using OfficeOpenXml;
 
 namespace Piolax_WebApp.Services.Impl
 {
@@ -400,6 +401,11 @@ namespace Piolax_WebApp.Services.Impl
                     .Select(s => s.solucion)
                     .FirstOrDefault();
 
+                // Obtener horas de inicio y término del técnico aprobado
+                var tecnicoAprobado = solicitud.Asignaciones
+                    .SelectMany(a => a.Asignacion_Tecnico)
+                    .FirstOrDefault(t => t.idStatusAprobacionTecnico == 1);
+
                 // Obtener las refacciones utilizadas
                 var refacciones = solicitud.Asignaciones
                     .SelectMany(a => a.Asignacion_Tecnico)
@@ -430,7 +436,9 @@ namespace Piolax_WebApp.Services.Impl
                     nombreCategoriaTicket = solicitud.categoriaTicket?.descripcionCategoriaTicket ?? "No disponible",
                     nombreCompletoTecnico = nombreCompletoTecnico,
                     solucion = solucion,
-                    Refacciones = refacciones
+                    Refacciones = refacciones,
+                    horaInicio = tecnicoAprobado?.horaInicio,
+                    horaTermino = tecnicoAprobado?.horaTermino
                 };
 
                 solicitudesDetalleDTO.Add(solicitudDetalleDTO);
@@ -804,6 +812,78 @@ namespace Piolax_WebApp.Services.Impl
             }
 
             return solicitudesDetalleDTO;
+        }
+
+        public async Task<byte[]> ExportarSolicitudesTerminadasExcel()
+        {
+            // Obtener los datos de las solicitudes terminadas
+            var solicitudes = await ConsultarSolicitudesTerminadas();
+
+            // EPPlus requiere declarar el contexto de licencia
+            ExcelPackage.LicenseContext = LicenseContext.NonCommercial;
+
+            using var package = new ExcelPackage();
+            var worksheet = package.Workbook.Worksheets.Add("Solicitudes Terminadas");
+
+            // Encabezados
+            worksheet.Cells[1, 1].Value = "Date";
+            worksheet.Cells[1, 2].Value = "Area";
+            worksheet.Cells[1, 3].Value = "Machine";
+            worksheet.Cells[1, 4].Value = "Report Time";
+            //worksheet.Cells[1, 5].Value = "Equipment stopped?";
+            worksheet.Cells[1, 5].Value = "Shift";
+            worksheet.Cells[1, 6].Value = "Tecnico/Operador";
+            worksheet.Cells[1, 7].Value = "Order No.";
+            worksheet.Cells[1, 8].Value = "Descripción de la falla";
+            worksheet.Cells[1, 9].Value = "Solución de la falla";
+            worksheet.Cells[1, 10].Value = "End Date";
+            worksheet.Cells[1, 11].Value = "Start Time";
+            worksheet.Cells[1, 12].Value = "End Time";
+            worksheet.Cells[1, 13].Value = "Done by";
+
+            // Estilo para encabezados
+            using (var range = worksheet.Cells[1, 1, 1, 13])
+            {
+                range.Style.Font.Bold = true;
+                range.Style.Fill.PatternType = OfficeOpenXml.Style.ExcelFillStyle.Solid;
+                range.Style.Fill.BackgroundColor.SetColor(System.Drawing.Color.LightGray);
+            }
+
+            // Datos
+            int row = 2;
+            foreach (var s in solicitudes)
+            {
+                worksheet.Cells[row, 1].Value = s.fechaSolicitud.ToString("dd/MM/yyyy");
+                worksheet.Cells[row, 2].Value = s.area;
+                worksheet.Cells[row, 3].Value = s.nombreMaquina;
+                worksheet.Cells[row, 4].Value = s.fechaSolicitud.ToString("HH:mm");
+                //worksheet.Cells[row, 5].Value = s.nombreMaquina;
+                worksheet.Cells[row, 5].Value = s.nombreTurno;
+                worksheet.Cells[row, 6].Value = s.nombreCompletoEmpleado;
+                worksheet.Cells[row, 7].Value = s.idSolicitud;
+                worksheet.Cells[row, 8].Value = s.descripcion;
+                worksheet.Cells[row, 9].Value = s.solucion;
+                worksheet.Cells[row, 10].Value = s.horaTermino?.ToString("dd/MM/yyyy");
+                worksheet.Cells[row, 11].Value = s.horaInicio?.ToString("HH:mm");
+                worksheet.Cells[row, 12].Value = s.horaTermino?.ToString("HH:mm");
+                worksheet.Cells[row, 13].Value = s.nombreCompletoTecnico;
+
+                // Formatear refacciones como texto
+                /*string refaccionesTexto = "";
+                if (s.Refacciones != null && s.Refacciones.Any())
+                {
+                    refaccionesTexto = string.Join(", ", s.Refacciones.Select(r => $"{r.NombreRefaccion} ({r.Cantidad})"));
+                }
+                worksheet.Cells[row, 16].Value = refaccionesTexto;*/
+
+                row++;
+            }
+
+            // Auto-ajustar columnas
+            worksheet.Cells.AutoFitColumns();
+
+            // Convertir a bytes y devolver
+            return package.GetAsByteArray();
         }
 
 
