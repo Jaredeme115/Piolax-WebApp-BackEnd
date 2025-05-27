@@ -20,7 +20,7 @@ namespace Piolax_WebApp.Hubs
             _logger = logger;
         }
 
-        public override async Task OnConnectedAsync()
+        /*public override async Task OnConnectedAsync()
         {
             _logger.LogInformation("User connected: {ConnectionId}", Context.ConnectionId);
 
@@ -62,6 +62,74 @@ namespace Piolax_WebApp.Hubs
             // Add to all groups in parallel
             var tasks = groups.Select(g => Groups.AddToGroupAsync(Context.ConnectionId, g));
             await Task.WhenAll(tasks);
+
+            await base.OnConnectedAsync();
+        }*/
+
+        public override async Task OnConnectedAsync()
+        {
+            _logger.LogInformation("User connected: {ConnectionId}", Context.ConnectionId);
+
+            try
+            {
+                // Collect all groups to add
+                var groups = new List<string>();
+
+                // 1) Individual user group
+                var userId = Context.UserIdentifier;
+                if (!string.IsNullOrEmpty(userId))
+                {
+                    groups.Add($"User_{userId}");
+
+                    // Solo procesar claims si hay usuario autenticado
+                    if (Context.User?.Identity?.IsAuthenticated == true)
+                    {
+                        // 2) Area+role groups
+                        var areas = Context.User.FindAll("idArea").Select(c => c.Value).ToList();
+                        var roles = Context.User.FindAll(ClaimTypes.Role).Select(c => c.Value).ToList();
+                        var roleIds = Context.User.FindAll("idRol").Select(c => c.Value).ToList();
+
+                        foreach (var area in areas)
+                        {
+                            // Maintenance technicians
+                            if (area == "5") groups.Add("Mantenimiento");
+
+                            // Area-level Assistant and Supervisor
+                            if (roles.Contains("Assistant Manager")) groups.Add($"Area_{area}_Assistant");
+                            if (roles.Contains("Supervisor")) groups.Add($"Area_{area}_Supervisor");
+
+                            // Combined area-role groups
+                            foreach (var roleId in roleIds)
+                            {
+                                groups.Add($"Area_{area}_Rol_{roleId}");
+                            }
+                        }
+
+                        // 3) Inventory managers (special)
+                        if ((areas.Contains("5") && roleIds.Contains("7")) ||
+                            (areas.Contains("2") && roleIds.Contains("12")))
+                        {
+                            groups.AddRange(InventoryGroupNames);
+                        }
+                    }
+                    else
+                    {
+                        _logger.LogWarning("Usuario conectado pero no autenticado: {ConnectionId}", Context.ConnectionId);
+                    }
+                }
+
+                // Add to all groups in parallel if any
+                if (groups.Any())
+                {
+                    var tasks = groups.Select(g => Groups.AddToGroupAsync(Context.ConnectionId, g));
+                    await Task.WhenAll(tasks);
+                }
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Error en OnConnectedAsync para {ConnectionId}: {Message}", Context.ConnectionId, ex.Message);
+                // No re-lanzamos la excepción para permitir que la conexión continúe
+            }
 
             await base.OnConnectedAsync();
         }
@@ -125,6 +193,24 @@ namespace Piolax_WebApp.Hubs
             }
 
             return Task.WhenAll(tasks);
+        }
+
+        public Task VerifyConnection()
+        {
+            var info = new
+            {
+                connectionId = Context.ConnectionId,
+                userId = Context.UserIdentifier,
+                isAuthenticated = Context.User?.Identity?.IsAuthenticated ?? false,
+                claims = Context.User?.Claims?.Select(c => new { c.Type, c.Value }).ToList()
+            };
+
+            return Clients.Caller.SendAsync("ConnectionStatus", info);
+        }
+
+        public Task Ping()
+        {
+            return Clients.Caller.SendAsync("Pong", DateTime.Now);
         }
 
     }

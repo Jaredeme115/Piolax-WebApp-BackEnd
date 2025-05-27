@@ -152,7 +152,7 @@ builder.Services.AddHostedService<KPIRealTimeService>();
 builder.Services.AddHostedService<AutoApprovalService>();
 
 // Para recordar ordenes no tomadas tras 15 minutos
-builder.Services.AddHostedService<PendingOrderMonitorService>();
+//builder.Services.AddHostedService<PendingOrderMonitorService>();
 
 
 builder.Configuration
@@ -361,8 +361,8 @@ app.UseAuthorization();
 app.MapControllers();
 
 // Endpoint de SignalR
-app.MapHub<AsignacionHub>("/AsignacionHub");
 app.MapHub<NotificationHub>("/NotificationHub");
+app.MapHub<AsignacionHub>("/AsignacionHub");
 app.MapHub<SolicitudHub>("/SolicitudHub");
 
 app.Run();

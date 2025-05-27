@@ -96,7 +96,6 @@ namespace Piolax_WebApp.Controllers
             return Ok(resultado);
         }
 
-
         [HttpPost("PausarAsignacion")]
         public async Task<ActionResult<bool>> PausarAsignacion([FromBody] PausarAsignacionDTO pausarAsignacionDTO)
         {
