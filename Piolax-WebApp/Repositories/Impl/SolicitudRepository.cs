@@ -314,6 +314,19 @@ namespace Piolax_WebApp.Repositories.Impl
                 .ToListAsync();
         }
 
+        public async Task<List<Solicitudes>> ObtenerSolicitudesEnStatus(int idStatusOrden)
+        {
+            // Traemos solo lo que necesitamos: idSolicitud, fechaSolicitud y status
+            return await _context.Solicitudes
+                .Where(s => s.idStatusOrden == idStatusOrden)
+                .Select(s => new Solicitudes
+                {
+                    idSolicitud = s.idSolicitud,
+                    fechaSolicitud = s.fechaSolicitud,
+                    idStatusOrden = s.idStatusOrden
+                })
+                .ToListAsync();
+        }
 
     }
 }

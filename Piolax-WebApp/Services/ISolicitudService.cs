@@ -19,7 +19,14 @@ namespace Piolax_WebApp.Services
         //Metodo para obtener las solicitudes por area
         Task<IEnumerable<SolicitudesDetalleDTO>> ObtenerSolicitudesPorAreaYRoles(int idArea, List<int> idRoles);
 
+        //Metodo para obtener las solicitudes terminadas por area
+        Task<IEnumerable<SolicitudesDetalleDTO>> ConsultarSolicitudesTerminadasPorArea(string numNomina);
 
+        //Metodo para obtener las solicitudes terminadas por empleado
+        Task<IEnumerable<SolicitudesDetalleDTO>> ConsultarSolicitudesTerminadasPorEmpleado(string numNomina);
+
+        // Nuevo método para exportar solicitudes a Excel
+        Task<byte[]> ExportarSolicitudesTerminadasExcel();
 
     }
 }

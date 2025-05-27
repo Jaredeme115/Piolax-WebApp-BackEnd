@@ -1,171 +1,217 @@
 ﻿using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.SignalR;
-using Piolax_WebApp.Models;
+using Microsoft.Extensions.Logging;
+using System;
+using System.Collections.Generic;
+using System.Linq;
 using System.Security.Claims;
 using System.Threading.Tasks;
 
 namespace Piolax_WebApp.Hubs
 {
-    [Authorize]
+    
     public class NotificationHub : Hub
     {
-        // Método general para enviar notificaciones
-        public async Task SendNotification(string message)
+        private readonly ILogger<NotificationHub> _logger;
+        private static readonly string[] InventoryGroupNames = { "GestoresInventario" };
+
+        public NotificationHub(ILogger<NotificationHub> logger)
         {
-            await Clients.All.SendAsync("ReceiveNotification", message);
+            _logger = logger;
         }
 
-        // Método específico para notificaciones de nuevas solicitudes
-        public async Task SendRequestNotification(int idSolicitud, string descripcion)
+        /*public override async Task OnConnectedAsync()
         {
-            await Clients.All.SendAsync("ReceiveRequestNotification", "Nueva solicitud asignada", idSolicitud, descripcion);
-        }
+            _logger.LogInformation("User connected: {ConnectionId}", Context.ConnectionId);
 
-        // Método para notificaciones de bajo stock
-        public async Task SendLowStockNotification(int idRefaccion, string nombreProducto, int stockActual, int stockMinimo)
-        {
-            string mensaje = $"Bajo stock de {nombreProducto} - Actual: {stockActual} / Mínimo: {stockMinimo}";
+            // Collect all groups to add
+            var groups = new List<string>();
 
-            // Enviar solo a los gestores de inventario especificados
-            await Clients.Group("GestoresInventario").SendAsync("LowStockAlert", new
+            // 1) Individual user group
+            var userId = Context.UserIdentifier;
+            groups.Add($"User_{userId}");
+
+            // 2) Area+role groups
+            var areas = Context.User.FindAll("idArea").Select(c => c.Value);
+            var roles = Context.User.FindAll(ClaimTypes.Role).Select(c => c.Value);
+            var roleIds = Context.User.FindAll("idRol").Select(c => c.Value);
+
+            foreach (var area in areas)
             {
-                idRefaccion,
-                nombreProducto,
-                cantidadActual = stockActual,
-                cantidadMin = stockMinimo,
-                mensaje
-            });
-        }
+                // Maintenance technicians
+                if (area == "5") groups.Add("Mantenimiento");
 
-        public override async Task OnConnectedAsync()
-        {
-            Console.WriteLine("🟡 Entrando a OnConnectedAsync");
+                // Area-level Assistant and Supervisor
+                if (roles.Contains("Assistant Manager")) groups.Add($"Area_{area}_Assistant");
+                if (roles.Contains("Supervisor")) groups.Add($"Area_{area}_Supervisor");
 
-            // 1) Agrupar a cada conexión por usuario (para notificaciones individuales)
-            var idEmpleado = Context.UserIdentifier;
-            Console.WriteLine($"[Hub] Conexión añadida a User_{idEmpleado}");
-            await Groups.AddToGroupAsync(Context.ConnectionId, $"User_{idEmpleado}");
-
-            // 2) Agrupar por área + rol
-            var idAreas = Context.User.FindAll("idArea").Select(c => c.Value).ToList();
-            var roles = Context.User.FindAll(ClaimTypes.Role).Select(c => c.Value).ToList();
-            var idRoles = Context.User.FindAll("idRol").Select(c => c.Value).ToList();
-
-            foreach (var idArea in idAreas)
-            {
-                // a) Técnicos de Mantenimiento (idArea = 5)
-                if (idArea == "5")
+                // Combined area-role groups
+                foreach (var roleId in roleIds)
                 {
-                    await Groups.AddToGroupAsync(Context.ConnectionId, "Mantenimiento");
-                    Console.WriteLine($"[Hub] Conexión añadida a Mantenimiento");
-                }
-
-                // b) Assistant Managers de esa área
-                if (roles.Contains("Assistant Manager"))
-                {
-                    var grp = $"Area_{idArea}_Assistant";
-                    await Groups.AddToGroupAsync(Context.ConnectionId, grp);
-                    Console.WriteLine($"[Hub] Conexión añadida a {grp}");
-                }
-
-                // c) Supervisor de esa área
-                if (roles.Contains("Supervisor"))
-                {
-                    var grp = $"Area_{idArea}_Supervisor";
-                    await Groups.AddToGroupAsync(Context.ConnectionId, grp);
-                    Console.WriteLine($"[Hub] Conexión añadida a {grp}");
-                }
-
-                // d) Grupos combinados por área y rol (para notificaciones específicas)
-                foreach (var idRol in idRoles)
-                {
-                    var combinedGroup = $"Area_{idArea}_Rol_{idRol}";
-                    await Groups.AddToGroupAsync(Context.ConnectionId, combinedGroup);
-                    Console.WriteLine($"[Hub] Conexión añadida a {combinedGroup}");
+                    groups.Add($"Area_{area}_Rol_{roleId}");
                 }
             }
 
-            // Grupo especial para notificaciones de inventario
-            bool esGestorInventario =
-                (idAreas.Contains("5") && idRoles.Contains("7")) ||
-                (idAreas.Contains("2") && idRoles.Contains("12"));
-
-            if (esGestorInventario)
+            // 3) Inventory managers (special)
+            if ((areas.Contains("5") && roleIds.Contains("7")) ||
+                (areas.Contains("2") && roleIds.Contains("12")))
             {
-                await Groups.AddToGroupAsync(Context.ConnectionId, "GestoresInventario");
-                Console.WriteLine($"[Hub] Conexión añadida a GestoresInventario");
+                groups.AddRange(InventoryGroupNames);
+            }
+
+            // Add to all groups in parallel
+            var tasks = groups.Select(g => Groups.AddToGroupAsync(Context.ConnectionId, g));
+            await Task.WhenAll(tasks);
+
+            await base.OnConnectedAsync();
+        }*/
+
+        public override async Task OnConnectedAsync()
+        {
+            _logger.LogInformation("User connected: {ConnectionId}", Context.ConnectionId);
+
+            try
+            {
+                // Collect all groups to add
+                var groups = new List<string>();
+
+                // 1) Individual user group
+                var userId = Context.UserIdentifier;
+                if (!string.IsNullOrEmpty(userId))
+                {
+                    groups.Add($"User_{userId}");
+
+                    // Solo procesar claims si hay usuario autenticado
+                    if (Context.User?.Identity?.IsAuthenticated == true)
+                    {
+                        // 2) Area+role groups
+                        var areas = Context.User.FindAll("idArea").Select(c => c.Value).ToList();
+                        var roles = Context.User.FindAll(ClaimTypes.Role).Select(c => c.Value).ToList();
+                        var roleIds = Context.User.FindAll("idRol").Select(c => c.Value).ToList();
+
+                        foreach (var area in areas)
+                        {
+                            // Maintenance technicians
+                            if (area == "5") groups.Add("Mantenimiento");
+
+                            // Area-level Assistant and Supervisor
+                            if (roles.Contains("Assistant Manager")) groups.Add($"Area_{area}_Assistant");
+                            if (roles.Contains("Supervisor")) groups.Add($"Area_{area}_Supervisor");
+
+                            // Combined area-role groups
+                            foreach (var roleId in roleIds)
+                            {
+                                groups.Add($"Area_{area}_Rol_{roleId}");
+                            }
+                        }
+
+                        // 3) Inventory managers (special)
+                        if ((areas.Contains("5") && roleIds.Contains("7")) ||
+                            (areas.Contains("2") && roleIds.Contains("12")))
+                        {
+                            groups.AddRange(InventoryGroupNames);
+                        }
+                    }
+                    else
+                    {
+                        _logger.LogWarning("Usuario conectado pero no autenticado: {ConnectionId}", Context.ConnectionId);
+                    }
+                }
+
+                // Add to all groups in parallel if any
+                if (groups.Any())
+                {
+                    var tasks = groups.Select(g => Groups.AddToGroupAsync(Context.ConnectionId, g));
+                    await Task.WhenAll(tasks);
+                }
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Error en OnConnectedAsync para {ConnectionId}: {Message}", Context.ConnectionId, ex.Message);
+                // No re-lanzamos la excepción para permitir que la conexión continúe
             }
 
             await base.OnConnectedAsync();
         }
 
-        public async Task JoinGroup(int idArea)
+        // Generic join/leave group API
+        public Task JoinGroupByName(string groupName)
         {
-            if (idArea == 5)
+            _logger.LogInformation("Joining group {Group} for connection {ConnectionId}", groupName, Context.ConnectionId);
+            return Groups.AddToGroupAsync(Context.ConnectionId, groupName);
+        }
+
+        public Task LeaveGroupByName(string groupName)
+        {
+            _logger.LogInformation("Leaving group {Group} for connection {ConnectionId}", groupName, Context.ConnectionId);
+            return Groups.RemoveFromGroupAsync(Context.ConnectionId, groupName);
+        }
+
+        // Notification methods simplified to send to named group or all
+        public Task SendNotification(string message)
+            => Clients.All.SendAsync("ReceiveNotification", message);
+
+        public Task SendLowStockNotification(int idRefaccion, string nombreProducto, int stockActual, int stockMinimo)
+        {
+            var mensaje = $"Bajo stock de {nombreProducto} - Actual: {stockActual} / Mínimo: {stockMinimo}";
+            return Clients.Group(InventoryGroupNames.First())
+                          .SendAsync("LowStockAlert", new
+                          {
+                              idRefaccion,
+                              nombreProducto,
+                              cantidadActual = stockActual,
+                              cantidadMin = stockMinimo,
+                              mensaje
+                          });
+        }
+
+        public Task NewRequest(int idSolicitud, string descripcion)
+            => Clients.Group("Mantenimiento").SendAsync("ReceiveNewRequest", new { idSolicitud, descripcion });
+
+        public Task NotifyRequestReady(int idSolicitud, int idSolicitante)
+            => Clients.Group($"User_{idSolicitante}")
+                      .SendAsync("RequestReadyForApproval", new { idSolicitud });
+
+        public Task NotifyAwaitingValidation(int idEmpleadoSolicitante, int idAreaSolicitante, int idSolicitud)
+        {
+            var dto = new { idSolicitud, estado = 4 };
+
+            var tasks = new List<Task>
             {
-                await Groups.AddToGroupAsync(Context.ConnectionId, "Mantenimiento");
-                Console.WriteLine($"Cliente {Context.ConnectionId} unido al grupo Mantenimiento por idArea {idArea}");
-            }
-            else
+                // Al creador
+                Clients.Group($"User_{idEmpleadoSolicitante}")
+                        .SendAsync("RequestAwaitingValidation", dto)
+            };
+
+            // A los roles 6,7,8 de la misma área
+            foreach (var rol in new[] { 6, 7, 8 })
             {
-                Console.WriteLine($"Cliente {Context.ConnectionId} no pudo unirse al grupo debido a idArea {idArea}");
+                tasks.Add(
+                  Clients.Group($"Area_{idAreaSolicitante}_Rol_{rol}")
+                         .SendAsync("RequestAwaitingValidation", dto)
+                );
             }
+
+            return Task.WhenAll(tasks);
         }
 
-        // 1) Notificar nueva solicitud a los técnicos de Mantenimiento
-        public async Task NewRequest(int idSolicitud, string descripcion, int idArea)
+        public Task VerifyConnection()
         {
-            await Clients.Group("Mantenimiento")
-                .SendAsync("ReceiveNewRequest", new { idSolicitud, descripcion });
+            var info = new
+            {
+                connectionId = Context.ConnectionId,
+                userId = Context.UserIdentifier,
+                isAuthenticated = Context.User?.Identity?.IsAuthenticated ?? false,
+                claims = Context.User?.Claims?.Select(c => new { c.Type, c.Value }).ToList()
+            };
+
+            return Clients.Caller.SendAsync("ConnectionStatus", info);
         }
 
-        // 2) Notificar al solicitante que su orden está lista para validación
-        public async Task NotifyRequestReady(int idSolicitud, int idSolicitante)
+        public Task Ping()
         {
-            await Clients.Group($"User_{idSolicitante}")
-                .SendAsync("RequestReadyForApproval", new { idSolicitud });
+            return Clients.Caller.SendAsync("Pong", DateTime.Now);
         }
-
-        // 3) Notificar a los roles superiores de área que hay una solicitud pendiente de validación
-        public async Task NotifyAwaitingValidation(int idSolicitud, int idArea)
-        {
-            var dto = new { idSolicitud, idArea };
-            await Clients.Group($"Area_{idArea}_Assistant")
-                .SendAsync("RequestAwaitingValidation", dto);
-            await Clients.Group($"Area_{idArea}_Supervisor")
-                .SendAsync("RequestAwaitingValidation", dto);
-            // Notificar a admin (idRol 11) y coordinador de producción (idRol 16)
-            await Clients.Group($"Area_{idArea}_Rol_11")
-                .SendAsync("RequestAwaitingValidation", dto);
-            await Clients.Group($"Area_{idArea}_Rol_16")
-                .SendAsync("RequestAwaitingValidation", dto);
-        }
-
-        // Unirse a un grupo para recibir actualizaciones de KPI por área
-        public async Task JoinAreaKPIGroup(int idArea)
-        {
-            await Groups.AddToGroupAsync(Context.ConnectionId, $"Area_{idArea}");
-            Console.WriteLine($"Cliente {Context.ConnectionId} unido al grupo KPI para área {idArea}");
-        }
-
-        // Unirse a un grupo para recibir actualizaciones de KPI por máquina
-
-
-        public async Task JoinMaquinaKPIGroup(int idMaquina)
-        {
-            await Groups.AddToGroupAsync(Context.ConnectionId, $"Maquina_{idMaquina}");
-            Console.WriteLine($"Cliente {Context.ConnectionId} unido al grupo KPI para máquina {idMaquina}");
-        }
-
-        // Salir de un grupo de KPI
-        public async Task LeaveKPIGroup(string groupName)
-        {
-            await Groups.RemoveFromGroupAsync(Context.ConnectionId, groupName);
-            Console.WriteLine($"Cliente {Context.ConnectionId} salió del grupo KPI {groupName}");
-        }
-
-
 
     }
 }
-

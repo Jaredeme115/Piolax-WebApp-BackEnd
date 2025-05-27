@@ -2,6 +2,9 @@
 using Piolax_WebApp.Models;
 using Piolax_WebApp.Repositories;
 using Piolax_WebApp.Repositories.Impl;
+using Microsoft.AspNetCore.SignalR;
+using Piolax_WebApp.Hubs;
+using OfficeOpenXml;
 
 namespace Piolax_WebApp.Services.Impl
 {
@@ -14,7 +17,8 @@ namespace Piolax_WebApp.Services.Impl
         IStatusOrdenService statusOrdenService,
         IStatusAprobacionSolicitanteService statusAprobacionSolicitanteService,
         ICategoriaTicketService categoriaTicketService,
-        IAsignacionRepository asignacionRepository
+        IAsignacionRepository asignacionRepository,
+        IHubContext<SolicitudHub> hubContext
         ) : ISolicitudService
     {
         private readonly ISolicitudesRepository _repository = repository;
@@ -26,6 +30,7 @@ namespace Piolax_WebApp.Services.Impl
         private readonly IStatusAprobacionSolicitanteService _statusAprobacionSolicitanteService = statusAprobacionSolicitanteService;
         private readonly ICategoriaTicketService _categoriaTicketService = categoriaTicketService;
         private readonly IAsignacionRepository _asignacionRepository = asignacionRepository;
+        private readonly IHubContext<SolicitudHub> _hubContext = hubContext;
 
         public async Task<SolicitudesDetalleDTO> RegistrarSolicitud(SolicitudesDTO solicitudesDTO)
         {
@@ -106,8 +111,13 @@ namespace Piolax_WebApp.Services.Impl
                 nombreCategoriaTicket = solicitud.categoriaTicket.descripcionCategoriaTicket
             };
 
+            // 🔹 Notificar a todos los clientes conectados sobre la nueva solicitud
+            await NotificarActualizacionSolicitudes(solicitudesDTO.idAreaSeleccionada);
+
             return solicitudDetalleDTO;
         }
+
+
         public async Task<SolicitudesDetalleDTO?> ObtenerSolicitudConDetalles(int idSolicitud)
         {
             var solicitud = await _repository.ObtenerSolicitudConDetalles(idSolicitud);
@@ -344,6 +354,7 @@ namespace Piolax_WebApp.Services.Impl
                 idStatusAprobacionSolicitante = solicitud.idStatusAprobacionSolicitante
             };
 
+            await NotificarActualizacionSolicitudes(solicitud.idAreaSeleccionada);
             return solicitudDetalleDTO;
         }
 
@@ -390,6 +401,11 @@ namespace Piolax_WebApp.Services.Impl
                     .Select(s => s.solucion)
                     .FirstOrDefault();
 
+                // Obtener horas de inicio y término del técnico aprobado
+                var tecnicoAprobado = solicitud.Asignaciones
+                    .SelectMany(a => a.Asignacion_Tecnico)
+                    .FirstOrDefault(t => t.idStatusAprobacionTecnico == 1);
+
                 // Obtener las refacciones utilizadas
                 var refacciones = solicitud.Asignaciones
                     .SelectMany(a => a.Asignacion_Tecnico)
@@ -420,7 +436,9 @@ namespace Piolax_WebApp.Services.Impl
                     nombreCategoriaTicket = solicitud.categoriaTicket?.descripcionCategoriaTicket ?? "No disponible",
                     nombreCompletoTecnico = nombreCompletoTecnico,
                     solucion = solucion,
-                    Refacciones = refacciones
+                    Refacciones = refacciones,
+                    horaInicio = tecnicoAprobado?.horaInicio,
+                    horaTermino = tecnicoAprobado?.horaTermino
                 };
 
                 solicitudesDetalleDTO.Add(solicitudDetalleDTO);
@@ -440,70 +458,8 @@ namespace Piolax_WebApp.Services.Impl
             solicitud.idStatusOrden = idStatusOrden;
             
             await _repository.ActualizarStatusOrden(idSolicitud, idStatusOrden);
+            await NotificarActualizacionSolicitudes(solicitud.idAreaSeleccionada);
         }
-
-        /*public async Task<IEnumerable<SolicitudesDetalleDTO>> ObtenerSolicitudesConPrioridadAsync()
-        {
-            var solicitudes = await _repository.ObtenerSolicitudesConPrioridadAsync();
-            var solicitudesDetalleDTO = new List<SolicitudesDetalleDTO>();
-
-            foreach (var solicitud in solicitudes)
-            {
-                var empleado = solicitud.Empleado;
-                var areasRoles = empleado.EmpleadoAreaRol;
-
-                string nombreArea = "N/A";
-                string nombreRol = "N/A";
-
-                // 🟢 CASO EXCEPCIÓN: SI EL ÁREA ES 19, SE SELECCIONA EL ÁREA 19 Y EL ROL PRINCIPAL
-                if (solicitud.idAreaSeleccionada == 19)
-                {
-                    nombreArea = "Servicios Generales";  
-                    var rolPrincipal = areasRoles.FirstOrDefault(ar => ar.esAreaPrincipal);
-                    nombreRol = rolPrincipal?.Rol?.nombreRol ?? "N/A";
-                }
-                else
-                {
-                    // 🔹 CASO NORMAL: SE OBTIENE EL ÁREA Y EL ROL ASIGNADO EN LA SOLICITUD
-                    var areaSeleccionada = areasRoles.FirstOrDefault(ar => ar.idArea == solicitud.idAreaSeleccionada);
-                    var rolSeleccionado = areasRoles.FirstOrDefault(ar => ar.idRol == solicitud.idRolSeleccionado && ar.idArea == solicitud.idAreaSeleccionada);
-
-                    nombreArea = areaSeleccionada?.Area?.nombreArea ?? "N/A";
-                    nombreRol = rolSeleccionado?.Rol?.nombreRol ?? "N/A";
-                }
-
-                // 📌 OBTENER DETALLES ADICIONALES
-                var maquina = await _maquinasService.Consultar(solicitud.idMaquina);
-                var turno = await _turnoService.Consultar(solicitud.idTurno);
-                var statusOrden = await _statusOrdenService.Consultar(solicitud.idStatusOrden);
-                var statusAprobacionSolicitante = await _statusAprobacionSolicitanteService.Consultar(solicitud.idStatusAprobacionSolicitante);
-                var categoriaTicket = await _categoriaTicketService.Consultar(solicitud.idCategoriaTicket);
-
-                var solicitudDetalleDTO = new SolicitudesDetalleDTO
-                {
-                    idSolicitud = solicitud.idSolicitud,
-                    descripcion = solicitud.descripcion,
-                    fechaSolicitud = solicitud.fechaSolicitud,
-                    nombreCompletoEmpleado = $"{empleado.nombre} {empleado.apellidoPaterno} {empleado.apellidoMaterno}",
-                    idMaquina = solicitud.idMaquina,
-                    idTurno = solicitud.idTurno,
-                    idStatusOrden = solicitud.idStatusOrden,
-                    idStatusAprobacionSolicitante = solicitud.idStatusAprobacionSolicitante,
-                    area = nombreArea, // 🔥 AHORA ASIGNA EL ÁREA CORRECTA
-                    rol = nombreRol,   // 🔥 AHORA ASIGNA EL ROL CORRECTO
-                    idCategoriaTicket = solicitud.idCategoriaTicket,
-                    nombreMaquina = maquina.nombreMaquina,
-                    nombreTurno = turno.descripcion,
-                    nombreStatusOrden = statusOrden.descripcionStatusOrden,
-                    nombreStatusAprobacionSolicitante = statusAprobacionSolicitante.descripcionStatusAprobacionSolicitante,
-                    nombreCategoriaTicket = solicitud.categoriaTicket.descripcionCategoriaTicket
-                };
-
-                solicitudesDetalleDTO.Add(solicitudDetalleDTO);
-            }
-
-            return solicitudesDetalleDTO;
-        }*/
 
 
         public async Task<IEnumerable<SolicitudesDetalleDTO>> ObtenerSolicitudesConPrioridadAsync()
@@ -613,6 +569,7 @@ namespace Piolax_WebApp.Services.Impl
             return await _repository.EliminarSolicitud(idSolicitud);
         }
 
+
         public async Task<IEnumerable<SolicitudesDetalleDTO>> ObtenerSolicitudesPorAreaYRoles(int idArea, List<int> idRoles)
         {
             // Obtener solicitudes con filtro de área y roles, aplicando la prioridad según el status
@@ -676,6 +633,279 @@ namespace Piolax_WebApp.Services.Impl
             return solicitudesDetalleDTO;
         }
 
+        public async Task<IEnumerable<SolicitudesDetalleDTO>> ConsultarSolicitudesTerminadasPorArea(string numNomina)
+        {
+            // Obtener el empleado para verificar a qué áreas pertenece
+            var empleado = await _empleadoService.Consultar(numNomina);
+            if (empleado == null)
+            {
+                throw new Exception($"No se encontró el empleado con número de nómina: {numNomina}");
+            }
+
+            // Obtener las áreas asignadas al empleado
+            var areasDelEmpleado = await _empleadoAreaRolService.ObtenerAreaPorEmpleado(numNomina);
+            var idsAreas = areasDelEmpleado.Select(a => a.idArea).ToList();
+
+            // Si no tiene áreas asignadas, regresamos una lista vacía
+            if (!idsAreas.Any())
+            {
+                return new List<SolicitudesDetalleDTO>();
+            }
+
+            // Obtener todas las solicitudes terminadas
+            var todasSolicitudesTerminadas = await _repository.ConsultarSolicitudesTerminadas();
+
+            // Filtrar las solicitudes por las áreas del empleado
+            var solicitudesFiltradas = todasSolicitudesTerminadas
+                .Where(s => idsAreas.Contains(s.idAreaSeleccionada))
+                .ToList();
+
+            var solicitudesDetalleDTO = new List<SolicitudesDetalleDTO>();
+
+            foreach (var solicitud in solicitudesFiltradas)
+            {
+                var solicitante = solicitud.Empleado;
+                if (solicitante == null)
+                {
+                    continue;
+                }
+
+                var areasRoles = solicitante.EmpleadoAreaRol ?? new List<EmpleadoAreaRol>();
+
+                var areaSeleccionada = areasRoles.FirstOrDefault(ar => ar.idArea == solicitud.idAreaSeleccionada);
+                var rolSeleccionado = areasRoles.FirstOrDefault(ar => ar.idRol == solicitud.idRolSeleccionado && ar.idArea == solicitud.idAreaSeleccionada);
+
+                // Obtener el técnico aprobado
+                var tecnico = solicitud.Asignaciones
+                    .SelectMany(a => a.Asignacion_Tecnico)
+                    .Where(t => t.idStatusAprobacionTecnico == 1)
+                    .Select(t => t.Empleado)
+                    .FirstOrDefault();
+
+                var nombreCompletoTecnico = tecnico != null
+                    ? $"{tecnico.nombre} {tecnico.apellidoPaterno} {tecnico.apellidoMaterno}"
+                    : "No asignado";
+
+                // Obtener la solución aplicada
+                var solucion = solicitud.Asignaciones
+                    .SelectMany(a => a.Asignacion_Tecnico)
+                    .Where(s => !string.IsNullOrEmpty(s.solucion))
+                    .Select(s => s.solucion)
+                    .FirstOrDefault();
+
+                // Obtener las refacciones utilizadas
+                var refacciones = solicitud.Asignaciones
+                    .SelectMany(a => a.Asignacion_Tecnico)
+                    .SelectMany(at => at.Asignacion_Refacciones)
+                    .Select(ar => new RefaccionesDTO
+                    {
+                        NombreRefaccion = ar.Inventario.nombreProducto,
+                        Cantidad = ar.cantidad
+                    }).ToList();
+
+                var solicitudDetalleDTO = new SolicitudesDetalleDTO
+                {
+                    idSolicitud = solicitud.idSolicitud,
+                    descripcion = solicitud.descripcion,
+                    fechaSolicitud = solicitud.fechaSolicitud,
+                    nombreCompletoEmpleado = $"{solicitante.nombre} {solicitante.apellidoPaterno} {solicitante.apellidoMaterno}",
+                    idMaquina = solicitud.idMaquina,
+                    idTurno = solicitud.idTurno,
+                    idStatusOrden = solicitud.idStatusOrden,
+                    idStatusAprobacionSolicitante = solicitud.idStatusAprobacionSolicitante,
+                    area = areaSeleccionada?.Area?.nombreArea ?? "N/A",
+                    rol = rolSeleccionado?.Rol?.nombreRol ?? "N/A",
+                    idCategoriaTicket = solicitud.idCategoriaTicket,
+                    nombreMaquina = solicitud.Maquina?.nombreMaquina ?? "No disponible",
+                    nombreTurno = solicitud.Turno?.descripcion ?? "No disponible",
+                    nombreStatusOrden = solicitud.StatusOrden?.descripcionStatusOrden ?? "No disponible",
+                    nombreStatusAprobacionSolicitante = solicitud.StatusAprobacionSolicitante?.descripcionStatusAprobacionSolicitante ?? "No disponible",
+                    nombreCategoriaTicket = solicitud.categoriaTicket?.descripcionCategoriaTicket ?? "No disponible",
+                    nombreCompletoTecnico = nombreCompletoTecnico,
+                    solucion = solucion,
+                    Refacciones = refacciones
+                };
+
+                solicitudesDetalleDTO.Add(solicitudDetalleDTO);
+            }
+
+            return solicitudesDetalleDTO;
+        }
+
+        public async Task<IEnumerable<SolicitudesDetalleDTO>> ConsultarSolicitudesTerminadasPorEmpleado(string numNomina)
+        {
+            // Obtener todas las solicitudes terminadas
+            var todasSolicitudesTerminadas = await _repository.ConsultarSolicitudesTerminadas();
+
+            // Filtrar las solicitudes que pertenecen al empleado específico
+            var solicitudesFiltradas = todasSolicitudesTerminadas
+                .Where(s => s.Empleado?.numNomina == numNomina)
+                .ToList();
+
+            var solicitudesDetalleDTO = new List<SolicitudesDetalleDTO>();
+
+            foreach (var solicitud in solicitudesFiltradas)
+            {
+                var empleado = solicitud.Empleado;
+                if (empleado == null)
+                {
+                    continue;
+                }
+
+                var areasRoles = empleado.EmpleadoAreaRol ?? new List<EmpleadoAreaRol>();
+
+                var areaSeleccionada = areasRoles.FirstOrDefault(ar => ar.idArea == solicitud.idAreaSeleccionada);
+                var rolSeleccionado = areasRoles.FirstOrDefault(ar => ar.idRol == solicitud.idRolSeleccionado && ar.idArea == solicitud.idAreaSeleccionada);
+
+                // Obtener el técnico aprobado
+                var tecnico = solicitud.Asignaciones
+                    .SelectMany(a => a.Asignacion_Tecnico)
+                    .Where(t => t.idStatusAprobacionTecnico == 1)
+                    .Select(t => t.Empleado)
+                    .FirstOrDefault();
+
+                var nombreCompletoTecnico = tecnico != null
+                    ? $"{tecnico.nombre} {tecnico.apellidoPaterno} {tecnico.apellidoMaterno}"
+                    : "No asignado";
+
+                // Obtener la solución aplicada
+                var solucion = solicitud.Asignaciones
+                    .SelectMany(a => a.Asignacion_Tecnico)
+                    .Where(s => !string.IsNullOrEmpty(s.solucion))
+                    .Select(s => s.solucion)
+                    .FirstOrDefault();
+
+                // Obtener las refacciones utilizadas
+                var refacciones = solicitud.Asignaciones
+                    .SelectMany(a => a.Asignacion_Tecnico)
+                    .SelectMany(at => at.Asignacion_Refacciones)
+                    .Select(ar => new RefaccionesDTO
+                    {
+                        NombreRefaccion = ar.Inventario.nombreProducto,
+                        Cantidad = ar.cantidad
+                    }).ToList();
+
+                var solicitudDetalleDTO = new SolicitudesDetalleDTO
+                {
+                    idSolicitud = solicitud.idSolicitud,
+                    descripcion = solicitud.descripcion,
+                    fechaSolicitud = solicitud.fechaSolicitud,
+                    nombreCompletoEmpleado = $"{empleado.nombre} {empleado.apellidoPaterno} {empleado.apellidoMaterno}",
+                    idMaquina = solicitud.idMaquina,
+                    idTurno = solicitud.idTurno,
+                    idStatusOrden = solicitud.idStatusOrden,
+                    idStatusAprobacionSolicitante = solicitud.idStatusAprobacionSolicitante,
+                    area = areaSeleccionada?.Area?.nombreArea ?? "N/A",
+                    rol = rolSeleccionado?.Rol?.nombreRol ?? "N/A",
+                    idCategoriaTicket = solicitud.idCategoriaTicket,
+                    nombreMaquina = solicitud.Maquina?.nombreMaquina ?? "No disponible",
+                    nombreTurno = solicitud.Turno?.descripcion ?? "No disponible",
+                    nombreStatusOrden = solicitud.StatusOrden?.descripcionStatusOrden ?? "No disponible",
+                    nombreStatusAprobacionSolicitante = solicitud.StatusAprobacionSolicitante?.descripcionStatusAprobacionSolicitante ?? "No disponible",
+                    nombreCategoriaTicket = solicitud.categoriaTicket?.descripcionCategoriaTicket ?? "No disponible",
+                    nombreCompletoTecnico = nombreCompletoTecnico,
+                    solucion = solucion,
+                    Refacciones = refacciones
+                };
+
+                solicitudesDetalleDTO.Add(solicitudDetalleDTO);
+            }
+
+            return solicitudesDetalleDTO;
+        }
+
+        public async Task<byte[]> ExportarSolicitudesTerminadasExcel()
+        {
+            // Obtener los datos de las solicitudes terminadas
+            var solicitudes = await ConsultarSolicitudesTerminadas();
+
+            // EPPlus requiere declarar el contexto de licencia
+            ExcelPackage.LicenseContext = LicenseContext.NonCommercial;
+
+            using var package = new ExcelPackage();
+            var worksheet = package.Workbook.Worksheets.Add("Solicitudes Terminadas");
+
+            // Encabezados
+            worksheet.Cells[1, 1].Value = "Date";
+            worksheet.Cells[1, 2].Value = "Area";
+            worksheet.Cells[1, 3].Value = "Machine";
+            worksheet.Cells[1, 4].Value = "Report Time";
+            //worksheet.Cells[1, 5].Value = "Equipment stopped?";
+            worksheet.Cells[1, 5].Value = "Shift";
+            worksheet.Cells[1, 6].Value = "Tecnico/Operador";
+            worksheet.Cells[1, 7].Value = "Order No.";
+            worksheet.Cells[1, 8].Value = "Descripción de la falla";
+            worksheet.Cells[1, 9].Value = "Solución de la falla";
+            worksheet.Cells[1, 10].Value = "End Date";
+            worksheet.Cells[1, 11].Value = "Start Time";
+            worksheet.Cells[1, 12].Value = "End Time";
+            worksheet.Cells[1, 13].Value = "Done by";
+
+            // Estilo para encabezados
+            using (var range = worksheet.Cells[1, 1, 1, 13])
+            {
+                range.Style.Font.Bold = true;
+                range.Style.Fill.PatternType = OfficeOpenXml.Style.ExcelFillStyle.Solid;
+                range.Style.Fill.BackgroundColor.SetColor(System.Drawing.Color.LightGray);
+            }
+
+            // Datos
+            int row = 2;
+            foreach (var s in solicitudes)
+            {
+                worksheet.Cells[row, 1].Value = s.fechaSolicitud.ToString("dd/MM/yyyy");
+                worksheet.Cells[row, 2].Value = s.area;
+                worksheet.Cells[row, 3].Value = s.nombreMaquina;
+                worksheet.Cells[row, 4].Value = s.fechaSolicitud.ToString("HH:mm");
+                //worksheet.Cells[row, 5].Value = s.nombreMaquina;
+                worksheet.Cells[row, 5].Value = s.nombreTurno;
+                worksheet.Cells[row, 6].Value = s.nombreCompletoEmpleado;
+                worksheet.Cells[row, 7].Value = s.idSolicitud;
+                worksheet.Cells[row, 8].Value = s.descripcion;
+                worksheet.Cells[row, 9].Value = s.solucion;
+                worksheet.Cells[row, 10].Value = s.horaTermino?.ToString("dd/MM/yyyy");
+                worksheet.Cells[row, 11].Value = s.horaInicio?.ToString("HH:mm");
+                worksheet.Cells[row, 12].Value = s.horaTermino?.ToString("HH:mm");
+                worksheet.Cells[row, 13].Value = s.nombreCompletoTecnico;
+
+                // Formatear refacciones como texto
+                /*string refaccionesTexto = "";
+                if (s.Refacciones != null && s.Refacciones.Any())
+                {
+                    refaccionesTexto = string.Join(", ", s.Refacciones.Select(r => $"{r.NombreRefaccion} ({r.Cantidad})"));
+                }
+                worksheet.Cells[row, 16].Value = refaccionesTexto;*/
+
+                row++;
+            }
+
+            // Auto-ajustar columnas
+            worksheet.Cells.AutoFitColumns();
+
+            // Convertir a bytes y devolver
+            return package.GetAsByteArray();
+        }
+
+
+
+        // Método para notificar actualizaciones a través de SignalR
+        private async Task NotificarActualizacionSolicitudes(int idArea)
+        {
+            try
+            {
+                // Notificar a todos los clientes
+                await _hubContext.Clients.All.SendAsync("RecibirActualizacionSolicitudes", idArea);
+
+                // Notificar específicamente al grupo de esta área
+                await _hubContext.Clients.Group($"Area_{idArea}").SendAsync("RecibirActualizacionSolicitudes", idArea);
+            }
+            catch (Exception ex)
+            {
+                // Manejar el error si hay algún problema con SignalR
+                Console.WriteLine($"Error al notificar actualización: {ex.Message}");
+                // También puedes registrar el error en algún sistema de logs
+            }
+        }
 
     }
 }

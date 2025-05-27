@@ -386,51 +386,7 @@ namespace Piolax_WebApp.Services.Impl
             }
         }
 
-        /*public async Task<byte[]> ExportarInventarioExcel()
-        {
-
-            ExcelPackage.LicenseContext = LicenseContext.NonCommercial; // Habilitar EPPlus para uso no comercial
-
-            using (var package = new ExcelPackage())
-            {
-                var worksheet = package.Workbook.Worksheets.Add("Inventario");
-
-                var inventario = await _repository.ConsultarTodoInventario();
-
-                // 🔹 Definir encabezados
-                var headers = new string[] { "ID Refacción", "Nombre", "Area", "Maquina", "Cantidad Actual", "Stock Mínimo", "Stock Máximo", "Precio Unitario", "Precio Total", "Ubicación", "Proveedor" };
-
-                for (int i = 0; i < headers.Length; i++)
-                {
-                    worksheet.Cells[1, i + 1].Value = headers[i];
-                    worksheet.Cells[1, i + 1].Style.Font.Bold = true;
-                }
-
-                // 🔹 Llenar los datos del inventario
-                int row = 2;
-                foreach (var item in inventario)
-                {
-                    worksheet.Cells[row, 1].Value = item.idRefaccion;
-                    worksheet.Cells[row, 2].Value = item.nombreProducto;
-                    worksheet.Cells[row, 3].Value = item.Areas?.nombreArea ?? "N/A";
-                    worksheet.Cells[row, 4].Value = item.Maquinas?.nombreMaquina ?? "N/A";
-                    worksheet.Cells[row, 5].Value = item.cantidadActual;
-                    worksheet.Cells[row, 6].Value = item.cantidadMin;
-                    worksheet.Cells[row, 7].Value = item.cantidadMax;
-                    worksheet.Cells[row, 8].Value = item.precioUnitario;
-                    worksheet.Cells[row, 9].Value = item.precioInventarioTotal;
-                    worksheet.Cells[row, 10].Value = item.ubicacion;
-                    worksheet.Cells[row, 11].Value = item.proveedor;
-                    row++;
-                }
-
-                // 🔹 Ajustar tamaño de columnas automáticamente
-                worksheet.Cells[worksheet.Dimension.Address].AutoFitColumns();
-
-                return package.GetAsByteArray(); // Retorna los bytes del archivo Excel
-            }
-        }*/
-
+        
         // Funcionalidad para generar el código QR
         public byte[] GenerateQRCodeBytes(string text)
         {

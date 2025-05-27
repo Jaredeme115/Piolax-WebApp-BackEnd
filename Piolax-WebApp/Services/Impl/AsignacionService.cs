@@ -23,51 +23,6 @@ namespace Piolax_WebApp.Services.Impl
         private readonly IMaquinasRepository _maquinaRepository = maquinasRepository;
         private readonly IKPIRepository _kpiRepository = kpiRepository;
 
-
-        /*public async Task<AsignacionResponseDTO> AgregarAsignacion(AsignacionesDTO asignacionesDTO)
-        {
-            // Verificar que la solicitud exista
-            var solicitudExiste = await _solicitudRepository.ExisteSolicitud(asignacionesDTO.idSolicitud);
-            if (!solicitudExiste)
-            {
-                throw new ArgumentException("La solicitud no existe.");
-            }
-
-            // La solicitud o la máquina asignada se puede obtener a partir de idSolicitud
-            var solicitudDetalle = await _solicitudRepository.ObtenerSolicitudConDetalles(asignacionesDTO.idSolicitud);
-            if (solicitudDetalle == null)
-            {
-                throw new Exception("No se pudo obtener la información de la solicitud.");
-            }
-
-            // Validar que el QR coincida con el nombre de la máquina
-            string nombreMaquinaEsperado = solicitudDetalle.Maquina.nombreMaquina;
-            if (!string.Equals(asignacionesDTO.codigoQR?.Trim(), nombreMaquinaEsperado?.Trim(), StringComparison.OrdinalIgnoreCase))
-            {
-                throw new Exception("El código QR proporcionado no coincide con la máquina asignada.");
-            }
-
-            // Si todo es correcto, crear la asignación
-            var asignacion = new Asignaciones
-            {
-                idSolicitud = asignacionesDTO.idSolicitud,
-                idStatusAsignacion = 1 // En proceso tecnico
-            };
-
-            // Guardar la asignación en la base de datos
-            var nuevaAsignacion = await _repository.AgregarAsignacion(asignacion);
-
-            // Mapear la entidad a un DTO de respuesta "plano"
-            var response = new AsignacionResponseDTO
-            {
-                idAsignacion = nuevaAsignacion.idAsignacion,
-                idSolicitud = nuevaAsignacion.idSolicitud,
-                idStatusAsignacion = nuevaAsignacion.idStatusAsignacion
-            };
-
-            return response;
-        }*/
-
         public async Task<AsignacionResponseDTO> AgregarAsignacion(AsignacionesDTO asignacionesDTO)
         {
             // Verificar que la solicitud exista
