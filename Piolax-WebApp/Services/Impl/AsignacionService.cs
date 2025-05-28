@@ -230,6 +230,7 @@ namespace Piolax_WebApp.Services.Impl
             return count > 0 ? tiempoTotalReparacion / count : 0;
         }
 
+
         /// <summary>
         /// Calcula el MTTA (Mean Time To Acknowledge) en minutos. Se toma el tiempo transcurrido entre la creación
         /// de la solicitud y el inicio del primer técnico asignado para cada solicitud.
