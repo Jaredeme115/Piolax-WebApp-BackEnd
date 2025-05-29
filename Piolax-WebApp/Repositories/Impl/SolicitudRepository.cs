@@ -181,30 +181,6 @@ namespace Piolax_WebApp.Repositories.Impl
         }
 
 
-
-        /*public async Task<IEnumerable<Solicitudes>> ConsultarSolicitudesTerminadas()
-        {
-            return await _context.Solicitudes
-                .Where(s => s.idStatusOrden == 1) // Filtra solicitudes "Terminadas"
-                .Include(s => s.Empleado) // 🔹 Incluir relación con Empleado
-                    .ThenInclude(e => e.EmpleadoAreaRol) // 🔹 Incluir roles y áreas del empleado
-                        .ThenInclude(ar => ar.Area)
-                .Include(s => s.Empleado)
-                    .ThenInclude(e => e.EmpleadoAreaRol)
-                        .ThenInclude(ar => ar.Rol)
-                .Include(s => s.Maquina)
-                .Include(s => s.Turno)
-                .Include(s => s.StatusOrden)
-                .Include(s => s.StatusAprobacionSolicitante)
-                .Include(s => s.categoriaTicket)
-                .Include(s => s.Asignaciones) // 🔹 Incluir asignaciones de la solicitud
-                    .ThenInclude(a => a.Asignacion_Tecnico) // 🔹 Incluir los técnicos asignados
-                        .ThenInclude(at => at.Empleado) // 🔹 Incluir detalles del técnico
-                .OrderBy(s => s.fechaSolicitud) // Ordena por fecha
-                .ToListAsync();
-        }*/
-
-
         public async Task ActualizarStatusOrden(int idSolicitud, int idStatusOrden)
         {
             var solicitud = await _context.Solicitudes.FindAsync(idSolicitud);
@@ -214,29 +190,6 @@ namespace Piolax_WebApp.Repositories.Impl
                 await _context.SaveChangesAsync();
             }
         }
-
-        /*public async Task<IEnumerable<Solicitudes>> ObtenerSolicitudesConPrioridadAsync()
-        {
-            return await _context.Solicitudes
-                .Where(s => s.idStatusOrden == 3 || s.idStatusOrden == 6 || s.idStatusOrden == 5 || s.idStatusOrden == 4 || s.idStatusOrden == 2)
-                .Include(s => s.Empleado)
-                    .ThenInclude(e => e.EmpleadoAreaRol)
-                        .ThenInclude(ar => ar.Area)
-                .Include(s => s.Empleado)
-                    .ThenInclude(e => e.EmpleadoAreaRol)
-                        .ThenInclude(ar => ar.Rol)
-                .Include(s => s.Maquina)
-                .Include(s => s.Turno)
-                .Include(s => s.StatusOrden)
-                .Include(s => s.StatusAprobacionSolicitante)
-                .Include(s => s.categoriaTicket)
-                .OrderByDescending(s => s.idStatusOrden == 3 ? s.fechaSolicitud : DateTime.MinValue) // Prioridad a "No tomada"
-                .ThenByDescending(s => s.idStatusOrden == 6 ? s.fechaSolicitud : DateTime.MinValue) // Luego "Rechazada"
-                .ThenByDescending(s => s.idStatusOrden == 5 ? s.fechaSolicitud : DateTime.MinValue) // Luego "Pausada"
-                .ThenByDescending(s => s.idStatusOrden == 4 ? s.fechaSolicitud : DateTime.MinValue) // Luego "Esperando validación"
-                .ThenByDescending(s => s.idStatusOrden == 2 ? s.fechaSolicitud : DateTime.MinValue) // Luego "En proceso"
-                .ToListAsync();
-        }*/
 
         public async Task<IEnumerable<Solicitudes>> ObtenerSolicitudesConPrioridadAsync()
         {
