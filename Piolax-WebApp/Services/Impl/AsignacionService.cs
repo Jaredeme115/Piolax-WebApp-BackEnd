@@ -230,6 +230,7 @@ namespace Piolax_WebApp.Services.Impl
             return count > 0 ? tiempoTotalReparacion / count : 0;
         }
 
+
         /// <summary>
         /// Calcula el MTTA (Mean Time To Acknowledge) en minutos. Se toma el tiempo transcurrido entre la creación
         /// de la solicitud y el inicio del primer técnico asignado para cada solicitud.
@@ -270,6 +271,49 @@ namespace Piolax_WebApp.Services.Impl
 
             return (count > 0) ? (tiempoTotal / count) : 0;
         }
+
+        /*public async Task<double> CalcularMTTA(int idMaquina, int idArea)
+        {
+            var solicitudes = await _solicitudRepository
+                .ConsultarSolicitudesPorMaquinaYArea(idMaquina, idArea);
+
+            double sumaEsperaTotal = 0;
+            int count = 0;
+
+            foreach (var s in solicitudes)
+            {
+                var asignacion = s.Asignaciones?
+                    .FirstOrDefault(a => a.idStatusAsignacion >= 1);
+                if (asignacion == null) continue;
+
+                var techs = asignacion.Asignacion_Tecnico
+                    .OrderBy(t => t.horaInicio)
+                    .ToList();
+                if (techs.Count < 1) continue;
+
+                // 1) Espera inicial
+                double espera = (techs[0].horaInicio - s.fechaSolicitud).TotalMinutes;
+
+                // 2) Para cada re-toma, suma la pausa anterior
+                for (int i = 1; i < techs.Count; i++)
+                {
+                    // Calcula finAnterior sin usar '??'
+                    DateTime finAnterior;
+                    if (techs[i - 1].horaTermino != DateTime.MinValue)
+                        finAnterior = techs[i - 1].horaTermino;
+                    else
+                        finAnterior = techs[i - 1].horaInicio.AddMinutes(techs[i - 1].tiempoAcumuladoMinutos);
+
+                    // Espera desde finAnterior hasta el nuevo inicio
+                    espera += (techs[i].horaInicio - finAnterior).TotalMinutes;
+                }
+
+                sumaEsperaTotal += espera;
+                count++;
+            }
+
+            return (count > 0) ? sumaEsperaTotal / count : 0;
+        }*/
 
 
         /// <summary>

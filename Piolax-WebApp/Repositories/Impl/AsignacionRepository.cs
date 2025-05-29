@@ -68,7 +68,7 @@ namespace Piolax_WebApp.Repositories.Impl
 
         public async Task<IEnumerable<Asignaciones>> ConsultarAsignacionesCompletadas(int idMaquina, int idArea, int? idEmpleado)
         {
-            // Suponemos que un idStatusAsignacion == 4 indica que la asignación está finalizada.
+            // Suponemos que un idStatusAsignacion == 3 indica que la asignación está finalizada.
             var query = _context.Asignaciones
                 .Include(a => a.Solicitud)
                 .Include(a => a.Asignacion_Tecnico)
