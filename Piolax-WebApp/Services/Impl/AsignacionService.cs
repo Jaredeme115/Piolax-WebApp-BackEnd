@@ -205,7 +205,7 @@ namespace Piolax_WebApp.Services.Impl
         /// <param name="idArea">Identificador del área.</param>
         /// <param name="idEmpleado">Opcional: para filtrar por un técnico específico.</param>
         /// <returns>Promedio de tiempo de reparación en minutos.</returns>
-        public async Task<double> CalcularMTTR(int idMaquina, int idArea, int? idEmpleado = null)
+        /*public async Task<double> CalcularMTTR(int idMaquina, int idArea, int? idEmpleado = null)
         {
             var asignaciones = await _repository.ConsultarAsignacionesCompletadas(idMaquina, idArea, idEmpleado);
             if (!asignaciones.Any())
@@ -228,6 +228,26 @@ namespace Piolax_WebApp.Services.Impl
                 }
             }
             return count > 0 ? tiempoTotalReparacion / count : 0;
+        }*/
+
+        public async Task<double> CalcularMTTR(int idMaquina, int idArea, int? idEmpleado = null)
+        {
+            var asignaciones = await _repository.ConsultarAsignacionesCompletadas(idMaquina, idArea, idEmpleado);
+            if (!asignaciones.Any())
+                return 0;
+
+            double sumaTotalPorOrdenes = 0;
+            foreach (var asignacion in asignaciones)
+            {
+                double sumaSegmentos = asignacion.Asignacion_Tecnico
+                    .Where(t => t.tiempoAcumuladoMinutos > 0)
+                    .Sum(t => t.tiempoAcumuladoMinutos);
+
+                sumaTotalPorOrdenes += sumaSegmentos;
+            }
+
+            // Aquí llamamos correctamente a Count()
+            return sumaTotalPorOrdenes / asignaciones.Count();
         }
 
 
@@ -238,7 +258,7 @@ namespace Piolax_WebApp.Services.Impl
         /// <param name="idMaquina">Identificador de la máquina.</param>
         /// <param name="idArea">Identificador del área.</param>
         /// <returns>Promedio de tiempo de asignación (MTTA) en minutos.</returns>
-        public async Task<double> CalcularMTTA(int idMaquina, int idArea)
+        /*public async Task<double> CalcularMTTA(int idMaquina, int idArea)
         {
             // Obtiene solicitudes
             var solicitudes = await _solicitudRepository.ConsultarSolicitudesPorMaquinaYArea(idMaquina, idArea);
@@ -270,9 +290,9 @@ namespace Piolax_WebApp.Services.Impl
             }
 
             return (count > 0) ? (tiempoTotal / count) : 0;
-        }
+        }*/
 
-        /*public async Task<double> CalcularMTTA(int idMaquina, int idArea)
+        public async Task<double> CalcularMTTA(int idMaquina, int idArea)
         {
             var solicitudes = await _solicitudRepository
                 .ConsultarSolicitudesPorMaquinaYArea(idMaquina, idArea);
@@ -313,7 +333,7 @@ namespace Piolax_WebApp.Services.Impl
             }
 
             return (count > 0) ? sumaEsperaTotal / count : 0;
-        }*/
+        }
 
 
         /// <summary>
