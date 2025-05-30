@@ -203,7 +203,7 @@ namespace Piolax_WebApp.Controllers
             }
 
             // ✅ Generar el texto del código QR con nombreProducto, idArea y idMaquina
-            string qrCodeText = $"{producto.nombreProducto} | Área: {producto.idArea} | Máquina: {producto.idMaquina}";
+            string qrCodeText = $"{producto.nombreProducto} | {producto.descripcion} | Area: {producto.idArea} | Maquina: {producto.idMaquina}";
 
             try
             {

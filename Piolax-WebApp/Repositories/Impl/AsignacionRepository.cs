@@ -90,5 +90,24 @@ namespace Piolax_WebApp.Repositories.Impl
                 .FirstOrDefaultAsync(a => a.idSolicitud == idSolicitud && (a.idStatusAsignacion == 1 || a.idStatusAsignacion == 2));
         }
 
+
+        public async Task<IEnumerable<Asignaciones>> ConsultarAsignacionesPorFiltros(
+    int idMaquina, int idArea, int? idEmpleado)
+        {
+            var q = _context.Asignaciones
+                .Include(a => a.Solicitud)
+                .Include(a => a.Asignacion_Tecnico)
+                .Where(a =>
+                    a.Solicitud.idMaquina == idMaquina &&
+                    a.Solicitud.idAreaSeleccionada == idArea);
+
+            if (idEmpleado.HasValue)
+                q = q.Where(a =>
+                    a.Asignacion_Tecnico.Any(t => t.idEmpleado == idEmpleado.Value));
+
+            return await q.ToListAsync();
+        }
+
+
     }
 }

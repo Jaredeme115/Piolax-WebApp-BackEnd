@@ -24,49 +24,6 @@ namespace Piolax_WebApp.Services.Impl
         private readonly IKPIRepository _kpiRepository = kpiRepository;
 
 
-        /*public async Task<AsignacionResponseDTO> AgregarAsignacion(AsignacionesDTO asignacionesDTO)
-        {
-            // Verificar que la solicitud exista
-            var solicitudExiste = await _solicitudRepository.ExisteSolicitud(asignacionesDTO.idSolicitud);
-            if (!solicitudExiste)
-            {
-                throw new ArgumentException("La solicitud no existe.");
-            }
-
-            // La solicitud o la máquina asignada se puede obtener a partir de idSolicitud
-            var solicitudDetalle = await _solicitudRepository.ObtenerSolicitudConDetalles(asignacionesDTO.idSolicitud);
-            if (solicitudDetalle == null)
-            {
-                throw new Exception("No se pudo obtener la información de la solicitud.");
-            }
-
-            // Validar que el QR coincida con el nombre de la máquina
-            string nombreMaquinaEsperado = solicitudDetalle.Maquina.nombreMaquina;
-            if (!string.Equals(asignacionesDTO.codigoQR?.Trim(), nombreMaquinaEsperado?.Trim(), StringComparison.OrdinalIgnoreCase))
-            {
-                throw new Exception("El código QR proporcionado no coincide con la máquina asignada.");
-            }
-
-            // Si todo es correcto, crear la asignación
-            var asignacion = new Asignaciones
-            {
-                idSolicitud = asignacionesDTO.idSolicitud,
-                idStatusAsignacion = 1 // En proceso tecnico
-            };
-
-            // Guardar la asignación en la base de datos
-            var nuevaAsignacion = await _repository.AgregarAsignacion(asignacion);
-
-            // Mapear la entidad a un DTO de respuesta "plano"
-            var response = new AsignacionResponseDTO
-            {
-                idAsignacion = nuevaAsignacion.idAsignacion,
-                idSolicitud = nuevaAsignacion.idSolicitud,
-                idStatusAsignacion = nuevaAsignacion.idStatusAsignacion
-            };
-
-            return response;
-        }*/
 
         public async Task<AsignacionResponseDTO> AgregarAsignacion(AsignacionesDTO asignacionesDTO)
         {
@@ -250,7 +207,7 @@ namespace Piolax_WebApp.Services.Impl
         /// <param name="idArea">Identificador del área.</param>
         /// <param name="idEmpleado">Opcional: para filtrar por un técnico específico.</param>
         /// <returns>Promedio de tiempo de reparación en minutos.</returns>
-        public async Task<double> CalcularMTTR(int idMaquina, int idArea, int? idEmpleado = null)
+     /*   public async Task<double> CalcularMTTR(int idMaquina, int idArea, int? idEmpleado = null)
         {
             var asignaciones = await _repository.ConsultarAsignacionesCompletadas(idMaquina, idArea, idEmpleado);
             if (!asignaciones.Any())
@@ -273,7 +230,54 @@ namespace Piolax_WebApp.Services.Impl
                 }
             }
             return count > 0 ? tiempoTotalReparacion / count : 0;
+        }*/
+
+        public async Task<double> CalcularMTTR(int idMaquina, int idArea, int? idEmpleado = null)
+{
+    // 1) Trae sólo las completadas
+    var asignaciones = await _repository.ConsultarAsignacionesCompletadas(idMaquina, idArea, idEmpleado);
+
+    // 2) Si no hay ninguna completada, traemos TODAS las asignaciones de ese combo
+    if (!asignaciones.Any())
+    {
+        asignaciones = await _repository.ConsultarAsignacionesPorFiltros(idMaquina, idArea, idEmpleado);
+    }
+
+    if (!asignaciones.Any())
+        return 0;
+
+    double tiempoTotalReparacion = 0;
+    int count = 0;
+
+    foreach (var asignacion in asignaciones)
+    {
+        // Filtramos técnicos si viene idEmpleado
+        var tecnicos = asignacion.Asignacion_Tecnico
+            .Where(t => !idEmpleado.HasValue || t.idEmpleado == idEmpleado.Value);
+
+        foreach (var tecnico in tecnicos)
+        {
+            // Usa tiempoAcumulado si existe, si no calcúlalo
+            double duracion = tecnico.tiempoAcumuladoMinutos > 0
+                ? tecnico.tiempoAcumuladoMinutos
+                : (tecnico.horaInicio != default 
+                    && tecnico.horaTermino != default
+                    ? (tecnico.horaTermino - tecnico.horaInicio).TotalMinutes
+                    : 0);
+
+            if (duracion > 0)
+            {
+                tiempoTotalReparacion += duracion;
+                count++;
+            }
         }
+    }
+
+    return (count > 0)
+        ? tiempoTotalReparacion / count
+        : 0;
+}
+
 
         /// <summary>
         /// Calcula el MTTA (Mean Time To Acknowledge) en minutos. Se toma el tiempo transcurrido entre la creación

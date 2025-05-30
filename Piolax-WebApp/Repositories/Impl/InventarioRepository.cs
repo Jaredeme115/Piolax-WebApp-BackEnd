@@ -258,5 +258,17 @@ namespace Piolax_WebApp.Repositories.Impl
             await _context.Set<Inventario>().AddRangeAsync(inventario); // Agrega el inventario al contexto.
             await _context.SaveChangesAsync(); // Guarda los cambios en la base de datos.
         }
+
+        public async Task<bool> ExisteProductoExacto(string nombreProducto, string numParte, string descripcion, int idArea, int idMaquina)
+        {
+            return await _context.Inventario.AnyAsync(p =>
+                p.nombreProducto == nombreProducto &&
+                p.numParte == numParte &&
+                p.descripcion == descripcion &&
+                p.idArea == idArea &&
+                p.idMaquina == idMaquina
+            );
+        }
+
     }
 }

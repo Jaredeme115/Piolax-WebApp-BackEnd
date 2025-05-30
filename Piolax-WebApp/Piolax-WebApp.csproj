@@ -31,4 +31,10 @@
     <Folder Include="wwwroot\PDFs\Editados\" />
   </ItemGroup>
 
+  <ItemGroup>
+    <Content Update="wwwroot\PDFs\Metales\FR-MTO-106 Rev 0 Revision Mensual de maquina de resortes PC8-PC15.pdf">
+      <CopyToOutputDirectory>Always</CopyToOutputDirectory>
+    </Content>
+  </ItemGroup>
+
 </Project>

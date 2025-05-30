@@ -2,6 +2,7 @@
 using Piolax_WebApp.DTOs;
 using Piolax_WebApp.Models;
 using Piolax_WebApp.Services;
+using Piolax_WebApp.Services.Impl;
 
 namespace Piolax_WebApp.Controllers
 {
@@ -129,6 +130,13 @@ namespace Piolax_WebApp.Controllers
                                     });
 
             return Ok(archivos);
+        }
+
+        [HttpGet("BuscarPDFs")]
+        public ActionResult<IEnumerable<MantenimientoPreventivoPDFsDTO>> BuscarPDFs([FromQuery] string nombre)
+        {
+            var resultados = _service.BuscarPDFsPorNombre(nombre);
+            return Ok(resultados);
         }
 
 

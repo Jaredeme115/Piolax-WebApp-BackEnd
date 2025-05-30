@@ -13,7 +13,7 @@ namespace Piolax_WebApp.Services
         Task<IEnumerable<KPIResponseDTO>> ObtenerResumenKPIs(
             int? idArea = null, int? idMaquina = null, int? idEmpleado = null,
             int? año = null, int? mes = null, int? semana = null, int? diaSemana = null);*/
-
+         
         Task<KPIResponseDTO> ObtenerMTTA(int? idArea = null, int? idMaquina = null, int? anio = null, int? mes = null);
         Task<KPIResponseDTO> ObtenerMTTR(int? idArea = null, int? idMaquina = null, int? idEmpleado = null, int? anio = null, int? mes = null);
 

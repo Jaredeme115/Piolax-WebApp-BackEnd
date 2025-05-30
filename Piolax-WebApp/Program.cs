@@ -374,6 +374,7 @@ app.UseStaticFiles(new StaticFileOptions
 // Permitir servir archivos estáticos
 app.UseStaticFiles();
 
+
 app.UseHttpsRedirection();
 
 //Para conexion con localhost y url publica
@@ -393,3 +394,4 @@ app.MapHub<AsignacionHub>("/AsignacionHub");
 app.MapHub<NotificationHub>("/NotificationHub");
 
 app.Run();
+app.UseDeveloperExceptionPage();

@@ -48,5 +48,11 @@ namespace Piolax_WebApp.DTOs
         public int idAsignacion { get; set; }
         public List<RefaccionesDTO> Refacciones { get; set; }
 
+        //Nuevo
+        public string equipoDetenido { get; set; }       // "Sí" o "No"
+        public string horaInicioToma { get; set; }       // "08:00"
+        public string horaTerminoOrden { get; set; }     // "10:15"
+        public string fechaFin { get; set; }             // "2025-05-23"
+
     }
 }

@@ -29,5 +29,8 @@ namespace Piolax_WebApp.Repositories
         //Carga masiva de Inventario
         Task AddRangeAsync(IEnumerable<Inventario> inventario);
 
+        Task<bool> ExisteProductoExacto(string nombreProducto, string numParte, string descripcion, int idArea, int idMaquina);
+
+
     }
 }

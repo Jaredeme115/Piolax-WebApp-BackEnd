@@ -472,6 +472,17 @@ namespace Piolax_WebApp.Services.Impl
                     nombreRol = rolSeleccionado?.Rol?.nombreRol ?? "N/A";
                 }
 
+                // Buscar técnico que haya aprobado (estatus técnico = 1)
+                var tecnico = solicitud.Asignaciones?
+                    .SelectMany(a => a.Asignacion_Tecnico)
+                    .Where(t => t.idStatusAprobacionTecnico == 1)
+                    .Select(t => t.Empleado)
+                    .FirstOrDefault();
+
+                var nombreCompletoTecnico = tecnico != null
+                    ? $"{tecnico.nombre} {tecnico.apellidoPaterno} {tecnico.apellidoMaterno}"
+                    : "Sin asignar";
+
                 // 📌 OBTENER DETALLES ADICIONALES
                 var maquina = await _maquinasService.Consultar(solicitud.idMaquina);
                 var turno = await _turnoService.Consultar(solicitud.idTurno);
@@ -496,7 +507,9 @@ namespace Piolax_WebApp.Services.Impl
                     nombreTurno = turno.descripcion,
                     nombreStatusOrden = statusOrden.descripcionStatusOrden,
                     nombreStatusAprobacionSolicitante = statusAprobacionSolicitante.descripcionStatusAprobacionSolicitante,
-                    nombreCategoriaTicket = solicitud.categoriaTicket.descripcionCategoriaTicket
+                    nombreCategoriaTicket = solicitud.categoriaTicket.descripcionCategoriaTicket,
+                    nombreCompletoTecnico = nombreCompletoTecnico,
+
                 };
 
                 solicitudesDetalleDTO.Add(solicitudDetalleDTO);
