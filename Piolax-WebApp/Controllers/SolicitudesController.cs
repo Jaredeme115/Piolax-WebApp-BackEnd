@@ -124,8 +124,32 @@ namespace Piolax_WebApp.Controllers
         public async Task<ActionResult<IEnumerable<SolicitudesDetalleDTO>>> ConsultarSolicitudesTerminadas()
         {
             var solicitudes = await _service.ConsultarSolicitudesTerminadas();
-            return Ok(solicitudes);
+            var solicitudesFormateadas = solicitudes.Select(s => new
+            {
+                s.idSolicitud,
+                s.descripcion,
+                fechaSolicitud = s.fechaSolicitud.ToString("dd/MM/yyyy HH:mm:ss"),
+                s.nombreCompletoEmpleado,
+                s.nombreMaquina,
+                s.nombreTurno,
+                s.nombreStatusOrden,
+                s.nombreStatusAprobacionSolicitante,
+                s.area,
+                s.rol,
+                s.nombreCategoriaTicket,
+                s.nombreCompletoTecnico,
+                s.solucion,
+                // Nuevos campos formateados de horaInicio y horaTermino
+                horaInicio = s.horaInicio.HasValue ? s.horaInicio.Value.ToString("dd/MM/yyyy HH:mm:ss") : null,
+                horaTermino = s.horaTermino.HasValue ? s.horaTermino.Value.ToString("dd/MM/yyyy HH:mm:ss") : null,
+                refacciones = s.Refacciones?.Select(r => new
+                {
+                    nombreRefaccion = r.NombreRefaccion,
+                    cantidad = r.Cantidad
+                })
+            });
 
+            return Ok(solicitudesFormateadas);
         }
 
         [HttpGet("ObtenerSolicitudesConPrioridad")]
@@ -203,6 +227,8 @@ namespace Piolax_WebApp.Controllers
                     s.nombreCategoriaTicket,
                     s.nombreCompletoTecnico,
                     s.solucion,
+                    horaInicio = s.horaInicio.HasValue ? s.horaInicio.Value.ToString("dd/MM/yyyy HH:mm:ss") : null,
+                    horaTermino = s.horaTermino.HasValue ? s.horaTermino.Value.ToString("dd/MM/yyyy HH:mm:ss") : null,
                     refacciones = s.Refacciones?.Select(r => new
                     {
                         nombreRefaccion = r.NombreRefaccion,
@@ -240,6 +266,8 @@ namespace Piolax_WebApp.Controllers
                     s.nombreCategoriaTicket,
                     s.nombreCompletoTecnico,
                     s.solucion,
+                    horaInicio = s.horaInicio.HasValue ? s.horaInicio.Value.ToString("dd/MM/yyyy HH:mm:ss") : null,
+                    horaTermino = s.horaTermino.HasValue ? s.horaTermino.Value.ToString("dd/MM/yyyy HH:mm:ss") : null,
                     refacciones = s.Refacciones?.Select(r => new
                     {
                         nombreRefaccion = r.NombreRefaccion,
@@ -255,8 +283,45 @@ namespace Piolax_WebApp.Controllers
             }
         }
 
+        [HttpGet("ExportarSolicitudesTerminadasExcel")]
+        public async Task<IActionResult> ExportarSolicitudesTerminadasExcel()
+        {
+            try
+            {
+                // Llamar al servicio para generar el Excel
+                byte[] excelBytes = await _service.ExportarSolicitudesTerminadasExcel();
 
+                // Devolver el archivo para descarga
+                return File(
+                    excelBytes,
+                    "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
+                    $"SolicitudesTerminadas_{DateTime.Now:yyyyMMdd}.xlsx");
+            }
+            catch (Exception ex)
+            {
+                return StatusCode(500, $"Error al generar el archivo Excel: {ex.Message}");
+            }
+        }
 
+        [HttpGet("ExportarSolicitudesTerminadasPorAreaExcel")]
+        public async Task<IActionResult> ExportarSolicitudesTerminadasPorAreaExcel([FromQuery]string numNomina)
+        {
+            try
+            {
+                // Llamar al servicio para generar el Excel
+                byte[] excelBytes = await _service.ExportarSolicitudesTerminadasPorAreaExcel(numNomina);
+
+                // Devolver el archivo para descarga
+                return File(
+                    excelBytes,
+                    "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
+                    $"SolicitudesTerminadas_{DateTime.Now:yyyyMMdd}.xlsx");
+            }
+            catch (Exception ex)
+            {
+                return StatusCode(500, $"Error al generar el archivo Excel: {ex.Message}");
+            }
+        }
 
     }
 }

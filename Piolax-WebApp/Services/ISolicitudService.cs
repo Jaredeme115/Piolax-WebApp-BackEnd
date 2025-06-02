@@ -25,7 +25,9 @@ namespace Piolax_WebApp.Services
         //Metodo para obtener las solicitudes terminadas por empleado
         Task<IEnumerable<SolicitudesDetalleDTO>> ConsultarSolicitudesTerminadasPorEmpleado(string numNomina);
 
-
+        // Nuevo método para exportar solicitudes a Excel
+        Task<byte[]> ExportarSolicitudesTerminadasExcel();
+        Task<byte[]> ExportarSolicitudesTerminadasPorAreaExcel(string numNomina);
 
     }
 }

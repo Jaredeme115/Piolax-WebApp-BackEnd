@@ -24,6 +24,7 @@ namespace Piolax_WebApp.Repositories
 
         //Método para obtener solicitudes por area
         Task<IEnumerable<Solicitudes>> ObtenerSolicitudesPorAreaYRoles(int idArea, List<int> idRoles);
+        Task<List<Solicitudes>> ObtenerSolicitudesEnStatus(int idStatusOrden);
 
     }
 }

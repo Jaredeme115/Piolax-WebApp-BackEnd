@@ -205,7 +205,7 @@ namespace Piolax_WebApp.Services.Impl
         /// <param name="idArea">Identificador del área.</param>
         /// <param name="idEmpleado">Opcional: para filtrar por un técnico específico.</param>
         /// <returns>Promedio de tiempo de reparación en minutos.</returns>
-        public async Task<double> CalcularMTTR(int idMaquina, int idArea, int? idEmpleado = null)
+        /*public async Task<double> CalcularMTTR(int idMaquina, int idArea, int? idEmpleado = null)
         {
             var asignaciones = await _repository.ConsultarAsignacionesCompletadas(idMaquina, idArea, idEmpleado);
             if (!asignaciones.Any())
@@ -228,7 +228,28 @@ namespace Piolax_WebApp.Services.Impl
                 }
             }
             return count > 0 ? tiempoTotalReparacion / count : 0;
+        }*/
+
+        public async Task<double> CalcularMTTR(int idMaquina, int idArea, int? idEmpleado = null)
+        {
+            var asignaciones = await _repository.ConsultarAsignacionesCompletadas(idMaquina, idArea, idEmpleado);
+            if (!asignaciones.Any())
+                return 0;
+
+            double sumaTotalPorOrdenes = 0;
+            foreach (var asignacion in asignaciones)
+            {
+                double sumaSegmentos = asignacion.Asignacion_Tecnico
+                    .Where(t => t.tiempoAcumuladoMinutos > 0)
+                    .Sum(t => t.tiempoAcumuladoMinutos);
+
+                sumaTotalPorOrdenes += sumaSegmentos;
+            }
+
+            // Aquí llamamos correctamente a Count()
+            return sumaTotalPorOrdenes / asignaciones.Count();
         }
+
 
         /// <summary>
         /// Calcula el MTTA (Mean Time To Acknowledge) en minutos. Se toma el tiempo transcurrido entre la creación
@@ -237,7 +258,7 @@ namespace Piolax_WebApp.Services.Impl
         /// <param name="idMaquina">Identificador de la máquina.</param>
         /// <param name="idArea">Identificador del área.</param>
         /// <returns>Promedio de tiempo de asignación (MTTA) en minutos.</returns>
-        public async Task<double> CalcularMTTA(int idMaquina, int idArea)
+        /*public async Task<double> CalcularMTTA(int idMaquina, int idArea)
         {
             // Obtiene solicitudes
             var solicitudes = await _solicitudRepository.ConsultarSolicitudesPorMaquinaYArea(idMaquina, idArea);
@@ -269,6 +290,49 @@ namespace Piolax_WebApp.Services.Impl
             }
 
             return (count > 0) ? (tiempoTotal / count) : 0;
+        }*/
+
+        public async Task<double> CalcularMTTA(int idMaquina, int idArea)
+        {
+            var solicitudes = await _solicitudRepository
+                .ConsultarSolicitudesPorMaquinaYArea(idMaquina, idArea);
+
+            double sumaEsperaTotal = 0;
+            int count = 0;
+
+            foreach (var s in solicitudes)
+            {
+                var asignacion = s.Asignaciones?
+                    .FirstOrDefault(a => a.idStatusAsignacion >= 1);
+                if (asignacion == null) continue;
+
+                var techs = asignacion.Asignacion_Tecnico
+                    .OrderBy(t => t.horaInicio)
+                    .ToList();
+                if (techs.Count < 1) continue;
+
+                // 1) Espera inicial
+                double espera = (techs[0].horaInicio - s.fechaSolicitud).TotalMinutes;
+
+                // 2) Para cada re-toma, suma la pausa anterior
+                for (int i = 1; i < techs.Count; i++)
+                {
+                    // Calcula finAnterior sin usar '??'
+                    DateTime finAnterior;
+                    if (techs[i - 1].horaTermino != DateTime.MinValue)
+                        finAnterior = techs[i - 1].horaTermino;
+                    else
+                        finAnterior = techs[i - 1].horaInicio.AddMinutes(techs[i - 1].tiempoAcumuladoMinutos);
+
+                    // Espera desde finAnterior hasta el nuevo inicio
+                    espera += (techs[i].horaInicio - finAnterior).TotalMinutes;
+                }
+
+                sumaEsperaTotal += espera;
+                count++;
+            }
+
+            return (count > 0) ? sumaEsperaTotal / count : 0;
         }
 
 
