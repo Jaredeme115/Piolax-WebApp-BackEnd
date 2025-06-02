@@ -72,7 +72,8 @@ namespace Piolax_WebApp.Controllers
                 s.nombreStatusAprobacionSolicitante,
                 s.area,
                 s.rol,
-                s.nombreCategoriaTicket
+                s.nombreCategoriaTicket,
+                s.paroMaquinaSolicitante
             });
             return Ok(solicitudesFormateadas);
         }
@@ -93,7 +94,8 @@ namespace Piolax_WebApp.Controllers
                 s.nombreStatusAprobacionSolicitante,
                 s.area,
                 s.rol,
-                s.nombreCategoriaTicket
+                s.nombreCategoriaTicket,
+                s.paroMaquinaSolicitante
             });
             return Ok(solicitudesFormateadas);
         }
@@ -139,6 +141,7 @@ namespace Piolax_WebApp.Controllers
                 s.nombreCategoriaTicket,
                 s.nombreCompletoTecnico,
                 s.solucion,
+                s.paroMaquinaSolicitante,
                 // Nuevos campos formateados de horaInicio y horaTermino
                 horaInicio = s.horaInicio.HasValue ? s.horaInicio.Value.ToString("dd/MM/yyyy HH:mm:ss") : null,
                 horaTermino = s.horaTermino.HasValue ? s.horaTermino.Value.ToString("dd/MM/yyyy HH:mm:ss") : null,
@@ -199,7 +202,8 @@ namespace Piolax_WebApp.Controllers
                 s.nombreStatusAprobacionSolicitante,
                 s.area,
                 s.rol,
-                s.nombreCategoriaTicket
+                s.nombreCategoriaTicket,
+                s.paroMaquinaSolicitante
             });
 
             return Ok(solicitudesFormateadas);
@@ -219,6 +223,7 @@ namespace Piolax_WebApp.Controllers
                     fechaSolicitud = s.fechaSolicitud.ToString("dd/MM/yyyy HH:mm:ss"),
                     s.nombreCompletoEmpleado,
                     s.nombreMaquina,
+                    s.paroMaquinaSolicitante,
                     s.nombreTurno,
                     s.nombreStatusOrden,
                     s.nombreStatusAprobacionSolicitante,
@@ -258,6 +263,7 @@ namespace Piolax_WebApp.Controllers
                     fechaSolicitud = s.fechaSolicitud.ToString("dd/MM/yyyy HH:mm:ss"),
                     s.nombreCompletoEmpleado,
                     s.nombreMaquina,
+                    s.paroMaquinaSolicitante,
                     s.nombreTurno,
                     s.nombreStatusOrden,
                     s.nombreStatusAprobacionSolicitante,

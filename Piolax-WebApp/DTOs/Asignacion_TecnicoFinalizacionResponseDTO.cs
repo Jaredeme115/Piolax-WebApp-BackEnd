@@ -14,6 +14,7 @@ namespace Piolax_WebApp.DTOs
         public int idStatusAprobacionTecnico { get; set; }
         public string nombreStatusAprobacionTecnico { get; set; } // Descripción del estado de aprobación
         public bool esTecnicoActivo { get; set; }
+        public bool paroMaquinaTecnico { get; set; } 
 
     }
 }

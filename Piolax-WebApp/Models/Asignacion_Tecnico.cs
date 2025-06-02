@@ -40,6 +40,9 @@ namespace Piolax_WebApp.Models
 
         public bool retirado { get; set; } = false;
 
+        [Required]
+        public bool paroMaquinaTecnico { get; set; } = false;
+
         public virtual ICollection<asignacion_refacciones> Asignacion_Refacciones { get; set; } = new List<asignacion_refacciones>(); // Lista de asignacion_refacciones asociados a Asignacion_Tecnico
     }
 }

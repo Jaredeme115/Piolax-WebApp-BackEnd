@@ -227,6 +227,9 @@ namespace Piolax_WebApp.Services.Impl
             tecnico.idStatusAprobacionTecnico = 1;
             tecnico.esTecnicoActivo = false;
 
+            //Agregado para el paro de máquina por parte del Tecnico
+            tecnico.paroMaquinaTecnico = asignacionTecnicoFinalizacionDTO.paroMaquinaTecnico;
+
             await _repository.ActualizarTecnicoEnAsignacion(tecnico);
 
             // Descontar las refacciones utilizadas en la asignación
@@ -272,7 +275,10 @@ namespace Piolax_WebApp.Services.Impl
                 solucion = tecnico.solucion,
                 idStatusAprobacionTecnico = tecnico.idStatusAprobacionTecnico,
                 nombreStatusAprobacionTecnico = tecnico.StatusAprobacionTecnico?.descripcionStatusAprobacionTecnico,
-                esTecnicoActivo = tecnico.esTecnicoActivo
+                esTecnicoActivo = tecnico.esTecnicoActivo,
+
+                // ← Devuelve el valor guardado para que el frontend lo confirme si es necesario
+                paroMaquinaTecnico = tecnico.paroMaquinaTecnico
             };
 
             return response;

@@ -14,5 +14,7 @@ namespace Piolax_WebApp.DTOs
         [Required]
         public string solucion { get; set; }
 
+        public bool paroMaquinaTecnico { get; set; }
+
     }
 }

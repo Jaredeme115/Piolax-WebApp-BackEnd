@@ -70,7 +70,8 @@ namespace Piolax_WebApp.Services.Impl
                 idStatusAprobacionSolicitante = solicitudesDTO.idStatusAprobacionSolicitante,
                 idAreaSeleccionada = solicitudesDTO.idAreaSeleccionada,
                 idRolSeleccionado = solicitudesDTO.idRolSeleccionado,
-                idCategoriaTicket = solicitudesDTO.idCategoriaTicket
+                idCategoriaTicket = solicitudesDTO.idCategoriaTicket,
+                paroMaquinaSolicitante = solicitudesDTO.paroMaquinaSolicitante
             };
 
             solicitud = await _repository.RegistrarSolicitud(solicitud);
@@ -108,7 +109,8 @@ namespace Piolax_WebApp.Services.Impl
                 nombreTurno = turno.descripcion,
                 nombreStatusOrden = statusOrden.descripcionStatusOrden,
                 nombreStatusAprobacionSolicitante = statusAprobacionSolicitante.descripcionStatusAprobacionSolicitante,
-                nombreCategoriaTicket = solicitud.categoriaTicket.descripcionCategoriaTicket
+                nombreCategoriaTicket = solicitud.categoriaTicket.descripcionCategoriaTicket,
+                paroMaquinaSolicitante = solicitud.paroMaquinaSolicitante
             };
 
             // 🔹 Notificar a todos los clientes conectados sobre la nueva solicitud
@@ -173,7 +175,8 @@ namespace Piolax_WebApp.Services.Impl
                 nombreTurno = turno.descripcion,
                 nombreStatusOrden = statusOrden.descripcionStatusOrden,
                 nombreStatusAprobacionSolicitante = statusAprobacionSolicitante.descripcionStatusAprobacionSolicitante,
-                nombreCategoriaTicket = solicitud.categoriaTicket.descripcionCategoriaTicket
+                nombreCategoriaTicket = solicitud.categoriaTicket.descripcionCategoriaTicket,
+                paroMaquinaSolicitante = solicitud.paroMaquinaSolicitante
             };
 
             return solicitudesDetalleDTO;
@@ -227,7 +230,8 @@ namespace Piolax_WebApp.Services.Impl
                     nombreTurno = turno.descripcion,
                     nombreStatusOrden = statusOrden.descripcionStatusOrden,
                     nombreStatusAprobacionSolicitante = statusAprobacionSolicitante.descripcionStatusAprobacionSolicitante,
-                    nombreCategoriaTicket = solicitud.categoriaTicket.descripcionCategoriaTicket
+                    nombreCategoriaTicket = solicitud.categoriaTicket.descripcionCategoriaTicket,
+                    paroMaquinaSolicitante = solicitud.paroMaquinaSolicitante
                 };
 
                 solicitudesDetalleDTO.Add(solicitudDetalleDTO);
@@ -283,7 +287,8 @@ namespace Piolax_WebApp.Services.Impl
                     nombreTurno = turno.descripcion,
                     nombreStatusOrden = statusOrden.descripcionStatusOrden,
                     nombreStatusAprobacionSolicitante = statusAprobacionSolicitante.descripcionStatusAprobacionSolicitante,
-                    nombreCategoriaTicket = solicitud.categoriaTicket.descripcionCategoriaTicket
+                    nombreCategoriaTicket = solicitud.categoriaTicket.descripcionCategoriaTicket,
+                    paroMaquinaSolicitante = solicitud.paroMaquinaSolicitante
                 };
 
                 solicitudesDetalleDTO.Add(solicitudDetalleDTO);
@@ -438,7 +443,8 @@ namespace Piolax_WebApp.Services.Impl
                     solucion = solucion,
                     Refacciones = refacciones,
                     horaInicio = tecnicoAprobado?.horaInicio,
-                    horaTermino = tecnicoAprobado?.horaTermino
+                    horaTermino = tecnicoAprobado?.horaTermino,
+                    paroMaquinaSolicitante = solicitud.paroMaquinaSolicitante
                 };
 
                 solicitudesDetalleDTO.Add(solicitudDetalleDTO);
@@ -547,7 +553,8 @@ namespace Piolax_WebApp.Services.Impl
                     nombreStatusOrden = statusOrden.descripcionStatusOrden,
                     nombreStatusAprobacionSolicitante = statusAprobacionSolicitante.descripcionStatusAprobacionSolicitante,
                     nombreCategoriaTicket = solicitud.categoriaTicket.descripcionCategoriaTicket,
-                    nombreCompletoTecnico = nombreCompletoTecnico // 🆕 AGREGADO: NOMBRE DEL TÉCNICO
+                    nombreCompletoTecnico = nombreCompletoTecnico, // 🆕 AGREGADO: NOMBRE DEL TÉCNICO
+                    paroMaquinaSolicitante = solicitud.paroMaquinaSolicitante
                 };
 
                 solicitudesDetalleDTO.Add(solicitudDetalleDTO);
@@ -624,7 +631,8 @@ namespace Piolax_WebApp.Services.Impl
                     nombreTurno = turno.descripcion,
                     nombreStatusOrden = statusOrden.descripcionStatusOrden,
                     nombreStatusAprobacionSolicitante = statusAprobacionSolicitante.descripcionStatusAprobacionSolicitante,
-                    nombreCategoriaTicket = categoriaTicket.descripcionCategoriaTicket
+                    nombreCategoriaTicket = categoriaTicket.descripcionCategoriaTicket,
+                    paroMaquinaSolicitante = solicitud.paroMaquinaSolicitante
                 };
 
                 solicitudesDetalleDTO.Add(solicitudDetalleDTO);
@@ -730,7 +738,8 @@ namespace Piolax_WebApp.Services.Impl
                     solucion = solucion,
                     Refacciones = refacciones,
                     horaInicio = tecnicoAprobado?.horaInicio,
-                    horaTermino = tecnicoAprobado?.horaTermino
+                    horaTermino = tecnicoAprobado?.horaTermino,
+                    paroMaquinaSolicitante = solicitud.paroMaquinaSolicitante
                 };
 
                 solicitudesDetalleDTO.Add(solicitudDetalleDTO);
@@ -819,7 +828,8 @@ namespace Piolax_WebApp.Services.Impl
                     solucion = solucion,
                     Refacciones = refacciones,
                     horaInicio = tecnicoAprobado?.horaInicio,
-                    horaTermino = tecnicoAprobado?.horaTermino
+                    horaTermino = tecnicoAprobado?.horaTermino,
+                    paroMaquinaSolicitante = solicitud.paroMaquinaSolicitante
                 };
 
                 solicitudesDetalleDTO.Add(solicitudDetalleDTO);
@@ -844,19 +854,19 @@ namespace Piolax_WebApp.Services.Impl
             worksheet.Cells[1, 2].Value = "Area";
             worksheet.Cells[1, 3].Value = "Machine";
             worksheet.Cells[1, 4].Value = "Report Time";
-            //worksheet.Cells[1, 5].Value = "Equipment stopped?";
-            worksheet.Cells[1, 5].Value = "Shift";
-            worksheet.Cells[1, 6].Value = "Tecnico/Operador";
-            worksheet.Cells[1, 7].Value = "Order No.";
-            worksheet.Cells[1, 8].Value = "Descripción de la falla";
-            worksheet.Cells[1, 9].Value = "Solución de la falla";
-            worksheet.Cells[1, 10].Value = "End Date";
-            worksheet.Cells[1, 11].Value = "Start Time";
-            worksheet.Cells[1, 12].Value = "End Time";
-            worksheet.Cells[1, 13].Value = "Done by";
+            worksheet.Cells[1, 5].Value = "Equipment stopped?";
+            worksheet.Cells[1, 6].Value = "Shift";
+            worksheet.Cells[1, 7].Value = "Tecnico/Operador";
+            worksheet.Cells[1, 8].Value = "Order No.";
+            worksheet.Cells[1, 9].Value = "Descripción de la falla";
+            worksheet.Cells[1, 10].Value = "Solución de la falla";
+            worksheet.Cells[1, 11].Value = "End Date";
+            worksheet.Cells[1, 12].Value = "Start Time";
+            worksheet.Cells[1, 13].Value = "End Time";
+            worksheet.Cells[1, 14].Value = "Done by";
 
             // Estilo para encabezados
-            using (var range = worksheet.Cells[1, 1, 1, 13])
+            using (var range = worksheet.Cells[1, 1, 1, 14])
             {
                 range.Style.Font.Bold = true;
                 range.Style.Fill.PatternType = OfficeOpenXml.Style.ExcelFillStyle.Solid;
@@ -871,16 +881,16 @@ namespace Piolax_WebApp.Services.Impl
                 worksheet.Cells[row, 2].Value = s.area;
                 worksheet.Cells[row, 3].Value = s.nombreMaquina;
                 worksheet.Cells[row, 4].Value = s.fechaSolicitud.ToString("HH:mm");
-                //worksheet.Cells[row, 5].Value = s.nombreMaquina;
-                worksheet.Cells[row, 5].Value = s.nombreTurno;
-                worksheet.Cells[row, 6].Value = s.nombreCompletoEmpleado;
-                worksheet.Cells[row, 7].Value = s.idSolicitud;
-                worksheet.Cells[row, 8].Value = s.descripcion;
-                worksheet.Cells[row, 9].Value = s.solucion;
-                worksheet.Cells[row, 10].Value = s.horaTermino?.ToString("dd/MM/yyyy");
-                worksheet.Cells[row, 11].Value = s.horaInicio?.ToString("HH:mm");
-                worksheet.Cells[row, 12].Value = s.horaTermino?.ToString("HH:mm");
-                worksheet.Cells[row, 13].Value = s.nombreCompletoTecnico;
+                worksheet.Cells[row, 5].Value = s.paroMaquinaSolicitante ? "Si" : "No";
+                worksheet.Cells[row, 6].Value = s.nombreTurno;
+                worksheet.Cells[row, 7].Value = s.nombreCompletoEmpleado;
+                worksheet.Cells[row, 8].Value = s.idSolicitud;
+                worksheet.Cells[row, 9].Value = s.descripcion;
+                worksheet.Cells[row, 10].Value = s.solucion;
+                worksheet.Cells[row, 11].Value = s.horaTermino?.ToString("dd/MM/yyyy");
+                worksheet.Cells[row, 12].Value = s.horaInicio?.ToString("HH:mm");
+                worksheet.Cells[row, 13].Value = s.horaTermino?.ToString("HH:mm");
+                worksheet.Cells[row, 14].Value = s.nombreCompletoTecnico;
 
                 // Formatear refacciones como texto
                 /*string refaccionesTexto = "";
@@ -916,19 +926,19 @@ namespace Piolax_WebApp.Services.Impl
             worksheet.Cells[1, 2].Value = "Area";
             worksheet.Cells[1, 3].Value = "Machine";
             worksheet.Cells[1, 4].Value = "Report Time";
-            //worksheet.Cells[1, 5].Value = "Equipment stopped?";
-            worksheet.Cells[1, 5].Value = "Shift";
-            worksheet.Cells[1, 6].Value = "Tecnico/Operador";
-            worksheet.Cells[1, 7].Value = "Order No.";
-            worksheet.Cells[1, 8].Value = "Descripción de la falla";
-            worksheet.Cells[1, 9].Value = "Solución de la falla";
-            worksheet.Cells[1, 10].Value = "End Date";
-            worksheet.Cells[1, 11].Value = "Start Time";
-            worksheet.Cells[1, 12].Value = "End Time";
-            worksheet.Cells[1, 13].Value = "Done by";
+            worksheet.Cells[1, 5].Value = "Equipment stopped?";
+            worksheet.Cells[1, 6].Value = "Shift";
+            worksheet.Cells[1, 7].Value = "Tecnico/Operador";
+            worksheet.Cells[1, 8].Value = "Order No.";
+            worksheet.Cells[1, 9].Value = "Descripción de la falla";
+            worksheet.Cells[1, 10].Value = "Solución de la falla";
+            worksheet.Cells[1, 11].Value = "End Date";
+            worksheet.Cells[1, 12].Value = "Start Time";
+            worksheet.Cells[1, 13].Value = "End Time";
+            worksheet.Cells[1, 14].Value = "Done by";
 
             // Estilo para encabezados
-            using (var range = worksheet.Cells[1, 1, 1, 13])
+            using (var range = worksheet.Cells[1, 1, 1, 14])
             {
                 range.Style.Font.Bold = true;
                 range.Style.Fill.PatternType = OfficeOpenXml.Style.ExcelFillStyle.Solid;
@@ -943,16 +953,16 @@ namespace Piolax_WebApp.Services.Impl
                 worksheet.Cells[row, 2].Value = s.area;
                 worksheet.Cells[row, 3].Value = s.nombreMaquina;
                 worksheet.Cells[row, 4].Value = s.fechaSolicitud.ToString("HH:mm");
-                //worksheet.Cells[row, 5].Value = s.nombreMaquina;
-                worksheet.Cells[row, 5].Value = s.nombreTurno;
-                worksheet.Cells[row, 6].Value = s.nombreCompletoEmpleado;
-                worksheet.Cells[row, 7].Value = s.idSolicitud;
-                worksheet.Cells[row, 8].Value = s.descripcion;
-                worksheet.Cells[row, 9].Value = s.solucion;
-                worksheet.Cells[row, 10].Value = s.horaTermino?.ToString("dd/MM/yyyy");
-                worksheet.Cells[row, 11].Value = s.horaInicio?.ToString("HH:mm");
-                worksheet.Cells[row, 12].Value = s.horaTermino?.ToString("HH:mm");
-                worksheet.Cells[row, 13].Value = s.nombreCompletoTecnico;
+                worksheet.Cells[row, 5].Value = s.paroMaquinaSolicitante ? "Si" : "No";
+                worksheet.Cells[row, 6].Value = s.nombreTurno;
+                worksheet.Cells[row, 7].Value = s.nombreCompletoEmpleado;
+                worksheet.Cells[row, 8].Value = s.idSolicitud;
+                worksheet.Cells[row, 9].Value = s.descripcion;
+                worksheet.Cells[row, 10].Value = s.solucion;
+                worksheet.Cells[row, 11].Value = s.horaTermino?.ToString("dd/MM/yyyy");
+                worksheet.Cells[row, 12].Value = s.horaInicio?.ToString("HH:mm");
+                worksheet.Cells[row, 13].Value = s.horaTermino?.ToString("HH:mm");
+                worksheet.Cells[row, 14].Value = s.nombreCompletoTecnico;
 
                 // Formatear refacciones como texto
                 /*string refaccionesTexto = "";
