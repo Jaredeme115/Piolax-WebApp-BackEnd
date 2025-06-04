@@ -84,6 +84,7 @@ namespace Piolax_WebApp.Repositories.Impl
             return await query.ToListAsync();
         }
 
+
         public async Task<Asignaciones?> ObtenerAsignacionActivaPorSolicitud(int idSolicitud)
         {
             return await _context.Asignaciones

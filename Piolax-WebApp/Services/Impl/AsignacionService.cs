@@ -230,6 +230,26 @@ namespace Piolax_WebApp.Services.Impl
             return count > 0 ? tiempoTotalReparacion / count : 0;
         }
 
+        /*public async Task<double> CalcularMTTR(int idMaquina, int idArea, int? idEmpleado = null)
+        {
+            var asignaciones = await _repository.ConsultarAsignacionesCompletadas(idMaquina, idArea, idEmpleado);
+            if (!asignaciones.Any())
+                return 0;
+
+            double sumaTotalPorOrdenes = 0;
+            foreach (var asignacion in asignaciones)
+            {
+                double sumaSegmentos = asignacion.Asignacion_Tecnico
+                    .Where(t => t.tiempoAcumuladoMinutos > 0)
+                    .Sum(t => t.tiempoAcumuladoMinutos);
+
+                sumaTotalPorOrdenes += sumaSegmentos;
+            }
+
+            // Aquí llamamos correctamente a Count()
+            return sumaTotalPorOrdenes / asignaciones.Count();
+        }*/
+
 
         /// <summary>
         /// Calcula el MTTA (Mean Time To Acknowledge) en minutos. Se toma el tiempo transcurrido entre la creación
