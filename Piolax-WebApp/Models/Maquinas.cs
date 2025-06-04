@@ -20,6 +20,9 @@ namespace Piolax_WebApp.Models
         public int idArea { get; set; }
         public Areas Area { get; set; }
 
+        [Required]
+        public bool maquinaActiva { get; set; } = true; // Indica si la maquina esta activa o no
+
         public ICollection<Solicitudes> Solicitudes { get; set; } // Lista de solicitudes asociados a esta maquina
 
         public ICollection<Inventario> Inventario { get; set; } // Lista de inventario asociados a esta maquina

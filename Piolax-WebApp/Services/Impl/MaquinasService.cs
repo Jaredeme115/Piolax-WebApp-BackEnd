@@ -29,7 +29,8 @@ namespace Piolax_WebApp.Services.Impl
             {
                 nombreMaquina = maquina.descripcion,
                 codigoQR = maquina.descripcion,
-                idArea = maquina.idArea
+                idArea = maquina.idArea,
+                maquinaActiva = maquina.maquinaActiva
             };
 
             return await _repository.Registro(maquinas);
@@ -45,6 +46,7 @@ namespace Piolax_WebApp.Services.Impl
             // Actualizamos los datos de la maquina
             maquinaExistente.nombreMaquina = maquina.descripcion;
             maquinaExistente.codigoQR = maquina.descripcion; // Actualiza el texto del QR
+            maquinaExistente.maquinaActiva = maquina.maquinaActiva;
 
             return await _repository.Modificar(idMaquina, maquinaExistente);
         }
@@ -105,9 +107,10 @@ namespace Piolax_WebApp.Services.Impl
                     filasProcesadas++;
                     try
                     {
-                        // Leo celdas A y B
+              
                         var descripcion = worksheet.Cells[row, 1].Text?.Trim();
                         var idAreaText = worksheet.Cells[row, 2].Text?.Trim();
+                        var maquinaActiva = worksheet.Cells[row, 3].Text?.Trim().ToLower() == "si";
 
                         if (string.IsNullOrWhiteSpace(descripcion) ||
                             string.IsNullOrWhiteSpace(idAreaText))
@@ -126,7 +129,8 @@ namespace Piolax_WebApp.Services.Impl
                         {
                             descripcion = descripcion,
                             idArea = idArea,
-                            codigoQR = descripcion // Generación de QR en tu servicio
+                            codigoQR = descripcion, // Generación de QR en tu servicio
+                            maquinaActiva = maquinaActiva
                         };
 
                         if (await MaquinaExisteRegistro(maquinaDTO.descripcion))

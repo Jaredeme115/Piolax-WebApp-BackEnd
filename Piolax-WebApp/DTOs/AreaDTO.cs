@@ -6,5 +6,7 @@ namespace Piolax_WebApp.DTOs
     {
         [Required(ErrorMessage = "El nombre del area es requerido")]
         public string nombreArea { get; set; }
+
+        public int contadorMaquinasActivasPorArea { get; set; }
     }
 }
