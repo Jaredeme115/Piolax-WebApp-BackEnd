@@ -202,8 +202,7 @@ namespace Piolax_WebApp.Controllers
                 s.nombreStatusAprobacionSolicitante,
                 s.area,
                 s.rol,
-                s.nombreCategoriaTicket,
-                s.paroMaquinaSolicitante
+                s.nombreCategoriaTicket
             });
 
             return Ok(solicitudesFormateadas);
