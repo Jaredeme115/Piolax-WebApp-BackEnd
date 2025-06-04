@@ -44,6 +44,9 @@ namespace Piolax_WebApp.Models
         public int idCategoriaTicket { get; set; }
         public categoriaTicket categoriaTicket { get; set; }
 
+        [Required]
+        public bool paroMaquinaSolicitante { get; set; } = false;
+
         //Nuevo atributo agregado para el envio de notificaciones mediante SignalR
 
         [Required]

@@ -32,6 +32,8 @@ namespace Piolax_WebApp.DTOs
         [Required]
         public int idCategoriaTicket { get; set; }
 
+        public bool paroMaquinaSolicitante { get; set; }
+
         //Asignar nombre a la maquina, al turno, al status de la orden, al status de aprobación del solicitante y a la categoria del ticket
         public string nombreMaquina { get; set; }
         public string nombreTurno { get; set; }

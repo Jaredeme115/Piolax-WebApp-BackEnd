@@ -18,7 +18,12 @@ namespace Piolax_WebApp.Services.Impl
         IStatusAprobacionSolicitanteService statusAprobacionSolicitanteService,
         ICategoriaTicketService categoriaTicketService,
         IAsignacionRepository asignacionRepository,
-        IHubContext<SolicitudHub> hubContext
+        IHubContext<SolicitudHub> hubContext,
+
+        //Agregados por modificaciones en el ObtenerSolicitudesPrioridad
+        IAreasService areasService,
+        IRolesService rolesService
+
         ) : ISolicitudService
     {
         private readonly ISolicitudesRepository _repository = repository;
@@ -32,6 +37,10 @@ namespace Piolax_WebApp.Services.Impl
         private readonly IAsignacionRepository _asignacionRepository = asignacionRepository;
         private readonly IHubContext<SolicitudHub> _hubContext = hubContext;
 
+        //Agregados por modificaciones en el ObtenerSolicitudesPrioridad
+        private readonly IAreasService _areasService = areasService;
+        private readonly IRolesService _rolesService = rolesService;
+
         public async Task<SolicitudesDetalleDTO> RegistrarSolicitud(SolicitudesDTO solicitudesDTO)
         {
             var empleado = await _empleadoService.Consultar(solicitudesDTO.numNomina);
@@ -40,25 +49,44 @@ namespace Piolax_WebApp.Services.Impl
                 throw new Exception($"No se encontró el empleado con número de nómina: {solicitudesDTO.numNomina}");
             }
 
+            // Traigo todas las tuplas (area, rol) donde el empleado está asignado
             var areasRoles = await _empleadoAreaRolService.ObtenerAreasRolesPorEmpleado(empleado.numNomina);
 
-            // Permitir si el idAreaSeleccionada es 19, aunque el usuario no esté asignado a ella
-            if (solicitudesDTO.idAreaSeleccionada != 19)
+            int idRolEnviado = solicitudesDTO.idRolSeleccionado;
+            int idAreaEnviada = solicitudesDTO.idAreaSeleccionada;
+
+            // ① Defino los IDs de rol “especiales” que pueden omitir cualquier validación de área/rol
+            int[] rolesEspeciales = new[] { 7, 11, 12, 15 };
+
+            // ② Si el rol enviado está en el arreglo de rolesEspeciales, salto TODAS las validaciones de área y rol
+            if (!rolesEspeciales.Contains(idRolEnviado))
             {
-                var areaSeleccionada = areasRoles.FirstOrDefault(ar => ar.idArea == solicitudesDTO.idAreaSeleccionada);
-                if (areaSeleccionada == null)
+                // ③ Si el área enviada NO es 19, primero validamos que exista en las áreas asignadas al empleado
+                if (idAreaEnviada != 19)
                 {
-                    throw new Exception("El área seleccionada no está asignada al empleado.");
+                    var areaSeleccionada = areasRoles.FirstOrDefault(ar => ar.idArea == idAreaEnviada);
+                    if (areaSeleccionada == null)
+                    {
+                        throw new Exception("El área seleccionada no está asignada al empleado.");
+                    }
+                }
+
+                // ④ Luego validamos el rol dentro de esa misma área, **solo si** el área no es 19
+                if (idAreaEnviada != 19)
+                {
+                    var rolSeleccionado = areasRoles
+                        .FirstOrDefault(ar => ar.idRol == idRolEnviado && ar.idArea == idAreaEnviada);
+
+                    if (rolSeleccionado == null)
+                    {
+                        throw new Exception("El rol seleccionado no está asignado al empleado en el área seleccionada.");
+                    }
                 }
             }
+            // Si el rol ES uno de los especiales (7,15,11), llegamos aquí y directamente
+            // pasamos a crear la solicitud sin chequear área ni rol.
 
-            // Validar el rol SOLO si el área no es 19
-            var rolSeleccionado = areasRoles.FirstOrDefault(ar => ar.idRol == solicitudesDTO.idRolSeleccionado && ar.idArea == solicitudesDTO.idAreaSeleccionada);
-            if (rolSeleccionado == null && solicitudesDTO.idAreaSeleccionada != 19)
-            {
-                throw new Exception("El rol seleccionado no está asignado al empleado en el área seleccionada.");
-            }
-
+            // ⑤ Construyo el objeto Solicitudes y guardo en DB
             var solicitud = new Solicitudes
             {
                 descripcion = solicitudesDTO.descripcion,
@@ -68,28 +96,21 @@ namespace Piolax_WebApp.Services.Impl
                 idTurno = solicitudesDTO.idTurno,
                 idStatusOrden = solicitudesDTO.idStatusOrden,
                 idStatusAprobacionSolicitante = solicitudesDTO.idStatusAprobacionSolicitante,
-                idAreaSeleccionada = solicitudesDTO.idAreaSeleccionada,
-                idRolSeleccionado = solicitudesDTO.idRolSeleccionado,
-                idCategoriaTicket = solicitudesDTO.idCategoriaTicket
+                idAreaSeleccionada = idAreaEnviada,
+                idRolSeleccionado = idRolEnviado,
+                idCategoriaTicket = solicitudesDTO.idCategoriaTicket,
+                paroMaquinaSolicitante = solicitudesDTO.paroMaquinaSolicitante
             };
 
             solicitud = await _repository.RegistrarSolicitud(solicitud);
 
-            //Se recurre a llamar a Maquina Service para obtener el nombre de la maquina en base al id de la maquina
-
-            var maquina = await _maquinasService.Consultar(solicitud.idMaquina); // Obtener la máquina por ID
-
-            //Se recurre a llamar a Turno Service para obtener el nombre del turno en base al id del turno
-
-            var turno = await _turnoService.Consultar(solicitud.idTurno); // Obtener el turno por ID
-
-            //Se recurre a llamar a StatusOrden Service para obtener el nombre del status de la orden en base al id del status de la orden
-            var statusOrden = await _statusOrdenService.Consultar(solicitud.idStatusOrden); // Obtener el status de la orden por ID
-
-            //Se recurre a llamar a StatusAprobacionSolicitante Service para obtener el nombre del status de aprobación del solicitante en base al id del status de aprobación del solicitante
-            var statusAprobacionSolicitante = await _statusAprobacionSolicitanteService.Consultar(solicitud.idStatusAprobacionSolicitante); // Obtener el status de aprobación del solicitante por ID
-
-            var categoriaTicket = await _categoriaTicketService.Consultar(solicitud.idCategoriaTicket); // Obtener la categoría del ticket por ID
+            // Resto de la lógica para llenar el DTO de respuesta
+            var maquina = await _maquinasService.Consultar(solicitud.idMaquina);
+            var turno = await _turnoService.Consultar(solicitud.idTurno);
+            var statusOrden = await _statusOrdenService.Consultar(solicitud.idStatusOrden);
+            var statusAprobacionSolicitante = await _statusAprobacionSolicitanteService
+                .Consultar(solicitud.idStatusAprobacionSolicitante);
+            var categoriaTicket = await _categoriaTicketService.Consultar(solicitud.idCategoriaTicket);
 
             var solicitudDetalleDTO = new SolicitudesDetalleDTO
             {
@@ -101,21 +122,27 @@ namespace Piolax_WebApp.Services.Impl
                 idTurno = solicitud.idTurno,
                 idStatusOrden = solicitud.idStatusOrden,
                 idStatusAprobacionSolicitante = solicitud.idStatusAprobacionSolicitante,
-                area = solicitudesDTO.idAreaSeleccionada == 19 ? "Área Permitida" : areasRoles.FirstOrDefault(ar => ar.idArea == solicitudesDTO.idAreaSeleccionada)?.Area.nombreArea,
-                rol = solicitudesDTO.idAreaSeleccionada == 19 ? "Rol Asignado Automáticamente" : areasRoles.FirstOrDefault(ar => ar.idRol == solicitudesDTO.idRolSeleccionado)?.Rol.nombreRol,
+                area = idAreaEnviada == 19
+                    ? "Área Permitida"
+                    : areasRoles.FirstOrDefault(ar => ar.idArea == idAreaEnviada)?.Area.nombreArea,
+                rol = idAreaEnviada == 19
+                    ? "Rol Asignado Automáticamente"
+                    : areasRoles.FirstOrDefault(ar => ar.idRol == idRolEnviado)?.Rol.nombreRol,
                 idCategoriaTicket = solicitud.idCategoriaTicket,
                 nombreMaquina = maquina.nombreMaquina,
                 nombreTurno = turno.descripcion,
                 nombreStatusOrden = statusOrden.descripcionStatusOrden,
                 nombreStatusAprobacionSolicitante = statusAprobacionSolicitante.descripcionStatusAprobacionSolicitante,
-                nombreCategoriaTicket = solicitud.categoriaTicket.descripcionCategoriaTicket
+                nombreCategoriaTicket = categoriaTicket.descripcionCategoriaTicket,
+                paroMaquinaSolicitante = solicitud.paroMaquinaSolicitante
             };
 
             // 🔹 Notificar a todos los clientes conectados sobre la nueva solicitud
-            await NotificarActualizacionSolicitudes(solicitudesDTO.idAreaSeleccionada);
+            await NotificarActualizacionSolicitudes(idAreaEnviada);
 
             return solicitudDetalleDTO;
         }
+
 
 
         public async Task<SolicitudesDetalleDTO?> ObtenerSolicitudConDetalles(int idSolicitud)
@@ -173,7 +200,8 @@ namespace Piolax_WebApp.Services.Impl
                 nombreTurno = turno.descripcion,
                 nombreStatusOrden = statusOrden.descripcionStatusOrden,
                 nombreStatusAprobacionSolicitante = statusAprobacionSolicitante.descripcionStatusAprobacionSolicitante,
-                nombreCategoriaTicket = solicitud.categoriaTicket.descripcionCategoriaTicket
+                nombreCategoriaTicket = solicitud.categoriaTicket.descripcionCategoriaTicket,
+                paroMaquinaSolicitante = solicitud.paroMaquinaSolicitante
             };
 
             return solicitudesDetalleDTO;
@@ -227,7 +255,8 @@ namespace Piolax_WebApp.Services.Impl
                     nombreTurno = turno.descripcion,
                     nombreStatusOrden = statusOrden.descripcionStatusOrden,
                     nombreStatusAprobacionSolicitante = statusAprobacionSolicitante.descripcionStatusAprobacionSolicitante,
-                    nombreCategoriaTicket = solicitud.categoriaTicket.descripcionCategoriaTicket
+                    nombreCategoriaTicket = solicitud.categoriaTicket.descripcionCategoriaTicket,
+                    paroMaquinaSolicitante = solicitud.paroMaquinaSolicitante
                 };
 
                 solicitudesDetalleDTO.Add(solicitudDetalleDTO);
@@ -246,25 +275,37 @@ namespace Piolax_WebApp.Services.Impl
                 var empleado = solicitud.Empleado;
                 var areasRoles = empleado.EmpleadoAreaRol;
 
-                // Filtrar el área y el rol específicos de la solicitud
-                var areaSeleccionada = areasRoles.FirstOrDefault(ar => ar.idArea == solicitud.idAreaSeleccionada);
-                var rolSeleccionado = areasRoles.FirstOrDefault(ar => ar.idRol == solicitud.idRolSeleccionado && ar.idArea == solicitud.idAreaSeleccionada);
+                string nombreArea = "N/A";
+                string nombreRol = "N/A";
 
-                //Se recurre a llamar a Maquina Service para obtener el nombre de la maquina en base al id de la maquina
+                // ← Aquí agregamos el caso especial para idArea = 19:
+                if (solicitud.idAreaSeleccionada == 19)
+                {
+                    nombreArea = "Servicios Generales";
+                    // Si quieres mostrar un rol, toma el primero marcado como esAreaPrincipal:
+                    var rolPrincipal = areasRoles.FirstOrDefault(ar => ar.esAreaPrincipal)?.Rol;
+                    nombreRol = rolPrincipal?.nombreRol ?? "N/A";
+                }
+                else
+                {
+                    // Caso normal: buscamos el area/rol dentro de EmpleadoAreaRol
+                    var areaSeleccionada = areasRoles
+                        .FirstOrDefault(ar => ar.idArea == solicitud.idAreaSeleccionada);
+                    var rolSeleccionado = areasRoles
+                        .FirstOrDefault(ar => ar.idRol == solicitud.idRolSeleccionado &&
+                                              ar.idArea == solicitud.idAreaSeleccionada);
 
-                var maquina = await _maquinasService.Consultar(solicitud.idMaquina); // Obtener la máquina por ID
+                    nombreArea = areaSeleccionada?.Area?.nombreArea ?? "N/A";
+                    nombreRol = rolSeleccionado?.Rol?.nombreRol ?? "N/A";
+                }
 
-                //Se recurre a llamar a Turno Service para obtener el nombre del turno en base al id del turno
-
-                var turno = await _turnoService.Consultar(solicitud.idTurno); // Obtener el turno por ID
-
-                //Se recurre a llamar a StatusOrden Service para obtener el nombre del status de la orden en base al id del status de la orden
-                var statusOrden = await _statusOrdenService.Consultar(solicitud.idStatusOrden); // Obtener el status de la orden por ID
-
-                //Se recurre a llamar a StatusAprobacionSolicitante Service para obtener el nombre del status de aprobación del solicitante en base al id del status de aprobación del solicitante
-                var statusAprobacionSolicitante = await _statusAprobacionSolicitanteService.Consultar(solicitud.idStatusAprobacionSolicitante); // Obtener el status de aprobación del solicitante por ID
-
-                var categoriaTicket = await _categoriaTicketService.Consultar(solicitud.idCategoriaTicket); // Obtener la categoría del ticket por ID
+                // Obtener detalles adicionales
+                var maquina = await _maquinasService.Consultar(solicitud.idMaquina);
+                var turno = await _turnoService.Consultar(solicitud.idTurno);
+                var statusOrden = await _statusOrdenService.Consultar(solicitud.idStatusOrden);
+                var statusAprobacionSolicitante = await _statusAprobacionSolicitanteService
+                                                       .Consultar(solicitud.idStatusAprobacionSolicitante);
+                var categoriaTicket = await _categoriaTicketService.Consultar(solicitud.idCategoriaTicket);
 
                 var solicitudDetalleDTO = new SolicitudesDetalleDTO
                 {
@@ -276,14 +317,15 @@ namespace Piolax_WebApp.Services.Impl
                     idTurno = solicitud.idTurno,
                     idStatusOrden = solicitud.idStatusOrden,
                     idStatusAprobacionSolicitante = solicitud.idStatusAprobacionSolicitante,
-                    area = areaSeleccionada?.Area?.nombreArea ?? "N/A",
-                    rol = rolSeleccionado?.Rol?.nombreRol ?? "N/A",
+                    area = nombreArea,
+                    rol = nombreRol,
                     idCategoriaTicket = solicitud.idCategoriaTicket,
                     nombreMaquina = maquina.nombreMaquina,
                     nombreTurno = turno.descripcion,
                     nombreStatusOrden = statusOrden.descripcionStatusOrden,
                     nombreStatusAprobacionSolicitante = statusAprobacionSolicitante.descripcionStatusAprobacionSolicitante,
-                    nombreCategoriaTicket = solicitud.categoriaTicket.descripcionCategoriaTicket
+                    nombreCategoriaTicket = categoriaTicket.descripcionCategoriaTicket,
+                    paroMaquinaSolicitante = solicitud.paroMaquinaSolicitante
                 };
 
                 solicitudesDetalleDTO.Add(solicitudDetalleDTO);
@@ -291,6 +333,7 @@ namespace Piolax_WebApp.Services.Impl
 
             return solicitudesDetalleDTO;
         }
+
 
         public async Task<SolicitudesDetalleDTO> ModificarEstatusAprobacionSolicitante(int idSolicitud, int idStatusAprobacionSolicitante)
         {
@@ -438,7 +481,8 @@ namespace Piolax_WebApp.Services.Impl
                     solucion = solucion,
                     Refacciones = refacciones,
                     horaInicio = tecnicoAprobado?.horaInicio,
-                    horaTermino = tecnicoAprobado?.horaTermino
+                    horaTermino = tecnicoAprobado?.horaTermino,
+                    paroMaquinaSolicitante = solicitud.paroMaquinaSolicitante
                 };
 
                 solicitudesDetalleDTO.Add(solicitudDetalleDTO);
@@ -464,58 +508,66 @@ namespace Piolax_WebApp.Services.Impl
 
         public async Task<IEnumerable<SolicitudesDetalleDTO>> ObtenerSolicitudesConPrioridadAsync()
         {
+            // 1) Obtengo todas las solicitudes con sus relaciones
             var solicitudes = await _repository.ObtenerSolicitudesConPrioridadAsync();
             var solicitudesDetalleDTO = new List<SolicitudesDetalleDTO>();
 
             foreach (var solicitud in solicitudes)
             {
+                // 2) Información del empleado que creó la solicitud
                 var empleado = solicitud.Empleado;
-                var areasRoles = empleado.EmpleadoAreaRol;
+                var areasRolesEmpleado = empleado.EmpleadoAreaRol; // Por si necesitas esAreaPrincipal en idArea=19
 
-                string nombreArea = "N/A";
-                string nombreRol = "N/A";
-
-                // 🟢 CASO EXCEPCIÓN: SI EL ÁREA ES 19, SE SELECCIONA EL ÁREA 19 Y EL ROL PRINCIPAL
+                // 3) OBTENGO EL NOMBRE DE ÁREA DE LA MÁQUINA usando IAreasService ←
+                string nombreArea;
                 if (solicitud.idAreaSeleccionada == 19)
                 {
                     nombreArea = "Servicios Generales";
-                    var rolPrincipal = areasRoles.FirstOrDefault(ar => ar.esAreaPrincipal);
-                    nombreRol = rolPrincipal?.Rol?.nombreRol ?? "N/A";
                 }
                 else
                 {
-                    // 🔹 CASO NORMAL: SE OBTIENE EL ÁREA Y EL ROL ASIGNADO EN LA SOLICITUD
-                    var areaSeleccionada = areasRoles.FirstOrDefault(ar => ar.idArea == solicitud.idAreaSeleccionada);
-                    var rolSeleccionado = areasRoles.FirstOrDefault(ar => ar.idRol == solicitud.idRolSeleccionado && ar.idArea == solicitud.idAreaSeleccionada);
-
-                    nombreArea = areaSeleccionada?.Area?.nombreArea ?? "N/A";
-                    nombreRol = rolSeleccionado?.Rol?.nombreRol ?? "N/A";
+                    var areaObj = await _areasService.Consultar(solicitud.idAreaSeleccionada);
+                    nombreArea = areaObj?.nombreArea ?? "N/A";
                 }
 
-                // 📌 OBTENER DETALLES ADICIONALES
+                // 4) OBTENGO EL NOMBRE DE ROL del solicitante usando IRolService ←
+                string nombreRol;
+                if (solicitud.idAreaSeleccionada == 19)
+                {
+                    // Si es área 19, busco el rol principal de ese empleado
+                    var rolPrincipal = areasRolesEmpleado
+                                        .FirstOrDefault(ar => ar.esAreaPrincipal)
+                                        ?.Rol
+                                        ?.nombreRol;
+                    nombreRol = rolPrincipal ?? "N/A";
+                }
+                else
+                {
+                    // Para cualquier otra área, consulto directamente el rol por ID
+                    var rolObj = await _rolesService.Consultar(solicitud.idRolSeleccionado);
+                    nombreRol = rolObj?.nombreRol ?? "N/A";
+                }
+
+                // 5) Obtengo detalles restantes (máquina, turno, estado, etc.)
                 var maquina = await _maquinasService.Consultar(solicitud.idMaquina);
                 var turno = await _turnoService.Consultar(solicitud.idTurno);
                 var statusOrden = await _statusOrdenService.Consultar(solicitud.idStatusOrden);
-                var statusAprobacionSolicitante = await _statusAprobacionSolicitanteService.Consultar(solicitud.idStatusAprobacionSolicitante);
+                var statusAprobacionSolicitante = await _statusAprobacionSolicitanteService
+                                                       .Consultar(solicitud.idStatusAprobacionSolicitante);
                 var categoriaTicket = await _categoriaTicketService.Consultar(solicitud.idCategoriaTicket);
 
-                // 🆕 OBTENER EL TÉCNICO ASIGNADO (si existe)
+                // 6) DETERMINO NOMBRE COMPLETO DEL TÉCNICO ASIGNADO (si existiera)
                 string nombreCompletoTecnico = "No asignado";
-
-                // Verificamos si hay asignaciones para esta solicitud
                 if (solicitud.Asignaciones != null && solicitud.Asignaciones.Any())
                 {
-                    // Buscamos un técnico activo entre todas las asignaciones
                     var tecnicoActivo = solicitud.Asignaciones
                         .SelectMany(a => a.Asignacion_Tecnico)
                         .FirstOrDefault(t => t.esTecnicoActivo);
 
-                    // Si hay un técnico activo, obtenemos su nombre completo
                     if (tecnicoActivo != null && tecnicoActivo.Empleado != null)
                     {
                         nombreCompletoTecnico = $"{tecnicoActivo.Empleado.nombre} {tecnicoActivo.Empleado.apellidoPaterno} {tecnicoActivo.Empleado.apellidoMaterno}";
                     }
-                    // Si no hay técnico activo pero hay técnicos asignados, tomamos el primero
                     else
                     {
                         var primerTecnico = solicitud.Asignaciones
@@ -529,25 +581,32 @@ namespace Piolax_WebApp.Services.Impl
                     }
                 }
 
+                // 7) Construyo y agrego el DTO final
                 var solicitudDetalleDTO = new SolicitudesDetalleDTO
                 {
                     idSolicitud = solicitud.idSolicitud,
                     descripcion = solicitud.descripcion,
                     fechaSolicitud = solicitud.fechaSolicitud,
                     nombreCompletoEmpleado = $"{empleado.nombre} {empleado.apellidoPaterno} {empleado.apellidoMaterno}",
+
                     idMaquina = solicitud.idMaquina,
                     idTurno = solicitud.idTurno,
                     idStatusOrden = solicitud.idStatusOrden,
                     idStatusAprobacionSolicitante = solicitud.idStatusAprobacionSolicitante,
-                    area = nombreArea, // 🔥 AHORA ASIGNA EL ÁREA CORRECTA
-                    rol = nombreRol,   // 🔥 AHORA ASIGNA EL ROL CORRECTO
+
+                    // ← Asignamos nombreArea y nombreRol calculados arriba
+                    area = nombreArea,
+                    rol = nombreRol,
+
                     idCategoriaTicket = solicitud.idCategoriaTicket,
-                    nombreMaquina = maquina.nombreMaquina,
-                    nombreTurno = turno.descripcion,
-                    nombreStatusOrden = statusOrden.descripcionStatusOrden,
-                    nombreStatusAprobacionSolicitante = statusAprobacionSolicitante.descripcionStatusAprobacionSolicitante,
-                    nombreCategoriaTicket = solicitud.categoriaTicket.descripcionCategoriaTicket,
-                    nombreCompletoTecnico = nombreCompletoTecnico // 🆕 AGREGADO: NOMBRE DEL TÉCNICO
+                    nombreMaquina = maquina?.nombreMaquina ?? "N/A",
+                    nombreTurno = turno?.descripcion ?? "N/A",
+                    nombreStatusOrden = statusOrden?.descripcionStatusOrden ?? "N/A",
+                    nombreStatusAprobacionSolicitante = statusAprobacionSolicitante?.descripcionStatusAprobacionSolicitante ?? "N/A",
+                    nombreCategoriaTicket = categoriaTicket?.descripcionCategoriaTicket ?? "N/A",
+
+                    nombreCompletoTecnico = nombreCompletoTecnico,
+                    paroMaquinaSolicitante = solicitud.paroMaquinaSolicitante
                 };
 
                 solicitudesDetalleDTO.Add(solicitudDetalleDTO);
@@ -555,6 +614,7 @@ namespace Piolax_WebApp.Services.Impl
 
             return solicitudesDetalleDTO;
         }
+
 
         public async Task<bool> EliminarSolicitud(int idSolicitud)
         {
@@ -572,11 +632,40 @@ namespace Piolax_WebApp.Services.Impl
 
         public async Task<IEnumerable<SolicitudesDetalleDTO>> ObtenerSolicitudesPorAreaYRoles(int idArea, List<int> idRoles)
         {
-            // Obtener solicitudes con filtro de área y roles, aplicando la prioridad según el status
-            var solicitudes = await _repository.ObtenerSolicitudesPorAreaYRoles(idArea, idRoles);
-            var solicitudesDetalleDTO = new List<SolicitudesDetalleDTO>();
+            // 1) Traigo las solicitudes “normales” para el área del usuario
+            var solicitudesBase = await _repository.ObtenerSolicitudesPorAreaYRoles(idArea, idRoles);
 
-            foreach (var solicitud in solicitudes)
+            // 2) Determino, según el idArea, si corresponde incluir una máquina extra de área 19
+            int? idMaquinaExtra = idArea switch
+            {
+                1 => 345,
+                2 => 346,
+                3 => 347,
+                _ => (int?)null
+            };
+
+            IEnumerable<Solicitudes> solicitudesExtras = Enumerable.Empty<Solicitudes>();
+
+            if (idMaquinaExtra.HasValue)
+            {
+                // 3) Traigo todas las solicitudes de área 19 con la misma lista de roles
+                var todasArea19 = await _repository.ObtenerSolicitudesPorAreaYRoles(19, idRoles);
+
+                // 4) Filtrar únicamente las que tengan esa máquina extra
+                solicitudesExtras = todasArea19
+                    .Where(s => s.idMaquina == idMaquinaExtra.Value);
+            }
+
+            // 5) Concateno ambas listas y elimino duplicados por idSolicitud
+            var todasSolicitudes = solicitudesBase
+                .Concat(solicitudesExtras)
+                .GroupBy(s => s.idSolicitud)
+                .Select(g => g.First())
+                .ToList();
+
+            // 6) Proyecto cada entidad a DTO (igual que antes)
+            var dtoList = new List<SolicitudesDetalleDTO>();
+            foreach (var solicitud in todasSolicitudes)
             {
                 var empleado = solicitud.Empleado;
                 var areasRoles = empleado.EmpleadoAreaRol;
@@ -584,17 +673,21 @@ namespace Piolax_WebApp.Services.Impl
                 string nombreArea = "N/A";
                 string nombreRol = "N/A";
 
-                // Gestión del área 19 (caso especial)
                 if (solicitud.idAreaSeleccionada == 19)
                 {
                     nombreArea = "Servicios Generales";
-                    var rolPrincipal = areasRoles.FirstOrDefault(ar => ar.esAreaPrincipal);
-                    nombreRol = rolPrincipal?.Rol?.nombreRol ?? "N/A";
+                    // Tomo el rol marcado como esAreaPrincipal, si existe
+                    var rolPrincipal = areasRoles.FirstOrDefault(ar => ar.esAreaPrincipal)?.Rol;
+                    nombreRol = rolPrincipal?.nombreRol ?? "N/A";
                 }
                 else
                 {
-                    var areaSeleccionada = areasRoles.FirstOrDefault(ar => ar.idArea == solicitud.idAreaSeleccionada);
-                    var rolSeleccionado = areasRoles.FirstOrDefault(ar => ar.idRol == solicitud.idRolSeleccionado && ar.idArea == solicitud.idAreaSeleccionada);
+                    // Caso normal: busco en EmpleadoAreaRol la tupla (idAreaSeleccionada, idRolSeleccionado)
+                    var areaSeleccionada = areasRoles
+                        .FirstOrDefault(ar => ar.idArea == solicitud.idAreaSeleccionada);
+                    var rolSeleccionado = areasRoles
+                        .FirstOrDefault(ar => ar.idRol == solicitud.idRolSeleccionado
+                                           && ar.idArea == solicitud.idAreaSeleccionada);
 
                     nombreArea = areaSeleccionada?.Area?.nombreArea ?? "N/A";
                     nombreRol = rolSeleccionado?.Rol?.nombreRol ?? "N/A";
@@ -604,10 +697,11 @@ namespace Piolax_WebApp.Services.Impl
                 var maquina = await _maquinasService.Consultar(solicitud.idMaquina);
                 var turno = await _turnoService.Consultar(solicitud.idTurno);
                 var statusOrden = await _statusOrdenService.Consultar(solicitud.idStatusOrden);
-                var statusAprobacionSolicitante = await _statusAprobacionSolicitanteService.Consultar(solicitud.idStatusAprobacionSolicitante);
+                var statusAprobacionSolicitante = await _statusAprobacionSolicitanteService
+                                                       .Consultar(solicitud.idStatusAprobacionSolicitante);
                 var categoriaTicket = await _categoriaTicketService.Consultar(solicitud.idCategoriaTicket);
 
-                var solicitudDetalleDTO = new SolicitudesDetalleDTO
+                dtoList.Add(new SolicitudesDetalleDTO
                 {
                     idSolicitud = solicitud.idSolicitud,
                     descripcion = solicitud.descripcion,
@@ -625,13 +719,12 @@ namespace Piolax_WebApp.Services.Impl
                     nombreStatusOrden = statusOrden.descripcionStatusOrden,
                     nombreStatusAprobacionSolicitante = statusAprobacionSolicitante.descripcionStatusAprobacionSolicitante,
                     nombreCategoriaTicket = categoriaTicket.descripcionCategoriaTicket
-                };
-
-                solicitudesDetalleDTO.Add(solicitudDetalleDTO);
+                });
             }
 
-            return solicitudesDetalleDTO;
+            return dtoList;
         }
+
 
         public async Task<IEnumerable<SolicitudesDetalleDTO>> ConsultarSolicitudesTerminadasPorArea(string numNomina)
         {
@@ -730,7 +823,8 @@ namespace Piolax_WebApp.Services.Impl
                     solucion = solucion,
                     Refacciones = refacciones,
                     horaInicio = tecnicoAprobado?.horaInicio,
-                    horaTermino = tecnicoAprobado?.horaTermino
+                    horaTermino = tecnicoAprobado?.horaTermino,
+                    paroMaquinaSolicitante = solicitud.paroMaquinaSolicitante
                 };
 
                 solicitudesDetalleDTO.Add(solicitudDetalleDTO);
@@ -819,7 +913,8 @@ namespace Piolax_WebApp.Services.Impl
                     solucion = solucion,
                     Refacciones = refacciones,
                     horaInicio = tecnicoAprobado?.horaInicio,
-                    horaTermino = tecnicoAprobado?.horaTermino
+                    horaTermino = tecnicoAprobado?.horaTermino,
+                    paroMaquinaSolicitante = solicitud.paroMaquinaSolicitante
                 };
 
                 solicitudesDetalleDTO.Add(solicitudDetalleDTO);
@@ -844,19 +939,19 @@ namespace Piolax_WebApp.Services.Impl
             worksheet.Cells[1, 2].Value = "Area";
             worksheet.Cells[1, 3].Value = "Machine";
             worksheet.Cells[1, 4].Value = "Report Time";
-            //worksheet.Cells[1, 5].Value = "Equipment stopped?";
-            worksheet.Cells[1, 5].Value = "Shift";
-            worksheet.Cells[1, 6].Value = "Tecnico/Operador";
-            worksheet.Cells[1, 7].Value = "Order No.";
-            worksheet.Cells[1, 8].Value = "Descripción de la falla";
-            worksheet.Cells[1, 9].Value = "Solución de la falla";
-            worksheet.Cells[1, 10].Value = "End Date";
-            worksheet.Cells[1, 11].Value = "Start Time";
-            worksheet.Cells[1, 12].Value = "End Time";
-            worksheet.Cells[1, 13].Value = "Done by";
+            worksheet.Cells[1, 5].Value = "Equipment stopped?";
+            worksheet.Cells[1, 6].Value = "Shift";
+            worksheet.Cells[1, 7].Value = "Tecnico/Operador";
+            worksheet.Cells[1, 8].Value = "Order No.";
+            worksheet.Cells[1, 9].Value = "Descripción de la falla";
+            worksheet.Cells[1, 10].Value = "Solución de la falla";
+            worksheet.Cells[1, 11].Value = "End Date";
+            worksheet.Cells[1, 12].Value = "Start Time";
+            worksheet.Cells[1, 13].Value = "End Time";
+            worksheet.Cells[1, 14].Value = "Done by";
 
             // Estilo para encabezados
-            using (var range = worksheet.Cells[1, 1, 1, 13])
+            using (var range = worksheet.Cells[1, 1, 1, 14])
             {
                 range.Style.Font.Bold = true;
                 range.Style.Fill.PatternType = OfficeOpenXml.Style.ExcelFillStyle.Solid;
@@ -871,16 +966,16 @@ namespace Piolax_WebApp.Services.Impl
                 worksheet.Cells[row, 2].Value = s.area;
                 worksheet.Cells[row, 3].Value = s.nombreMaquina;
                 worksheet.Cells[row, 4].Value = s.fechaSolicitud.ToString("HH:mm");
-                //worksheet.Cells[row, 5].Value = s.nombreMaquina;
-                worksheet.Cells[row, 5].Value = s.nombreTurno;
-                worksheet.Cells[row, 6].Value = s.nombreCompletoEmpleado;
-                worksheet.Cells[row, 7].Value = s.idSolicitud;
-                worksheet.Cells[row, 8].Value = s.descripcion;
-                worksheet.Cells[row, 9].Value = s.solucion;
-                worksheet.Cells[row, 10].Value = s.horaTermino?.ToString("dd/MM/yyyy");
-                worksheet.Cells[row, 11].Value = s.horaInicio?.ToString("HH:mm");
-                worksheet.Cells[row, 12].Value = s.horaTermino?.ToString("HH:mm");
-                worksheet.Cells[row, 13].Value = s.nombreCompletoTecnico;
+                worksheet.Cells[row, 5].Value = s.paroMaquinaSolicitante ? "Si" : "No";
+                worksheet.Cells[row, 6].Value = s.nombreTurno;
+                worksheet.Cells[row, 7].Value = s.nombreCompletoEmpleado;
+                worksheet.Cells[row, 8].Value = s.idSolicitud;
+                worksheet.Cells[row, 9].Value = s.descripcion;
+                worksheet.Cells[row, 10].Value = s.solucion;
+                worksheet.Cells[row, 11].Value = s.horaTermino?.ToString("dd/MM/yyyy");
+                worksheet.Cells[row, 12].Value = s.horaInicio?.ToString("HH:mm");
+                worksheet.Cells[row, 13].Value = s.horaTermino?.ToString("HH:mm");
+                worksheet.Cells[row, 14].Value = s.nombreCompletoTecnico;
 
                 // Formatear refacciones como texto
                 /*string refaccionesTexto = "";
@@ -916,19 +1011,19 @@ namespace Piolax_WebApp.Services.Impl
             worksheet.Cells[1, 2].Value = "Area";
             worksheet.Cells[1, 3].Value = "Machine";
             worksheet.Cells[1, 4].Value = "Report Time";
-            //worksheet.Cells[1, 5].Value = "Equipment stopped?";
-            worksheet.Cells[1, 5].Value = "Shift";
-            worksheet.Cells[1, 6].Value = "Tecnico/Operador";
-            worksheet.Cells[1, 7].Value = "Order No.";
-            worksheet.Cells[1, 8].Value = "Descripción de la falla";
-            worksheet.Cells[1, 9].Value = "Solución de la falla";
-            worksheet.Cells[1, 10].Value = "End Date";
-            worksheet.Cells[1, 11].Value = "Start Time";
-            worksheet.Cells[1, 12].Value = "End Time";
-            worksheet.Cells[1, 13].Value = "Done by";
+            worksheet.Cells[1, 5].Value = "Equipment stopped?";
+            worksheet.Cells[1, 6].Value = "Shift";
+            worksheet.Cells[1, 7].Value = "Tecnico/Operador";
+            worksheet.Cells[1, 8].Value = "Order No.";
+            worksheet.Cells[1, 9].Value = "Descripción de la falla";
+            worksheet.Cells[1, 10].Value = "Solución de la falla";
+            worksheet.Cells[1, 11].Value = "End Date";
+            worksheet.Cells[1, 12].Value = "Start Time";
+            worksheet.Cells[1, 13].Value = "End Time";
+            worksheet.Cells[1, 14].Value = "Done by";
 
             // Estilo para encabezados
-            using (var range = worksheet.Cells[1, 1, 1, 13])
+            using (var range = worksheet.Cells[1, 1, 1, 14])
             {
                 range.Style.Font.Bold = true;
                 range.Style.Fill.PatternType = OfficeOpenXml.Style.ExcelFillStyle.Solid;
@@ -943,16 +1038,16 @@ namespace Piolax_WebApp.Services.Impl
                 worksheet.Cells[row, 2].Value = s.area;
                 worksheet.Cells[row, 3].Value = s.nombreMaquina;
                 worksheet.Cells[row, 4].Value = s.fechaSolicitud.ToString("HH:mm");
-                //worksheet.Cells[row, 5].Value = s.nombreMaquina;
-                worksheet.Cells[row, 5].Value = s.nombreTurno;
-                worksheet.Cells[row, 6].Value = s.nombreCompletoEmpleado;
-                worksheet.Cells[row, 7].Value = s.idSolicitud;
-                worksheet.Cells[row, 8].Value = s.descripcion;
-                worksheet.Cells[row, 9].Value = s.solucion;
-                worksheet.Cells[row, 10].Value = s.horaTermino?.ToString("dd/MM/yyyy");
-                worksheet.Cells[row, 11].Value = s.horaInicio?.ToString("HH:mm");
-                worksheet.Cells[row, 12].Value = s.horaTermino?.ToString("HH:mm");
-                worksheet.Cells[row, 13].Value = s.nombreCompletoTecnico;
+                worksheet.Cells[row, 5].Value = s.paroMaquinaSolicitante ? "Si" : "No";
+                worksheet.Cells[row, 6].Value = s.nombreTurno;
+                worksheet.Cells[row, 7].Value = s.nombreCompletoEmpleado;
+                worksheet.Cells[row, 8].Value = s.idSolicitud;
+                worksheet.Cells[row, 9].Value = s.descripcion;
+                worksheet.Cells[row, 10].Value = s.solucion;
+                worksheet.Cells[row, 11].Value = s.horaTermino?.ToString("dd/MM/yyyy");
+                worksheet.Cells[row, 12].Value = s.horaInicio?.ToString("HH:mm");
+                worksheet.Cells[row, 13].Value = s.horaTermino?.ToString("HH:mm");
+                worksheet.Cells[row, 14].Value = s.nombreCompletoTecnico;
 
                 // Formatear refacciones como texto
                 /*string refaccionesTexto = "";

@@ -53,24 +53,7 @@ namespace Piolax_WebApp.Repositories.Impl
                 .ToListAsync();
         }
 
-        /*public async Task<IEnumerable<Solicitudes>> ObtenerSolicitudesEmpleado(string numNomina)
-        {
-            return await _context.Solicitudes
-           .Include(s => s.Empleado)
-           .ThenInclude(e => e.EmpleadoAreaRol)
-           .ThenInclude(ar => ar.Area)
-           .Include(s => s.Empleado)
-           .ThenInclude(e => e.EmpleadoAreaRol)
-           .ThenInclude(ar => ar.Rol)
-           .Include(s => s.Maquina)
-           .Include(s => s.Turno)
-           .Include(s => s.StatusOrden)
-           .Include(s => s.StatusAprobacionSolicitante)
-           .Include(s => s.categoriaTicket)
-           .Where(s => s.Empleado.numNomina == numNomina)
-           .ToListAsync();
-        }*/
-
+       
         public async Task<IEnumerable<Solicitudes>> ObtenerSolicitudesEmpleado(string numNomina)
         {
             return await _context.Solicitudes
@@ -126,7 +109,8 @@ namespace Piolax_WebApp.Repositories.Impl
                 nombreTurno = solicitud.Turno.descripcion,
                 nombreStatusOrden = solicitud.StatusOrden.descripcionStatusOrden,
                 nombreStatusAprobacionSolicitante = solicitud.StatusAprobacionSolicitante.descripcionStatusAprobacionSolicitante,
-                nombreCategoriaTicket = solicitud.categoriaTicket.descripcionCategoriaTicket
+                nombreCategoriaTicket = solicitud.categoriaTicket.descripcionCategoriaTicket,
+                paroMaquinaSolicitante = solicitud.paroMaquinaSolicitante
             };
 
             return solicitudDetalleDTO;

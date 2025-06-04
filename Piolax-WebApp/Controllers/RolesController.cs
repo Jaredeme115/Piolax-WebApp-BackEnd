@@ -12,7 +12,7 @@ namespace Piolax_WebApp.Controllers
         private readonly IEmpleadoAreaRolService _empleadoAreaRolService = empleadoAreaRolService;
         private readonly IEmpleadoService _empleadoService = empleadoService;
 
-        [Authorize]
+        //[Authorize]
         [HttpGet("Consultar")]
         public ActionResult<Roles?> Consultar(int idRol)
         {
