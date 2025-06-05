@@ -12,5 +12,6 @@ namespace Piolax_WebApp.Services
         Task<Areas> Eliminar(int idArea);
         Task<bool> AreaExiste(int idArea);
         Task<bool> AreaExisteRegistro(string nombreArea);
+        Task RecalcularTodosLosContadores();
     }
 }

@@ -57,5 +57,13 @@ namespace Piolax_WebApp.Repositories.Impl
         {
             return await _context.Maquinas.Where(p => p.idArea == idArea).ToListAsync();
         }
+
+        public async Task<int> ContarMaquinasActivasPorArea(int idArea)
+        {
+            return await _context.Maquinas
+                .Where(m => m.idArea == idArea && m.maquinaActiva)
+                .CountAsync();
+        }
+
     }
 }

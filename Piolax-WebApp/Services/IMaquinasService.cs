@@ -10,6 +10,8 @@ namespace Piolax_WebApp.Services
         Task<Maquinas> Registro(MaquinaDTO maquina);
         Task<Maquinas> Modificar(int idMaquina, MaquinaDTO maquina);
         Task<Maquinas> Eliminar(int idMaquina);
+        Task<bool> CambiarEstado(int idMaquina, bool nuevaCondicion);
+        Task<int> ContarMaquinasActivasPorArea(int idArea);
         Task<bool> MaquinaExiste(int idMaquina);
         Task<bool> MaquinaExisteRegistro(string nombreMaquina);
         Task<IEnumerable<Maquinas>> ConsultarPorArea(int idArea);

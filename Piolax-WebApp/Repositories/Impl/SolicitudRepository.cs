@@ -265,5 +265,19 @@ namespace Piolax_WebApp.Repositories.Impl
                 .ToListAsync();
         }
 
+        //Método de apoyo para calculo de MTBF
+        /// <summary>
+        /// Retorna el conteo de fallas (solicitudes) para un área dada,
+        /// pero solo aquellas cuya fecha de solicitud esté en el año y mes especificados.
+        /// </summary>
+        public async Task<int> ContarFallasPorAreaEnMes(int idArea, int anio, int mes)
+        {
+            return await _context.Solicitudes
+                .Where(s => s.idAreaSeleccionada == idArea
+                            && s.fechaSolicitud.Year == anio
+                            && s.fechaSolicitud.Month == mes)
+                .CountAsync();
+        }
+
     }
 }

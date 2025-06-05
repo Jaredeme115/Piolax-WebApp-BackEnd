@@ -9,9 +9,10 @@ using OfficeOpenXml;
 
 namespace Piolax_WebApp.Services.Impl
 {
-    public class MaquinasService(IMaquinasRepository repository) : IMaquinasService
+    public class MaquinasService(IMaquinasRepository repository, IAreasRepository areasRepository) : IMaquinasService
     {
         private readonly IMaquinasRepository _repository = repository;
+        private readonly IAreasRepository _areasRepository = areasRepository;
 
         public Task<IEnumerable<Maquinas>> ConsultarTodos()
         {
@@ -33,7 +34,10 @@ namespace Piolax_WebApp.Services.Impl
                 maquinaActiva = maquina.maquinaActiva
             };
 
-            return await _repository.Registro(maquinas);
+            var registrada = await _repository.Registro(maquinas);
+            await _areasRepository.ActualizarContadorMaquinasActivas(maquinas.idArea);
+
+            return registrada;
         }
 
         public async Task<Maquinas> Modificar(int idMaquina, MaquinaDTO maquina)
@@ -41,20 +45,56 @@ namespace Piolax_WebApp.Services.Impl
             var maquinaExistente = await _repository.Consultar(idMaquina);
 
             if (maquinaExistente == null)
-                return null; // Devuelve null si la maquina no existe
+                return null;
 
-            // Actualizamos los datos de la maquina
+            int idAreaAnterior = maquinaExistente.idArea;
+
             maquinaExistente.nombreMaquina = maquina.descripcion;
-            maquinaExistente.codigoQR = maquina.descripcion; // Actualiza el texto del QR
+            maquinaExistente.codigoQR = maquina.descripcion;
             maquinaExistente.maquinaActiva = maquina.maquinaActiva;
+            maquinaExistente.idArea = maquina.idArea;
 
-            return await _repository.Modificar(idMaquina, maquinaExistente);
+            var modificada = await _repository.Modificar(idMaquina, maquinaExistente);
+
+            if (idAreaAnterior != maquina.idArea)
+            {
+                await _areasRepository.ActualizarContadorMaquinasActivas(idAreaAnterior);
+            }
+            await _areasRepository.ActualizarContadorMaquinasActivas(maquina.idArea);
+
+            return modificada;
         }
+
+
 
         public async Task<Maquinas> Eliminar(int idMaquina)
         {
-            return await _repository.Eliminar(idMaquina);
+            var maquina = await _repository.Consultar(idMaquina);
+            if (maquina == null) return null;
+
+            var eliminada = await _repository.Eliminar(idMaquina);
+            await _areasRepository.ActualizarContadorMaquinasActivas(maquina.idArea);
+
+            return eliminada;
         }
+
+        public async Task<bool> CambiarEstado(int idMaquina, bool nuevaCondicion)
+        {
+            var maquina = await _repository.Consultar(idMaquina);
+            if (maquina == null) return false;
+
+            maquina.maquinaActiva = nuevaCondicion;
+            await _repository.Modificar(maquina.idMaquina, maquina);
+            await _areasRepository.ActualizarContadorMaquinasActivas(maquina.idArea);
+
+            return true;
+        }
+
+        public Task<int> ContarMaquinasActivasPorArea(int idArea)
+        {
+            return _repository.ContarMaquinasActivasPorArea(idArea);
+        }
+
 
         public async Task<bool> MaquinaExiste(int idMaquina)
         {

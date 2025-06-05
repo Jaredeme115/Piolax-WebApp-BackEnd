@@ -106,39 +106,24 @@ namespace Piolax_WebApp.Controllers
         }
 
         /// <summary>
-        /// Obtiene el MTBF segmentado por mes para visualización en gráficos
+        /// Obtiene el MTBF segmentado por mes (en HORAS) para un área y año dados.
         /// </summary>
         [HttpGet("mtbf/segmentado")]
         public async Task<ActionResult<List<KpiSegmentadoDTO>>> GetMTBFSegmentadoPorMes(
             int? idArea = null,
             int? anio = null)
         {
-            // Crear datos de ejemplo para MTBF por mes (a implementar en el servicio)
-            var mtbfSegmentado = new List<KpiSegmentadoDTO>();
+            if (!idArea.HasValue)
+                return BadRequest("Se debe especificar idArea.");
 
-            // Si no hay anio especificado, usar el actual
+            int areaToUse = idArea.Value;
             int yearToUse = anio ?? DateTime.Now.Year;
 
-            for (int i = 1; i <= 12; i++)
-            {
-                mtbfSegmentado.Add(new KpiSegmentadoDTO
-                {
-                    etiqueta = $"Mes {i}",
-                    valor = 100 + (i * 5) // Simulación de valores que aumentan por mes
-                });
-            }
+            // Llamamos al servicio que recorre los 12 meses
+            var mtbfSegmentado = await _service.ObtenerMTBFPorAreaMes(areaToUse, yearToUse);
 
             return Ok(mtbfSegmentado);
         }
-
-        [HttpGet("mtbf/segmentado/{anio}")]
-        public async Task<IActionResult> GetMTBFPorAreaMes(int anio)
-        {
-            var data = await _service.ObtenerMTBFPorAreaMes(anio);
-            return Ok(data);
-        }
-
-
 
         // Metodos para KPI Objetivos
         [HttpPost("mtbf/objetivo")]

@@ -137,37 +137,18 @@ namespace Piolax_WebApp.Services.Impl
             return new List<KpiSegmentadoDTO>();
         }
 
-
-        /// Obtiene el MTBF filtrado por área (Minutos)
-        /*public async Task<KPIResponseDTO> ObtenerMTBF(int? idArea = null)
-        {
-            var kpiDetalles = await _repository.ConsultarMTBF(idArea);
-            if (!kpiDetalles.Any())
-                return new KPIResponseDTO { Nombre = "MTBF", Valor = 0, UnidadMedida = "minutos" };
-
-            // Calcular el promedio de los valores de MTBF
-            float valorPromedio = kpiDetalles.Average(k => k.kpiValor);
-
-            return new KPIResponseDTO
-            {
-                Nombre = "MTBF",
-                Valor = valorPromedio,
-                UnidadMedida = "minutos"
-            };
-        }*/
-
-        /// Obtiene el MTBF filtrado por área (Horas)
+        /// <summary>
+        /// Obtiene el MTBF filtrado por área (HORAS).
+        /// Ahora suponemos que _repository.ConsultarMTBF(...) ya devuelve kpiValor en HORAS.
+        /// </summary>
         public async Task<KPIResponseDTO> ObtenerMTBF(int? idArea = null)
         {
             var kpiDetalles = await _repository.ConsultarMTBF(idArea);
             if (!kpiDetalles.Any())
                 return new KPIResponseDTO { Nombre = "MTBF", Valor = 0, UnidadMedida = "horas" };
 
-            // Calcular el promedio de los valores de MTBF en minutos
-            float valorPromedioMinutos = kpiDetalles.Average(k => k.kpiValor);
-
-            // Convertir minutos a horas
-            float valorPromedioHoras = valorPromedioMinutos / 60f;
+            // Promedio de MTBF (ya en HORAS), sin dividir por 60
+            float valorPromedioHoras = kpiDetalles.Average(k => k.kpiValor);
 
             return new KPIResponseDTO
             {
@@ -176,6 +157,36 @@ namespace Piolax_WebApp.Services.Impl
                 UnidadMedida = "horas"
             };
         }
+
+        /// <summary>
+        /// Obtiene el MTBF segmentado por cada mes del año (en HORAS) para un área dada.
+        /// Recorre los 12 meses y llama a CalcularMTBF(area, año, mes) por cada uno.
+        /// </summary>
+        public async Task<List<KpiSegmentadoDTO>> ObtenerMTBFPorAreaMes(int idArea, int anio)
+        {
+            var listaSegmentada = new List<KpiSegmentadoDTO>();
+
+            for (int mes = 1; mes <= 12; mes++)
+            {
+                // 1) Llamamos al método que ya tienes, que devuelve MTBF en HORAS para ese mes
+                double mtbfHoras = await _asignacionService.CalcularMTBF(idArea, anio, mes);
+
+                // 2) Obtenemos el nombre del mes ("enero", "febrero", ...)
+                string nombreMes = CultureInfo.CurrentCulture
+                    .DateTimeFormat
+                    .GetMonthName(mes);
+
+                // 3) Creamos el DTO con etiqueta = nombre del mes y valor = MTBF en horas
+                listaSegmentada.Add(new KpiSegmentadoDTO
+                {
+                    etiqueta = nombreMes,
+                    valor = (float)mtbfHoras
+                });
+            }
+
+            return listaSegmentada;
+        }
+
 
         /// Calcula el tiempo total de inactividad (TotalDowntime) filtrado por área, máquina y período de tiempo
         public async Task<KPIResponseDTO> ObtenerTotalDowntime(int? idArea = null, int? idMaquina = null, int? anio = null, int? mes = null, int? semana = null, int? diaSemana = null)

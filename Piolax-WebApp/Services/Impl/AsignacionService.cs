@@ -2,6 +2,7 @@
 using Piolax_WebApp.Models;
 using Piolax_WebApp.Repositories;
 using Piolax_WebApp.Repositories.Impl;
+using System.Globalization;
 using System.Linq;
 
 namespace Piolax_WebApp.Services.Impl
@@ -361,7 +362,7 @@ namespace Piolax_WebApp.Services.Impl
         /// Se resta el tiempo perdido en reparaciones (MTTR) del tiempo total 
         /// disponible desde la primera falla hasta ahora.
         /// </summary>
-        public async Task<double> CalcularMTBF(int idMaquina, int idArea)
+        /*public async Task<double> CalcularMTBF(int idMaquina, int idArea)
         {
             // 1) Todas las solicitudes (cada una es una falla)
             var solicitudes = await _solicitudRepository
@@ -399,6 +400,83 @@ namespace Piolax_WebApp.Services.Impl
                 : 0;
 
             return mtbfMinutos;
+        }*/
+
+        public async Task<double> CalcularMTBF(int idArea, int anio, int mes)
+        {
+            // 1) Contar cuántas fallas (solicitudes) hubo en esa área durante el mes y año indicados
+            int numeroParadas = await _solicitudRepository.ContarFallasPorAreaEnMes(idArea, anio, mes);
+
+            // Si no hubo fallas, devolvemos 0 inmediatamente
+            if (numeroParadas == 0)
+                return 0;
+
+            // 2) Contar cuántas máquinas activas hay en esa área
+            int numMaquinasActivas = await _maquinaRepository.ContarMaquinasActivasPorArea(idArea);
+
+            // Si no hay máquinas activas, el MTBF no tiene sentido (evitamos división por cero)
+            if (numMaquinasActivas == 0)
+                return 0;
+
+            // 3) Calcular el “tiempo total de funcionamiento” en horas para todas esas máquinas
+            //    (21.75 hrs/día * 5.5 días/semana * 4 semanas)
+            double horasPorMaquinaEnElMes = 21.75 * 5.5 * 4; // = 478.5 horas/mes
+            double tiempoTotalFuncionamientoHoras = numMaquinasActivas * horasPorMaquinaEnElMes;
+
+            // 4) Aplicar la fórmula MTBF
+            double mtbfHoras = tiempoTotalFuncionamientoHoras / numeroParadas;
+
+            return mtbfHoras;
+        }
+
+        // NUEVO: recorre cada mes del año y construye la lista segmentada
+        public async Task<List<KpiSegmentadoDTO>> ObtenerMTBFPorAreaMes(int idArea, int anio)
+        {
+            var listaSegmentada = new List<KpiSegmentadoDTO>();
+
+            for (int mes = 1; mes <= 12; mes++)
+            {
+                // Llamada a tu método existente para cada mes
+                double valorHoras = await CalcularMTBF(idArea, anio, mes);
+
+                // Obtener el nombre del mes (por ejemplo: "enero", "febrero", ...)
+                string nombreMes = CultureInfo.CurrentCulture
+                    .DateTimeFormat
+                    .GetMonthName(mes);
+
+                listaSegmentada.Add(new KpiSegmentadoDTO
+                {
+                    etiqueta = nombreMes,
+                    valor = (float)valorHoras
+                });
+            }
+
+            return listaSegmentada;
+        }
+
+        public async Task<double> CalcularMTBF_DiaAHoy(int idArea, int anio, int mes, int dia)
+        {
+            // 1) Paradas acumuladas HASTA el día “dia” del mes
+            int paradasHastaHoy = await _solicitudRepository
+                .ContarFallasPorAreaEnMesHastaDia(idArea, anio, mes, dia);
+            if (paradasHastaHoy == 0)
+                return 0;
+
+            // 2) Cantidad de máquinas activas en el área
+            int numMaquinasActivas = await _maquinaRepository.ContarMaquinasActivasPorArea(idArea);
+            if (numMaquinasActivas == 0)
+                return 0;
+
+            // 3) Calcular “horas por máquina” desde el día 1 hasta el día ‘dia’
+            //    (21.75 h/día operando)
+            double horasPorMaquinaHastaHoy = 21.75 * dia;
+
+            // 4) Multiplicar por la cantidad de máquinas
+            double horasDisponiblesHastaHoy = numMaquinasActivas * horasPorMaquinaHastaHoy;
+
+            // 5) MTBF (en horas) = horasDisponiblesHastaHoy / paradasHastaHoy
+            double mtbfHoras = horasDisponiblesHastaHoy / paradasHastaHoy;
+            return mtbfHoras;
         }
 
 
@@ -408,7 +486,10 @@ namespace Piolax_WebApp.Services.Impl
         {
             var mttr = await CalcularMTTR(idMaquina, idArea, idEmpleado);
             var mtta = await CalcularMTTA(idMaquina, idArea);
-            var mtbf = await CalcularMTBF(idMaquina, idArea);
+
+            int anioActual = DateTime.Now.Year;
+            int mesActual = DateTime.Now.Month;
+            var mtbf = await CalcularMTBF(idArea, anioActual, mesActual);
 
             // Si la propiedad idEmpleado en el modelo es no nullable, se asigna un valor por defecto (por ejemplo, 0)
             var kpiMantenimiento = new KpisMantenimiento
@@ -425,7 +506,7 @@ namespace Piolax_WebApp.Services.Impl
             {
                 new KpisDetalle { kpiNombre = "MTTR", kpiValor = (float)mttr },
                 new KpisDetalle { kpiNombre = "MTTA", kpiValor = (float)mtta },
-                new KpisDetalle { kpiNombre = "MTBF", kpiValor = (float)mtbf }
+                new KpisDetalle { kpiNombre = "MTBF", MTBF_HorasNueva = mtbf  }
             };
 
             await _kpiRepository.GuardarKPIDetalles(kpiMantenimiento.idKPIMantenimiento, kpiDetalles);

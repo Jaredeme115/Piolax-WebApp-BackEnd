@@ -13,5 +13,8 @@ namespace Piolax_WebApp.Services
         Task<AsignacionDetallesDTO?> ConsultarAsignacionConDetallesPorId(int idAsignacion);
         Task GuardarKPIs(int idMaquina, int idArea, int? idEmpleado = null);
 
+        // Métodos de apoyo para MTBF
+        Task<double> CalcularMTBF(int idArea, int anio, int mes);
+
     }
 }

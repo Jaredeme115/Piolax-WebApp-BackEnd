@@ -26,5 +26,8 @@ namespace Piolax_WebApp.Repositories
         Task<IEnumerable<Solicitudes>> ObtenerSolicitudesPorAreaYRoles(int idArea, List<int> idRoles);
         Task<List<Solicitudes>> ObtenerSolicitudesEnStatus(int idStatusOrden);
 
+        //Método de apoyo para calculo de MTBF
+        Task<int> ContarFallasPorAreaEnMes(int idArea, int anio, int mes);
+
     }
 }

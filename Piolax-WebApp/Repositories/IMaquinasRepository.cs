@@ -12,5 +12,7 @@ namespace Piolax_WebApp.Repositories
         Task<bool> MaquinaExiste(int idMaquina);
         Task<bool> MaquinaExisteRegistro(string nombreMaquina);
         Task<IEnumerable<Maquinas>> ConsultarPorArea(int idArea);
+        Task<int> ContarMaquinasActivasPorArea(int idArea);
+
     }
 }
