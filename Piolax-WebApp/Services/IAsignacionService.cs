@@ -13,5 +13,7 @@ namespace Piolax_WebApp.Services
         Task<AsignacionDetallesDTO?> ConsultarAsignacionConDetallesPorId(int idAsignacion);
         Task GuardarKPIs(int idMaquina, int idArea, int? idEmpleado = null);
 
+        Task<double> CalcularMTTR(int idMaquina, int idArea, int? idEmpleado = null);
+
     }
 }

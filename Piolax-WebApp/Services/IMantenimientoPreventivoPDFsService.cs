@@ -11,5 +11,8 @@ namespace Piolax_WebApp.Services
         Task<MantenimientoPreventivoPDFsDTO> EliminarMantenimientoPreventivoPDFs(int idMPPDF);
         Task<MantenimientoPreventivoPDFsDTO> ConsultarPorNombrePDF(string nombrePDF);
         Task<IEnumerable<MantenimientoPreventivoPDFsDTO>> ObtenerPDFsPorMantenimientoPreventivo(int idMP);
+
+        IEnumerable<MantenimientoPreventivoPDFsDTO> BuscarPDFsPorNombre(string nombreParcial);
+
     }
 }

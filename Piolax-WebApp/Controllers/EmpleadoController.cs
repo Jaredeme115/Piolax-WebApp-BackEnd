@@ -331,7 +331,7 @@ namespace Piolax_WebApp.Controllers
         // Nuevo método: carga masiva desde Excel
         [Authorize(Policy = "AdminOnly")]
         [HttpPost("RegistrarDesdeExcel")]
-        public async Task<ActionResult<string>> RegistrarEmpleadosDesdeExcelConAreaRol([FromForm] IFormFile file)
+        public async Task<ActionResult<string>> RegistrarEmpleadosDesdeExcelConAreaRol( IFormFile file)
         {
             if (file == null || file.Length == 0)
                 return BadRequest("Por favor proporciona un archivo Excel válido.");

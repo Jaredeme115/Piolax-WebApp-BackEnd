@@ -123,5 +123,33 @@ namespace Piolax_WebApp.Services.Impl
             return rutaPDF.Split('/').LastOrDefault() ?? "archivo_desconocido.pdf"; // Evita errores si la ruta no tiene "/"
         }
 
+
+        public IEnumerable<MantenimientoPreventivoPDFsDTO> BuscarPDFsPorNombre(string nombreParcial)
+        {
+            string rutaBase = Path.Combine(Directory.GetCurrentDirectory(), "wwwroot", "PDFs");
+
+        var archivos = Directory.GetFiles(rutaBase, "*.pdf", SearchOption.AllDirectories);
+
+        var resultados = archivos
+            .Where(path => Path.GetFileName(path).Contains(nombreParcial, StringComparison.OrdinalIgnoreCase))
+            .Select(archivo =>
+            {
+                string nombre = Path.GetFileName(archivo);
+                string rutaRelativa = archivo
+                    .Replace(Directory.GetCurrentDirectory(), "")
+                    .Replace("\\", "/")
+                    .Replace("wwwroot", "");
+
+                return new MantenimientoPreventivoPDFsDTO
+                {
+                    idMP = 0,
+                    nombrePDF = nombre,
+                    rutaPDF = rutaRelativa
+                };
+            }).ToList();
+
+            return resultados;
+        }
+
     }
 }

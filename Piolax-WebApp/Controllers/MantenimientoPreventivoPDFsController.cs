@@ -131,6 +131,11 @@ namespace Piolax_WebApp.Controllers
             return Ok(archivos);
         }
 
-
+        [HttpGet("BuscarPDFs")] 
+        public ActionResult<IEnumerable<MantenimientoPreventivoPDFsDTO>> BuscarPDFs([FromQuery] string nombre)
+        {
+            var resultados = _service.BuscarPDFsPorNombre(nombre);
+            return Ok(resultados);
+        }
     }
 }

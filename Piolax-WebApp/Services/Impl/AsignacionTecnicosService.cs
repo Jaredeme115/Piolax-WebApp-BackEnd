@@ -260,6 +260,7 @@ namespace Piolax_WebApp.Services.Impl
                               asignacion.Solicitud.idAreaSeleccionada,
                               asignacionTecnicoFinalizacionDTO.idEmpleado);
 
+
             // Mapear la entidad a un DTO de respuesta
             var response = new Asignacion_TecnicoFinalizacionResponseDTO
             {

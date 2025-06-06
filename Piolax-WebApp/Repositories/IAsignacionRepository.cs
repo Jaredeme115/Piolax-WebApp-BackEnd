@@ -18,6 +18,11 @@ namespace Piolax_WebApp.Repositories
         Task<IEnumerable<Asignaciones>> ConsultarAsignacionesCompletadas(int idMaquina, int idArea, int? idEmpleado);
         Task<Asignaciones?> ObtenerAsignacionActivaPorSolicitud(int idSolicitud);
 
+        Task<IEnumerable<Asignaciones>> ConsultarAsignacionesPorFiltros(int idMaquina, int idArea, int? idEmpleado);
+
+
+
+      
 
     }
 }

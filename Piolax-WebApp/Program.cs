@@ -8,15 +8,11 @@ using Piolax_WebApp.Services.Impl;
 using Piolax_WebApp.Repositories;
 using Piolax_WebApp.Repositories.Impl;
 using System.Collections.Specialized;
-using Piolax_WebApp.BackgroundServices; 
+using Piolax_WebApp.BackgroundServices;
 using Piolax_WebApp.Hubs;
 using Piolax_WebApp.Utilities;
 using System.IdentityModel.Tokens.Jwt;
 using System.Security.Claims;
-
-//Para cargar el archivo de configuración
-using Microsoft.AspNetCore.Http.Features;
-using Piolax_WebApp.Services.BackgroundServices;
 
 
 
@@ -33,7 +29,7 @@ builder.Services.AddDbContext<AppDbContext>(options =>
 
 builder.Services.AddControllers();
 builder.Services.AddSignalR();
-builder.Services.AddHttpContextAccessor();
+
 
 //Empleado
 builder.Services.AddScoped<IEmpleadoService, EmpleadoService>();
@@ -148,18 +144,9 @@ builder.Services.AddHostedService<LowStockNotificationService>();
 // Añade el servicio de KPIs en tiempo real
 builder.Services.AddHostedService<KPIRealTimeService>();
 
-// Para cerrar orden pasados 15 minutos
-builder.Services.AddHostedService<AutoApprovalService>();
+//Obtener URL dinamicamente
+builder.Services.AddHttpContextAccessor();
 
-// Para recordar ordenes no tomadas tras 15 minutos
-//builder.Services.AddHostedService<PendingOrderMonitorService>();
-
-
-builder.Configuration
-    .SetBasePath(Directory.GetCurrentDirectory())
-    .AddJsonFile("appsettings.json", optional: false, reloadOnChange: true)
-    .AddJsonFile($"appsettings.{builder.Environment.EnvironmentName}.json", optional: true)
-    .AddEnvironmentVariables();
 
 
 builder.Services.AddEndpointsApiExplorer();
@@ -197,14 +184,32 @@ builder.Services.AddSwaggerGen(options =>
 
 string corsConfiguration = "_corsConfiguration";
 
-// Conexión para exponer URL a la Red Empresarial
 
-// Registrar la política CORS
+//Conexion con Localhost
+
+/*builder.Services.AddCors(options =>
+    options.AddPolicy(name: corsConfiguration,
+        cors => cors.WithOrigins("http://localhost:4200")
+        .AllowAnyHeader()
+        .AllowAnyMethod()
+        .AllowCredentials()
+    )
+);*/
+
+
+//Conexion para exponer URL a internet  
+
 builder.Services.AddCors(options =>
 {
     options.AddPolicy(name: corsConfiguration, cors =>
     {
-        cors.WithOrigins("http://192.168.1.95:83") // cambia a la IP real del servidor
+        cors
+            .SetIsOriginAllowed(origin =>
+            {
+                // Permite localhost y cualquier túnel de Cloudflare (trycloudflare.com)
+                return origin == "http://localhost:4200" ||
+                       new Uri(origin).Host.EndsWith("trycloudflare.com");
+            })
             .AllowAnyHeader()
             .AllowAnyMethod()
             .AllowCredentials();
@@ -220,10 +225,25 @@ var tokenKey = builder.Configuration["TokenKey"];
 if (string.IsNullOrEmpty(tokenKey))
 {
     throw new InvalidOperationException("TokenKey no está configurado en appsettings.json");
-
 }
+
 builder.Services.AddScoped<ITokenService, TokenService>();
 
+//Localhost
+/*builder.Services.AddAuthentication(JwtBearerDefaults.AuthenticationScheme)
+                .AddJwtBearer(option =>
+                {
+                    option.TokenValidationParameters = new TokenValidationParameters
+                    {
+                        ValidateIssuerSigningKey = true,
+                        IssuerSigningKey = new SymmetricSecurityKey(Encoding.UTF8.GetBytes(tokenKey)),
+                        ValidateIssuer = true,
+                        ValidIssuer = builder.Configuration["Jwt:Issuer"], // Usar el Issuer configurado
+                        ValidateAudience = true,
+                        ValidAudience = builder.Configuration["Jwt:Audience"], // Usar el Audience configurado
+                        ClockSkew = TimeSpan.Zero
+                    };
+});*/
 
 //Exponer URL a internet
 builder.Services.AddAuthentication(JwtBearerDefaults.AuthenticationScheme)
@@ -241,22 +261,28 @@ builder.Services.AddAuthentication(JwtBearerDefaults.AuthenticationScheme)
             ValidateAudience = true,
             ClockSkew = TimeSpan.Zero,
 
-        
+            // Validación dinámica de Issuer
             IssuerValidator = (issuer, token, parameters) =>
             {
-                if (issuer.StartsWith("http://localhost") || issuer.StartsWith("http://192.168.1.95"))
+                if (issuer.StartsWith("https://localhost") || issuer.Contains("trycloudflare.com"))
+                {
                     return issuer;
+                }
 
                 throw new SecurityTokenInvalidIssuerException("Issuer no válido.");
             },
 
+            // Validación dinámica de Audience
             AudienceValidator = (audiences, token, parameters) =>
             {
                 foreach (var audience in audiences)
                 {
-                    if (audience.StartsWith("http://localhost") || audience.StartsWith("http://192.168.1.95"))
+                    if (audience.StartsWith("https://localhost") || audience.Contains("trycloudflare.com"))
+                    {
                         return true;
+                    }
                 }
+
                 return false;
             }
         };
@@ -274,9 +300,7 @@ builder.Services.AddAuthentication(JwtBearerDefaults.AuthenticationScheme)
                 var path = context.HttpContext.Request.Path;
                 if (!string.IsNullOrEmpty(accessToken) &&
                     (path.StartsWithSegments("/NotificationHub") ||
-                     path.StartsWithSegments("/AsignacionHub") ||
-                     path.StartsWithSegments("/SolicitudHub")))
-
+                     path.StartsWithSegments("/AsignacionHub")))
                 {
                     context.Token = accessToken;
                 }
@@ -294,7 +318,6 @@ builder.Services.AddAuthorization(options =>
     //options.AddPolicy("AdminOnly", policy => policy.RequireRole("Admin"));
     options.AddPolicy("AdminOnly", policy =>
         policy.RequireRole(
-            "Admin",         // tu rol original
             "Tecnico",        // tu rol original
             "Supervisor",     // rol adicional
             "Assistant Manager", // otro rol
@@ -304,17 +327,7 @@ builder.Services.AddAuthorization(options =>
     );
 });
 
-builder.Services.Configure<FormOptions>(opts =>
-{
-    opts.MultipartBodyLengthLimit = 50 * 1024 * 1024; // 50 MB
-});
-
-
 var app = builder.Build();
-
-
-
-//Usar esta función unicamente para debugeo en desarrollo, NO DEJAR EN PRODUCCIÓN ==> app.UseDeveloperExceptionPage();
 
 
 if (app.Environment.IsDevelopment())
@@ -323,6 +336,17 @@ if (app.Environment.IsDevelopment())
     app.UseSwaggerUI();
 }
 
+
+// Permitir al CORS para archivos estáticos
+/*app.UseStaticFiles(new StaticFileOptions
+{
+    OnPrepareResponse = ctx =>
+    {
+        ctx.Context.Response.Headers.Append("Access-Control-Allow-Origin", "http://localhost:4200");
+        ctx.Context.Response.Headers.Append("Access-Control-Allow-Methods", "GET, OPTIONS");
+        ctx.Context.Response.Headers.Append("Access-Control-Allow-Headers", "Content-Type, Authorization");
+    }
+});*/
 
 app.UseStaticFiles(new StaticFileOptions
 {
@@ -336,7 +360,7 @@ app.UseStaticFiles(new StaticFileOptions
 
         // Si viene de localhost:4200 o contiene "trycloudflare.com", lo permitimos
         if (!string.IsNullOrEmpty(origin) &&
-            (origin.StartsWith("http://192.168.")))
+            (origin == "http://localhost:4200" || origin.Contains("trycloudflare.com")))
         {
             response.Headers.Append("Access-Control-Allow-Origin", origin);
             response.Headers.Append("Access-Control-Allow-Methods", "GET, OPTIONS");
@@ -346,13 +370,18 @@ app.UseStaticFiles(new StaticFileOptions
 });
 
 
+
 // Permitir servir archivos estáticos
 app.UseStaticFiles();
+
+
+app.UseHttpsRedirection();
 
 //Para conexion con localhost y url publica
 app.UseCors(corsConfiguration);
 
-//Usar esta función solo si la aplicación acepta HTTPS ====> app.UseHttpsRedirection();
+//Para exponer URL publica
+//app.UseCors("AllowLocalTunnel");
 
 app.UseAuthentication();
 
@@ -361,8 +390,8 @@ app.UseAuthorization();
 app.MapControllers();
 
 // Endpoint de SignalR
-app.MapHub<NotificationHub>("/NotificationHub");
 app.MapHub<AsignacionHub>("/AsignacionHub");
-app.MapHub<SolicitudHub>("/SolicitudHub");
+app.MapHub<NotificationHub>("/NotificationHub");
 
 app.Run();
+app.UseDeveloperExceptionPage();

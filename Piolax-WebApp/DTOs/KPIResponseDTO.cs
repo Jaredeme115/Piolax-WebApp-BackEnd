@@ -5,5 +5,7 @@
         public string Nombre { get; set; }
         public float Valor { get; set; }
         public string UnidadMedida { get; set; }
+        public bool EsTecnicoEspecifico { get; set; } = false;
+
     }
 }

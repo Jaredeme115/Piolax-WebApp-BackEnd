@@ -77,51 +77,109 @@ namespace Piolax_WebApp.Services.Impl
         }
 
         /// Obtiene el MTTR filtrado por área, máquina y/o técnico
-        public async Task<KPIResponseDTO> ObtenerMTTR(int? idArea = null, int? idMaquina = null, int? idEmpleado = null, int? anio = null, int? mes = null)
+        /*    public async Task<KPIResponseDTO> ObtenerMTTR(int? idArea = null, int? idMaquina = null, int? idEmpleado = null, int? anio = null, int? mes = null)
+            {
+                var kpiDetalles = await _repository.ConsultarMTTR(idArea, idMaquina, idEmpleado, anio, mes);
+                if (!kpiDetalles.Any())
+                    return new KPIResponseDTO { Nombre = "MTTR", Valor = 0, UnidadMedida = "minutos" };
+
+                // Calcular el promedio de los valores de MTTR
+                float valorPromedio = kpiDetalles.Average(k => k.kpiValor);
+
+                return new KPIResponseDTO
+                {
+                    Nombre = "MTTR",
+                    Valor = valorPromedio,
+                    UnidadMedida = "minutos"
+                };
+            }
+     */
+        public async Task<KPIResponseDTO> ObtenerMTTR(
+            int? idArea = null,
+            int? idMaquina = null,
+            int? idEmpleado = null,
+            int? anio = null,
+            int? mes = null)
         {
             var kpiDetalles = await _repository.ConsultarMTTR(idArea, idMaquina, idEmpleado, anio, mes);
+
             if (!kpiDetalles.Any())
                 return new KPIResponseDTO { Nombre = "MTTR", Valor = 0, UnidadMedida = "minutos" };
 
-            // Calcular el promedio de los valores de MTTR
-            float valorPromedio = kpiDetalles.Average(k => k.kpiValor);
+            float promedio = kpiDetalles.Average(k => k.kpiValor);
 
             return new KPIResponseDTO
             {
                 Nombre = "MTTR",
-                Valor = valorPromedio,
+                Valor = promedio,
                 UnidadMedida = "minutos"
             };
         }
-        ////////segmento para que funcionen los  filtros por promedio////
-        public async Task<List<KpiSegmentadoDTO>> ObtenerMTTRSegmentado(
-         int? idArea = null,
-         int? idMaquina = null,
-         int? idEmpleado = null,
-         int? anio = null,
-         int? mes = null)
-        {
-            var kpiDetalles = await _repository.ConsultarMTTR(idArea, idMaquina, idEmpleado, anio, mes);
 
+        public async Task<List<KpiSegmentadoDTO>> ObtenerMTTRSegmentado(
+            int? idArea = null,
+            int? idMaquina = null,
+            int? idEmpleado = null,
+            int? anio = null,
+            int? mes = null)
+        {
+            var resultado = new List<KpiSegmentadoDTO>();
+
+            if (idEmpleado.HasValue)
+            {
+                // 🔹 MTTR del técnico (usa cálculo real)
+                double mttrTecnico = await _asignacionService.CalcularMTTR(idMaquina ?? 0, idArea ?? 0, idEmpleado);
+                resultado.Add(new KpiSegmentadoDTO
+                {
+                    etiqueta = "MTTR del técnico",
+                    valor = (float)mttrTecnico
+                });
+
+                // 🔹 MTTR global (misma área y máquina, pero sin técnico)
+                double mttrGlobal = await _asignacionService.CalcularMTTR(idMaquina ?? 0, idArea ?? 0, null);
+                resultado.Add(new KpiSegmentadoDTO
+                {
+                    etiqueta = "MTTR global",
+                    valor = (float)mttrGlobal
+                });
+
+                return resultado;
+            }
+
+            // 🔹 Si solo hay área y máquina (sin técnico), usa el cálculo real también
+            if (idArea.HasValue && idMaquina.HasValue)
+            {
+                double mttrGlobal = await _asignacionService.CalcularMTTR(idMaquina.Value, idArea.Value, null);
+                resultado.Add(new KpiSegmentadoDTO
+                {
+                    etiqueta = "MTTR global",
+                    valor = (float)mttrGlobal
+                });
+
+                return resultado;
+            }
+
+            // 🔹 Si hay año y mes (para vistas mensuales históricas desde BD guardada)
+            var kpiDetalles = await _repository.ConsultarMTTR(idArea, idMaquina, null, anio, mes);
             if (!kpiDetalles.Any())
                 return new List<KpiSegmentadoDTO>();
 
             if (anio.HasValue && mes.HasValue)
             {
-                // ✅ Año + Mes: retornar valor único del mes completo
                 float promedio = kpiDetalles.Average(k => k.kpiValor);
                 return new List<KpiSegmentadoDTO>
-      {
-          new KpiSegmentadoDTO
-          {
-              etiqueta = $"Mes {mes}",
-              valor = promedio
-          }
-      };
-            }
-            else if (anio.HasValue)
+        {
+            new KpiSegmentadoDTO
             {
-                // ✅ Solo año: agrupar por mes
+                etiqueta = $"Mes {mes}",
+                valor = promedio
+            }
+        };
+            }
+
+            // 🔹 Si solo hay año → agrupar por mes
+            if (anio.HasValue)
+            {
                 return kpiDetalles
                     .GroupBy(k => k.KpisMantenimiento.fechaCalculo.Month)
                     .Select(g => new KpiSegmentadoDTO
@@ -133,49 +191,76 @@ namespace Piolax_WebApp.Services.Impl
                     .ToList();
             }
 
-            // ❌ Sin año no se devuelve nada
             return new List<KpiSegmentadoDTO>();
         }
 
 
-        /// Obtiene el MTBF filtrado por área (Minutos)
-        /*public async Task<KPIResponseDTO> ObtenerMTBF(int? idArea = null)
+
+        ////////segmento para que funcionen los  filtros por promedio////
+        /*  public async Task<List<KpiSegmentadoDTO>> ObtenerMTTRSegmentado(
+           int? idArea = null,
+           int? idMaquina = null,
+           int? idEmpleado = null,
+           int? anio = null,
+           int? mes = null)
+          {
+              var kpiDetalles = await _repository.ConsultarMTTR(idArea, idMaquina, idEmpleado, anio, mes);
+
+              if (!kpiDetalles.Any())
+                  return new List<KpiSegmentadoDTO>();
+
+              if (anio.HasValue && mes.HasValue)
+              {
+                  // ✅ Año + Mes: retornar valor único del mes completo
+                  float promedio = kpiDetalles.Average(k => k.kpiValor);
+                  return new List<KpiSegmentadoDTO>
         {
-            var kpiDetalles = await _repository.ConsultarMTBF(idArea);
-            if (!kpiDetalles.Any())
-                return new KPIResponseDTO { Nombre = "MTBF", Valor = 0, UnidadMedida = "minutos" };
-
-            // Calcular el promedio de los valores de MTBF
-            float valorPromedio = kpiDetalles.Average(k => k.kpiValor);
-
-            return new KPIResponseDTO
+            new KpiSegmentadoDTO
             {
-                Nombre = "MTBF",
-                Valor = valorPromedio,
-                UnidadMedida = "minutos"
-            };
-        }*/
+                etiqueta = $"Mes {mes}",
+                valor = promedio
+            }
+        };
+              }
+              else if (anio.HasValue)
+              {
+                  // ✅ Solo año: agrupar por mes
+                  return kpiDetalles
+                      .GroupBy(k => k.KpisMantenimiento.fechaCalculo.Month)
+                      .Select(g => new KpiSegmentadoDTO
+                      {
+                          etiqueta = $"Mes {g.Key}",
+                          valor = g.Average(x => x.kpiValor)
+                      })
+                      .OrderBy(x => x.etiqueta)
+                      .ToList();
+              }
 
+              // ❌ Sin año no se devuelve nada
+              return new List<KpiSegmentadoDTO>();
+          }
+        */
         /// Obtiene el MTBF filtrado por área (Horas)
         public async Task<KPIResponseDTO> ObtenerMTBF(int? idArea = null)
-        {
-            var kpiDetalles = await _repository.ConsultarMTBF(idArea);
-            if (!kpiDetalles.Any())
-                return new KPIResponseDTO { Nombre = "MTBF", Valor = 0, UnidadMedida = "horas" };
+          {
+              var kpiDetalles = await _repository.ConsultarMTBF(idArea);
+              if (!kpiDetalles.Any())
+                  return new KPIResponseDTO { Nombre = "MTBF", Valor = 0, UnidadMedida = "horas" };
 
-            // Calcular el promedio de los valores de MTBF en minutos
-            float valorPromedioMinutos = kpiDetalles.Average(k => k.kpiValor);
+              // Calcular el promedio de los valores de MTBF en minutos
+              float valorPromedioMinutos = kpiDetalles.Average(k => k.kpiValor);
 
-            // Convertir minutos a horas
-            float valorPromedioHoras = valorPromedioMinutos / 60f;
+              // Convertir minutos a horas
+              float valorPromedioHoras = valorPromedioMinutos / 60f;
 
-            return new KPIResponseDTO
-            {
-                Nombre = "MTBF",
-                Valor = valorPromedioHoras,
-                UnidadMedida = "horas"
-            };
-        }
+              return new KPIResponseDTO
+              {
+                  Nombre = "MTBF",
+                  Valor = valorPromedioHoras,
+                  UnidadMedida = "horas"
+              };
+          }
+        
 
         /// Calcula el tiempo total de inactividad (TotalDowntime) filtrado por área, máquina y período de tiempo
         public async Task<KPIResponseDTO> ObtenerTotalDowntime(int? idArea = null, int? idMaquina = null, int? anio = null, int? mes = null, int? semana = null, int? diaSemana = null)

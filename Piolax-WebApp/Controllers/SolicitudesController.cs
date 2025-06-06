@@ -25,7 +25,6 @@ namespace Piolax_WebApp.Controllers
             {
                 var solicitudDetalle = await _service.RegistrarSolicitud(solicitudesDTO);
 
-                //Enviar detalles en otro canal para procesar más información si es necesario
                 await _hubContext.Clients.Group("Mantenimiento").SendAsync("ReceiveRequestDetails", new
                 {
                     idSolicitud = solicitudDetalle.idSolicitud,
@@ -37,7 +36,11 @@ namespace Piolax_WebApp.Controllers
             }
             catch (Exception ex)
             {
-                return BadRequest($"Error al registrar la solicitud: {ex.Message}");
+                // 👇 LOGEA EL ERROR COMPLETO
+                Console.WriteLine("❌ Error al registrar la solicitud: " + ex.Message);
+                Console.WriteLine("⛔ StackTrace: " + ex.StackTrace);
+
+                return BadRequest(new { message = $"Error al registrar la solicitud: {ex.Message}" });
             }
         }
 
@@ -304,7 +307,7 @@ namespace Piolax_WebApp.Controllers
         }
 
         [HttpGet("ExportarSolicitudesTerminadasPorAreaExcel")]
-        public async Task<IActionResult> ExportarSolicitudesTerminadasPorAreaExcel([FromQuery]string numNomina)
+        public async Task<IActionResult> ExportarSolicitudesTerminadasPorAreaExcel([FromQuery] string numNomina)
         {
             try
             {
@@ -323,5 +326,6 @@ namespace Piolax_WebApp.Controllers
             }
         }
 
+ 
     }
 }

@@ -29,5 +29,6 @@ namespace Piolax_WebApp.Services
         Task<byte[]> ExportarSolicitudesTerminadasExcel();
         Task<byte[]> ExportarSolicitudesTerminadasPorAreaExcel(string numNomina);
 
+
     }
 }
