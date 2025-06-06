@@ -338,108 +338,100 @@ namespace Piolax_WebApp.Services.Impl
 
 
         /// <summary>
-        /// Calcula el MTBF (Mean Time Between Failures) en minutos. Dado que no se cuenta con la fecha de instalación de la máquina,
-        /// se utiliza la fecha mínima de solicitud registrada para la máquina y área como proxy del inicio de operación.
+        /// Calcula el MTBF para el mes completo, usando la fórmula:
+        ///
+        ///   MTBF = [ ((22 / DíasMes) × DíasAjustados) × 21.75 × MáquinasActivas ] 
+        ///           --------------------------------------------------------------
+        ///                        # Fallas acumuladas en el mes
+        ///
+        ///   Donde:
+        ///     • DíasMes = DateTime.DaysInMonth(anio, mes)
+        ///     • PrimerDia = día de la primera solicitud en ese área/mes/año
+        ///     • DíasAjustados = (último día del mes – (PrimerDia – 1)) 
+        ///         (para mayo) 
+        ///       o, si es el mes actual (junio 2025), entonces:
+        ///         (díaHoy – (PrimerDia – 1)), con “díaHoy” = DateTime.Today.Day
+        ///
+        ///   El repositorio debe proporcionar:
+        ///     • ContarFallasPorAreaEnMes(idArea, anio, mes)
+        ///     • ContarMaquinasActivasPorArea(idArea)
+        ///     • ObtenerPrimerDiaSolicitudPorAreaEnMes(idArea, anio, mes)
         /// </summary>
-        /// <param name="idMaquina">Identificador de la máquina.</param>
-        /// <param name="idArea">Identificador del área.</param>
-        /// <returns>Promedio de tiempo entre fallas en minutos.</returns>
-        /*public async Task<double> CalcularMTBF(int idMaquina, int idArea)
-        {
-            var solicitudes = await _solicitudRepository.ConsultarSolicitudesPorMaquinaYArea(idMaquina, idArea);
-            if (!solicitudes.Any())
-                return 0;
-
-            // Se utiliza la fecha mínima de solicitud como proxy para el inicio de operación
-            DateTime fechaInicioOperacion = solicitudes.Min(s => s.fechaSolicitud);
-            double tiempoTotalOperacion = (DateTime.Now - fechaInicioOperacion).TotalMinutes;
-            int cantidadFallas = solicitudes.Count(); // Se asume cada solicitud es una "falla"
-            return cantidadFallas > 0 ? tiempoTotalOperacion / cantidadFallas : 0;
-        }*/
-
-        /// <summary>
-        /// Calcula el MTBF (Mean Time Between Failures) en minutos.
-        /// Se resta el tiempo perdido en reparaciones (MTTR) del tiempo total 
-        /// disponible desde la primera falla hasta ahora.
-        /// </summary>
-        /*public async Task<double> CalcularMTBF(int idMaquina, int idArea)
-        {
-            // 1) Todas las solicitudes (cada una es una falla)
-            var solicitudes = await _solicitudRepository
-                .ConsultarSolicitudesPorMaquinaYArea(idMaquina, idArea);
-            if (!solicitudes.Any())
-                return 0;
-
-            // 2) Fecha de inicio de operación = primera solicitud (proxy de instalación)
-            DateTime fechaInicioOperacion = solicitudes.Min(s => s.fechaSolicitud);
-
-            // 3) Tiempo total disponible en minutos
-            double tiempoTotalDisponible = (DateTime.Now - fechaInicioOperacion).TotalMinutes;
-
-            // 4) Sumar todo el tiempo perdido (MTTR) en minutos
-            double tiempoPerdido = 0;
-            foreach (var sol in solicitudes)
-            {
-                // Obtenemos la asignación principal (fase de reparación)
-                var asign = sol.Asignaciones?
-                    .FirstOrDefault(a => a.idStatusAsignacion >= 1);
-                if (asign == null)
-                    continue;
-
-                // Sumamos el tiempo acumulado de cada técnico en esa falla
-                tiempoPerdido += asign.Asignacion_Tecnico
-                    .Sum(t => t.tiempoAcumuladoMinutos);
-            }
-
-            // 5) Número de paradas = número de solicitudes (fallas)
-            int numeroParadas = solicitudes.Count();
-
-            // 6) Aplicar fórmula MTBF = (Disponible – Perdido) / Paradas
-            var mtbfMinutos = numeroParadas > 0
-                ? (tiempoTotalDisponible - tiempoPerdido) / numeroParadas
-                : 0;
-
-            return mtbfMinutos;
-        }*/
-
         public async Task<double> CalcularMTBF(int idArea, int anio, int mes)
         {
-            // 1) Contar cuántas fallas (solicitudes) hubo en esa área durante el mes y año indicados
-            int numeroParadas = await _solicitudRepository.ContarFallasPorAreaEnMes(idArea, anio, mes);
+            // 1) Obtener el día de la primera solicitud en ese mes:
+            int? primerDiaNullable = await _solicitudRepository
+                .ObtenerPrimerDiaSolicitudPorAreaEnMes(idArea, anio, mes);
 
-            // Si no hubo fallas, devolvemos 0 inmediatamente
+            // Si no hay solicitudes, retorno 0
+            if (primerDiaNullable == null)
+                return 0;
+
+            int primerDia = primerDiaNullable.Value;
+            // Ejemplo: primerDia = 19 si la primera falla en mayo es 19/05/2025
+
+            // 2) Contar cuántas fallas hay desde "primerDia" hasta fin de mes
+            int numeroParadas = await _solicitudRepository
+                .ContarFallasPorAreaEnMesDesdeDia(idArea, anio, mes, primerDia);
+
+            // Si no hay ninguna falla en ese rango, retorno 0
             if (numeroParadas == 0)
                 return 0;
 
-            // 2) Contar cuántas máquinas activas hay en esa área
-            int numMaquinasActivas = await _maquinaRepository.ContarMaquinasActivasPorArea(idArea);
-
-            // Si no hay máquinas activas, el MTBF no tiene sentido (evitamos división por cero)
+            // 3) Cantidad de máquinas activas en el área
+            int numMaquinasActivas = await _maquinaRepository
+                .ContarMaquinasActivasPorArea(idArea);
             if (numMaquinasActivas == 0)
                 return 0;
 
-            // 3) Calcular el “tiempo total de funcionamiento” en horas para todas esas máquinas
-            //    (21.75 hrs/día * 5.5 días/semana * 4 semanas)
-            double horasPorMaquinaEnElMes = 21.75 * 5.5 * 4; // = 478.5 horas/mes
-            double tiempoTotalFuncionamientoHoras = numMaquinasActivas * horasPorMaquinaEnElMes;
+            // 4) Días del mes completo
+            int diasDelMes = DateTime.DaysInMonth(anio, mes);
 
-            // 4) Aplicar la fórmula MTBF
-            double mtbfHoras = tiempoTotalFuncionamientoHoras / numeroParadas;
+            // 5) Calcular “días ajustados”:
+            var hoy = DateTime.Today;
+            int diasAjustados;
+            if (anio == hoy.Year && mes == hoy.Month)
+            {
+                // Mes actual: solo hasta el día de hoy
+                int diaHoy = hoy.Day;
+                diasAjustados = diaHoy - (primerDia - 1);
+            }
+            else
+            {
+                // Mes pasado o mes completo: hasta fin de mes
+                diasAjustados = diasDelMes - (primerDia - 1);
+            }
+            diasAjustados = Math.Max(diasAjustados, 0);
 
+            // 6) "Días efectivos" en el mes = (22 / díasDelMes) * díasAjustados
+            double diasEfectivos = (22.0 / diasDelMes) * diasAjustados;
+
+            // 7) Horas por máquina en esos días efectivos = díasEfectivos × 21.75
+            double horasPorMaquinaEnMes = diasEfectivos * 21.75;
+
+            // 8) Horas totales disponibles = horasPorMaquinaEnMes × numMaquinasActivas
+            double horasTotalesDisponibles = horasPorMaquinaEnMes * numMaquinasActivas;
+
+            // 9) MTBF = horasTotalesDisponibles / numeroParadas
+            double mtbfHoras = horasTotalesDisponibles / numeroParadas;
             return mtbfHoras;
         }
 
-        // NUEVO: recorre cada mes del año y construye la lista segmentada
+
+        /// <summary>
+        /// Recorre los meses del año y devuelve un DTO con el MTBF calculado
+        /// para cada mes (usando la nueva fórmula). 
+        /// </summary>
         public async Task<List<KpiSegmentadoDTO>> ObtenerMTBFPorAreaMes(int idArea, int anio)
         {
             var listaSegmentada = new List<KpiSegmentadoDTO>();
 
+            // Para cada mes de 1 a 12
             for (int mes = 1; mes <= 12; mes++)
             {
-                // Llamada a tu método existente para cada mes
                 double valorHoras = await CalcularMTBF(idArea, anio, mes);
 
-                // Obtener el nombre del mes (por ejemplo: "enero", "febrero", ...)
+                // Nombre del mes en la cultura actual (p.ej. "enero", "febrero", …)
                 string nombreMes = CultureInfo.CurrentCulture
                     .DateTimeFormat
                     .GetMonthName(mes);
@@ -454,28 +446,67 @@ namespace Piolax_WebApp.Services.Impl
             return listaSegmentada;
         }
 
-        public async Task<double> CalcularMTBF_DiaAHoy(int idArea, int anio, int mes, int dia)
+        /// <summary>
+        /// Si aún necesitas el MTBF “hasta hoy” (día a día) con la nueva lógica, 
+        /// podrías adaptar CalcularMTBF_DiaAHoy de esta manera:
+        ///
+        ///   MTBF_DiaAHoy = 
+        ///     { 
+        ///       [((22 / DíasMes) × DíasAjustadosHastaHoy) × 21.75 × MáquinasActivas] 
+        ///         / paradasHastaHoy 
+        ///       , si paradasHastaHoy > 0 
+        ///       ; 0 en otro caso
+        ///     }
+        ///
+        ///   Aquí “DíasAjustadosHastaHoy” = (díaHoy – (primerDia – 1)), 
+        ///   pero no supera (díasDelMes – (primerDia – 1)) si estamos después del mes.
+        /// </summary>
+        public async Task<double> CalcularMTBF_DiaAHoy(int idArea, int anio, int mes, int diaHoy)
         {
-            // 1) Paradas acumuladas HASTA el día “dia” del mes
+            // 1) Paradas acumuladas HASTA el día “diaHoy” del mes
             int paradasHastaHoy = await _solicitudRepository
-                .ContarFallasPorAreaEnMesHastaDia(idArea, anio, mes, dia);
+                .ContarFallasPorAreaEnMesHastaDia(idArea, anio, mes, diaHoy);
+
             if (paradasHastaHoy == 0)
                 return 0;
 
             // 2) Cantidad de máquinas activas en el área
-            int numMaquinasActivas = await _maquinaRepository.ContarMaquinasActivasPorArea(idArea);
+            int numMaquinasActivas = await _maquinaRepository
+                .ContarMaquinasActivasPorArea(idArea);
+
             if (numMaquinasActivas == 0)
                 return 0;
 
-            // 3) Calcular “horas por máquina” desde el día 1 hasta el día ‘dia’
-            //    (21.75 h/día operando)
-            double horasPorMaquinaHastaHoy = 21.75 * dia;
+            // 3) Obtener primer día de solicitud en ese mes
+            int? primerDiaNullable = await _solicitudRepository
+                .ObtenerPrimerDiaSolicitudPorAreaEnMes(idArea, anio, mes);
 
-            // 4) Multiplicar por la cantidad de máquinas
-            double horasDisponiblesHastaHoy = numMaquinasActivas * horasPorMaquinaHastaHoy;
+            if (primerDiaNullable == null)
+                return 0;
 
-            // 5) MTBF (en horas) = horasDisponiblesHastaHoy / paradasHastaHoy
+            int primerDia = primerDiaNullable.Value;
+
+            // 4) Días del mes
+            int diasDelMes = DateTime.DaysInMonth(anio, mes);
+
+            // 5) Calcular "días ajustados hasta hoy":
+            //    No puede ser negativo, ni mayor que (díasDelMes - (primerDia - 1))
+            int diasAjustadosHastaHoy = diaHoy - (primerDia - 1);
+            diasAjustadosHastaHoy = Math.Max(diasAjustadosHastaHoy, 0);
+            diasAjustadosHastaHoy = Math.Min(diasAjustadosHastaHoy, diasDelMes - (primerDia - 1));
+
+            // 6) “Días efectivos hasta hoy” = (22 / díasDelMes) * diasAjustadosHastaHoy
+            double diasEfectivosHastaHoy = (22.0 / diasDelMes) * diasAjustadosHastaHoy;
+
+            // 7) Horas por máquina hasta hoy = diasEfectivosHastaHoy × 21.75
+            double horasPorMaquinaHastaHoy = diasEfectivosHastaHoy * 21.75;
+
+            // 8) Horas totales disponibles hasta hoy = horasPorMaquinaHastaHoy × numMaquinasActivas
+            double horasDisponiblesHastaHoy = horasPorMaquinaHastaHoy * numMaquinasActivas;
+
+            // 9) MTBF hasta hoy = horasDisponiblesHastaHoy / paradasHastaHoy
             double mtbfHoras = horasDisponiblesHastaHoy / paradasHastaHoy;
+
             return mtbfHoras;
         }
 

@@ -143,12 +143,16 @@ namespace Piolax_WebApp.Services.Impl
         /// </summary>
         public async Task<KPIResponseDTO> ObtenerMTBF(int? idArea = null)
         {
-            var kpiDetalles = await _repository.ConsultarMTBF(idArea);
+            // Llamamos a la nueva firma que trae el DTO con MTBF_HorasNueva
+            var kpiDetalles = await _repository.ConsultarMTBF_Nueva(idArea);
+
             if (!kpiDetalles.Any())
                 return new KPIResponseDTO { Nombre = "MTBF", Valor = 0, UnidadMedida = "horas" };
 
-            // Promedio de MTBF (ya en HORAS), sin dividir por 60
-            float valorPromedioHoras = kpiDetalles.Average(k => k.kpiValor);
+            // Promediamos la propiedad MTBF_HorasNueva (ya en horas)
+            float valorPromedioHoras = kpiDetalles
+                .Where(k => k.MTBF_HorasNueva > 0)   // opcional: podemos ignorar registros en 0
+                .Average(k => (float)k.MTBF_HorasNueva);
 
             return new KPIResponseDTO
             {
@@ -157,6 +161,8 @@ namespace Piolax_WebApp.Services.Impl
                 UnidadMedida = "horas"
             };
         }
+
+
 
         /// <summary>
         /// Obtiene el MTBF segmentado por cada mes del año (en HORAS) para un área dada.
@@ -347,58 +353,53 @@ namespace Piolax_WebApp.Services.Impl
         /// Obtiene el MTBF segmentado por mes para un año específico
         /// </summary>
         public async Task<List<KpiSegmentadoDTO>> ObtenerMTBFSegmentado(
-            int? idArea = null,
-            int? anio = null,
-            int? objetivo = null)
+    int? idArea = null,
+    int? anio = null,
+    int? objetivo = null)
         {
             // Si no hay año especificado, usar el actual
             int yearToUse = anio ?? DateTime.Now.Year;
 
-            // Obtener todos los registros de MTBF para el área y año especificados
-            var kpiDetalles = await _repository.ConsultarMTBF(idArea);
+            // 1) Obtener todos los registros de MTBF_HorasNueva para el área y año especificados
+            //    Aquí llamamos a la nueva consulta que devuelve KpisDetalleDTO con MTBF_HorasNueva (en horas)
+            var kpiDetalles = await _repository.ConsultarMTBF_Nueva(idArea);
 
             if (!kpiDetalles.Any())
                 return new List<KpiSegmentadoDTO>();
 
-            // Filtrar por año si está especificado
+            // 2) Filtrar por año si está especificado
             if (anio.HasValue)
             {
-                kpiDetalles = kpiDetalles.Where(kd => kd.KpisMantenimiento.fechaCalculo.Year == anio.Value);
+                kpiDetalles = kpiDetalles
+                    .Where(kd => kd.fechaCalculo.Year == anio.Value)
+                    .ToList();
             }
 
-            // Agrupar por mes y calcular el promedio de cada mes
-            /*var mtbfPorMes = kpiDetalles
-                .GroupBy(kd => kd.KpisMantenimiento.fechaCalculo.Month)
-                .Select(g => new KpiSegmentadoDTO
-                {
-                    etiqueta = ObtenerNombreMes(g.Key),
-                    valor = (int)Math.Round(g.Average(kd => kd.kpiValor))
-                })
-                .OrderBy(k => Array.IndexOf(
-                    new[] { "Enero", "Febrero", "Marzo", "Abril", "Mayo", "Junio",
-                    "Julio", "Agosto", "Septiembre", "Octubre", "Noviembre", "Diciembre" },
-                    k.etiqueta))
-                .ToList();*/
-
-            // Agrupar por mes y calcular el promedio de cada mes (convertido a horas)
+            // 3) Agrupar por mes y calcular el promedio de MTBF_HorasNueva (ya en horas)
             var mtbfPorMes = kpiDetalles
-                .GroupBy(kd => kd.KpisMantenimiento.fechaCalculo.Month)
+                .GroupBy(kd => kd.fechaCalculo.Month)
                 .Select(g => new KpiSegmentadoDTO
                 {
                     etiqueta = ObtenerNombreMes(g.Key),
-                    valor = (float)Math.Round(g.Average(kd => kd.kpiValor) / 60, 2) // Convertir minutos a horas
+                    valor = (float)Math.Round(g.Average(kd => kd.MTBF_HorasNueva), 2)
                 })
-                .OrderBy(k => Array.IndexOf(
-                    new[] { "Enero", "Febrero", "Marzo", "Abril", "Mayo", "Junio",
-            "Julio", "Agosto", "Septiembre", "Octubre", "Noviembre", "Diciembre" },
-                    k.etiqueta))
+                .OrderBy(k =>
+                    Array.IndexOf(
+                        new[]
+                        {
+                    "Enero", "Febrero", "Marzo", "Abril",
+                    "Mayo", "Junio", "Julio", "Agosto",
+                    "Septiembre", "Octubre", "Noviembre", "Diciembre"
+                        },
+                        k.etiqueta))
                 .ToList();
 
-            // Si hay un objetivo, añadirlo como una línea de referencia
+            // 4) Si hay un objetivo, agregar meses faltantes para que la serie tenga siempre 12 puntos
             if (objetivo.HasValue && objetivo.Value > 0)
             {
-                // Completar los meses faltantes (si es necesario para mostrar todos los meses en el gráfico)
-                var mesesExistentes = mtbfPorMes.Select(k => ObtenerNumeroMes(k.etiqueta)).ToList();
+                var mesesExistentes = mtbfPorMes
+                    .Select(k => ObtenerNumeroMes(k.etiqueta))
+                    .ToList();
 
                 for (int mes = 1; mes <= 12; mes++)
                 {
@@ -407,20 +408,28 @@ namespace Piolax_WebApp.Services.Impl
                         mtbfPorMes.Add(new KpiSegmentadoDTO
                         {
                             etiqueta = ObtenerNombreMes(mes),
-                            valor = 0 // Sin datos para este mes
+                            valor = 0f
                         });
                     }
                 }
 
-                // Reordenar después de añadir los meses faltantes
-                mtbfPorMes = mtbfPorMes.OrderBy(k => Array.IndexOf(
-                    new[] { "Enero", "Febrero", "Marzo", "Abril", "Mayo", "Junio",
-                    "Julio", "Agosto", "Septiembre", "Octubre", "Noviembre", "Diciembre" },
-                    k.etiqueta)).ToList();
+                // Reordenamos después de añadir los faltantes
+                mtbfPorMes = mtbfPorMes
+                    .OrderBy(k =>
+                        Array.IndexOf(
+                            new[]
+                            {
+                        "Enero", "Febrero", "Marzo", "Abril",
+                        "Mayo", "Junio", "Julio", "Agosto",
+                        "Septiembre", "Octubre", "Noviembre", "Diciembre"
+                            },
+                            k.etiqueta))
+                    .ToList();
             }
 
             return mtbfPorMes;
         }
+
 
         public async Task<List<KpiAreaMesSeriesDTO>> ObtenerMTBFPorAreaMes(int? anio = null)
         {

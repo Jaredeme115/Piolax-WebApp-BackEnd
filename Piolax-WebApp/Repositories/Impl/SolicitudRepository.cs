@@ -279,5 +279,66 @@ namespace Piolax_WebApp.Repositories.Impl
                 .CountAsync();
         }
 
+        public async Task<int?> ObtenerPrimerDiaSolicitudPorAreaEnMes(int idArea, int anio, int mes)
+        {
+            // Filtramos las solicitudes por área, año y mes
+            // Luego extraemos la fecha mínima (Min) y devolvemos solo el .Day
+            var primeraFecha = await _context.Solicitudes
+                .Where(s =>
+                    s.idAreaSeleccionada == idArea &&
+                    s.fechaSolicitud.Year == anio &&
+                    s.fechaSolicitud.Month == mes
+                )
+                // Convertimos a nullable DateTime para que MinAsync devuelva null si no hay registros
+                .Select(s => (DateTime?)s.fechaSolicitud)
+                .MinAsync();
+
+            // Si primeraFecha es null, devolvemos null; sino devolvemos el día de la fecha
+            return primeraFecha?.Day;
+        }
+
+        public async Task<int> ContarFallasPorAreaEnMesHastaDia(int idArea, int anio, int mes, int diaHoy)
+        {
+            // Validar parámetros
+            if (anio < 1 || mes < 1 || mes > 12 || diaHoy < 1 || diaHoy > 31)
+            {
+                throw new ArgumentOutOfRangeException("Fecha proporcionada no es válida.");
+            }
+
+            // Filtramos por:
+            //   • idAreaSeleccionada == idArea
+            //   • YEAR(FechaSolicitud) == anio
+            //   • MONTH(FechaSolicitud) == mes
+            //   • DAY(FechaSolicitud) <= diaHoy
+            //
+            // Luego contamos el total.
+            int count = await _context.Solicitudes
+                .Where(s =>
+                    s.idAreaSeleccionada == idArea &&
+                    s.fechaSolicitud.Year == anio &&
+                    s.fechaSolicitud.Month == mes &&
+                    s.fechaSolicitud.Day <= diaHoy
+                )
+                .CountAsync();
+
+            return count;
+        }
+
+        public async Task<int> ContarFallasPorAreaEnMesDesdeDia(
+        int idArea, int anio, int mes, int diaInicio)
+        {
+            if (anio < 1 || mes < 1 || mes > 12 || diaInicio < 1 || diaInicio > 31)
+                throw new ArgumentOutOfRangeException("Fecha fuera de rango.");
+
+            return await _context.Solicitudes
+                .Where(s =>
+                    s.idAreaSeleccionada == idArea &&
+                    s.fechaSolicitud.Year == anio &&
+                    s.fechaSolicitud.Month == mes &&
+                    s.fechaSolicitud.Day >= diaInicio
+                )
+                .CountAsync();
+        }
+
     }
 }
