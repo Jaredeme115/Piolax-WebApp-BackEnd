@@ -492,6 +492,95 @@ namespace Piolax_WebApp.Services.Impl
         }
 
 
+        public async Task<IEnumerable<SolicitudesDetalleDTO>> ConsultarSolicitudesTerminadasPorMesYAnio(int? mes, int? anio)
+        {
+            // valores por defecto
+            var now = DateTime.Now;
+            int mesFiltro = mes ?? now.Month;
+            int anioFiltro = anio ?? now.Year;
+
+            var solicitudes = await _repository.ConsultarSolicitudesTerminadasPorMesYAnio(mesFiltro, anioFiltro);
+
+            var solicitudesDetalleDTO = new List<SolicitudesDetalleDTO>();
+
+            foreach (var solicitud in solicitudes)
+            {
+                var empleado = solicitud.Empleado;
+                if (empleado == null)
+                {
+                    continue;
+                }
+
+                var areasRoles = empleado.EmpleadoAreaRol ?? new List<EmpleadoAreaRol>();
+
+                var areaSeleccionada = areasRoles.FirstOrDefault(ar => ar.idArea == solicitud.idAreaSeleccionada);
+                var rolSeleccionado = areasRoles.FirstOrDefault(ar => ar.idRol == solicitud.idRolSeleccionado && ar.idArea == solicitud.idAreaSeleccionada);
+
+                // Obtener el técnico aprobado
+                var tecnico = solicitud.Asignaciones
+                    .SelectMany(a => a.Asignacion_Tecnico)
+                    .Where(t => t.idStatusAprobacionTecnico == 1)
+                    .Select(t => t.Empleado)
+                    .FirstOrDefault();
+
+                var nombreCompletoTecnico = tecnico != null
+                    ? $"{tecnico.nombre} {tecnico.apellidoPaterno} {tecnico.apellidoMaterno}"
+                    : "No asignado";
+
+                // Obtener la solución aplicada
+                var solucion = solicitud.Asignaciones
+                    .SelectMany(a => a.Asignacion_Tecnico)
+                    .Where(s => !string.IsNullOrEmpty(s.solucion))
+                    .Select(s => s.solucion)
+                    .FirstOrDefault();
+
+                // Obtener horas de inicio y término del técnico aprobado
+                var tecnicoAprobado = solicitud.Asignaciones
+                    .SelectMany(a => a.Asignacion_Tecnico)
+                    .FirstOrDefault(t => t.idStatusAprobacionTecnico == 1);
+
+                // Obtener las refacciones utilizadas
+                var refacciones = solicitud.Asignaciones
+                    .SelectMany(a => a.Asignacion_Tecnico)
+                    .SelectMany(at => at.Asignacion_Refacciones)
+                    .Select(ar => new RefaccionesDTO
+                    {
+                        NombreRefaccion = ar.Inventario.nombreProducto,
+                        Cantidad = ar.cantidad
+                    }).ToList();
+
+                var solicitudDetalleDTO = new SolicitudesDetalleDTO
+                {
+                    idSolicitud = solicitud.idSolicitud,
+                    descripcion = solicitud.descripcion,
+                    fechaSolicitud = solicitud.fechaSolicitud,
+                    nombreCompletoEmpleado = $"{empleado.nombre} {empleado.apellidoPaterno} {empleado.apellidoMaterno}",
+                    idMaquina = solicitud.idMaquina,
+                    idTurno = solicitud.idTurno,
+                    idStatusOrden = solicitud.idStatusOrden,
+                    idStatusAprobacionSolicitante = solicitud.idStatusAprobacionSolicitante,
+                    area = areaSeleccionada?.Area?.nombreArea ?? "N/A",
+                    rol = rolSeleccionado?.Rol?.nombreRol ?? "N/A",
+                    idCategoriaTicket = solicitud.idCategoriaTicket,
+                    nombreMaquina = solicitud.Maquina?.nombreMaquina ?? "No disponible",
+                    nombreTurno = solicitud.Turno?.descripcion ?? "No disponible",
+                    nombreStatusOrden = solicitud.StatusOrden?.descripcionStatusOrden ?? "No disponible",
+                    nombreStatusAprobacionSolicitante = solicitud.StatusAprobacionSolicitante?.descripcionStatusAprobacionSolicitante ?? "No disponible",
+                    nombreCategoriaTicket = solicitud.categoriaTicket?.descripcionCategoriaTicket ?? "No disponible",
+                    nombreCompletoTecnico = nombreCompletoTecnico,
+                    solucion = solucion,
+                    Refacciones = refacciones,
+                    horaInicio = tecnicoAprobado?.horaInicio,
+                    horaTermino = tecnicoAprobado?.horaTermino,
+                    paroMaquinaSolicitante = solicitud.paroMaquinaSolicitante
+                };
+
+                solicitudesDetalleDTO.Add(solicitudDetalleDTO);
+            }
+
+            return solicitudesDetalleDTO;
+        }
+
         public async Task ActualizarStatusOrden(int idSolicitud, int idStatusOrden)
         {
             var solicitud = await _repository.ObtenerSolicitudConDetalles(idSolicitud);
@@ -581,6 +670,11 @@ namespace Piolax_WebApp.Services.Impl
                     }
                 }
 
+                // Obtener horas de inicio y término del técnico aprobado
+                var tecnicoAsignado = solicitud.Asignaciones
+                    .SelectMany(a => a.Asignacion_Tecnico)
+                    .FirstOrDefault(t => t.idStatusAprobacionTecnico == 3);
+
                 // 7) Construyo y agrego el DTO final
                 var solicitudDetalleDTO = new SolicitudesDetalleDTO
                 {
@@ -606,7 +700,8 @@ namespace Piolax_WebApp.Services.Impl
                     nombreCategoriaTicket = categoriaTicket?.descripcionCategoriaTicket ?? "N/A",
 
                     nombreCompletoTecnico = nombreCompletoTecnico,
-                    paroMaquinaSolicitante = solicitud.paroMaquinaSolicitante
+                    paroMaquinaSolicitante = solicitud.paroMaquinaSolicitante,
+                    horaInicio = tecnicoAsignado?.horaInicio
                 };
 
                 solicitudesDetalleDTO.Add(solicitudDetalleDTO);
@@ -995,10 +1090,10 @@ namespace Piolax_WebApp.Services.Impl
             return package.GetAsByteArray();
         }
 
-        public async Task<byte[]> ExportarSolicitudesTerminadasPorAreaExcel(string numNomina)
+        public async Task<byte[]> ExportarSolicitudesTerminadasPorMesYAnioExcel(int ? mes, int ? anio)
         {
             // Obtener los datos de las solicitudes terminadas
-            var solicitudes = await ConsultarSolicitudesTerminadasPorArea(numNomina);
+            var solicitudes = await ConsultarSolicitudesTerminadasPorMesYAnio(mes, anio);
 
             // EPPlus requiere declarar el contexto de licencia
             ExcelPackage.LicenseContext = LicenseContext.NonCommercial;
@@ -1056,6 +1151,80 @@ namespace Piolax_WebApp.Services.Impl
                     refaccionesTexto = string.Join(", ", s.Refacciones.Select(r => $"{r.NombreRefaccion} ({r.Cantidad})"));
                 }
                 worksheet.Cells[row, 16].Value = refaccionesTexto;*/
+
+                row++;
+            }
+
+            // Auto-ajustar columnas
+            worksheet.Cells.AutoFitColumns();
+
+            // Convertir a bytes y devolver
+            return package.GetAsByteArray();
+        }
+
+
+
+        public async Task<byte[]> ExportarSolicitudesTerminadasPorAreaExcel(string numNomina)
+        {
+            // Obtener los datos de las solicitudes terminadas
+            var solicitudes = await ConsultarSolicitudesTerminadasPorArea(numNomina);
+
+            // EPPlus requiere declarar el contexto de licencia
+            ExcelPackage.LicenseContext = LicenseContext.NonCommercial;
+
+            using var package = new ExcelPackage();
+            var worksheet = package.Workbook.Worksheets.Add("Solicitudes Terminadas");
+
+            // Encabezados
+            worksheet.Cells[1, 1].Value = "Date";
+            worksheet.Cells[1, 2].Value = "Area";
+            worksheet.Cells[1, 3].Value = "Machine";
+            worksheet.Cells[1, 4].Value = "Report Time";
+            worksheet.Cells[1, 5].Value = "Equipment stopped?";
+            worksheet.Cells[1, 6].Value = "Shift";
+            worksheet.Cells[1, 7].Value = "Tecnico/Operador";
+            worksheet.Cells[1, 8].Value = "Order No.";
+            worksheet.Cells[1, 9].Value = "Descripción de la falla";
+            worksheet.Cells[1, 10].Value = "Solución de la falla";
+            worksheet.Cells[1, 11].Value = "End Date";
+            worksheet.Cells[1, 12].Value = "Start Time";
+            worksheet.Cells[1, 13].Value = "End Time";
+            worksheet.Cells[1, 14].Value = "Done by";
+
+            // Estilo para encabezados
+            using (var range = worksheet.Cells[1, 1, 1, 14])
+            {
+                range.Style.Font.Bold = true;
+                range.Style.Fill.PatternType = OfficeOpenXml.Style.ExcelFillStyle.Solid;
+                range.Style.Fill.BackgroundColor.SetColor(System.Drawing.Color.LightGray);
+            }
+
+            // Datos
+            int row = 2;
+            foreach (var s in solicitudes)
+            {
+                worksheet.Cells[row, 1].Value = s.fechaSolicitud.ToString("dd/MM/yyyy");
+                worksheet.Cells[row, 2].Value = s.area;
+                worksheet.Cells[row, 3].Value = s.nombreMaquina;
+                worksheet.Cells[row, 4].Value = s.fechaSolicitud.ToString("HH:mm");
+                worksheet.Cells[row, 5].Value = s.paroMaquinaSolicitante ? "Si" : "No";
+                worksheet.Cells[row, 6].Value = s.nombreTurno;
+                worksheet.Cells[row, 7].Value = s.nombreCompletoEmpleado;
+                worksheet.Cells[row, 8].Value = s.idSolicitud;
+                worksheet.Cells[row, 9].Value = s.descripcion;
+                worksheet.Cells[row, 10].Value = s.solucion;
+                worksheet.Cells[row, 11].Value = s.horaTermino?.ToString("dd/MM/yyyy");
+                worksheet.Cells[row, 12].Value = s.horaInicio?.ToString("HH:mm");
+                worksheet.Cells[row, 13].Value = s.horaTermino?.ToString("HH:mm");
+                worksheet.Cells[row, 14].Value = s.nombreCompletoTecnico;
+
+                // Formatear refacciones como texto
+                string refaccionesTexto = "";
+                if (s.Refacciones != null && s.Refacciones.Any())
+                {
+                    refaccionesTexto = string.Join(", ", s.Refacciones.Select(r => $"{r.NombreRefaccion} ({r.Cantidad})"));
+                }
+                worksheet.Cells[row, 16].Value = refaccionesTexto;
 
                 row++;
             }

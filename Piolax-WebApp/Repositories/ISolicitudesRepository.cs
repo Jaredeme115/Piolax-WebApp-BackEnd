@@ -17,7 +17,11 @@ namespace Piolax_WebApp.Repositories
         Task<SolicitudesDetalleDTO> ModificarEstatusAprobacionSolicitante(int idSolicitud, int idStatusAprobacionSolicitante);
         Task<IEnumerable<Solicitudes>> ConsultarSolicitudesPorMaquinaYArea(int idMaquina, int idArea);
         Task<IEnumerable<Solicitudes>> ConsultarSolicitudesNoTomadas();
+
         Task<IEnumerable<Solicitudes>> ConsultarSolicitudesTerminadas();
+
+        Task<IEnumerable<Solicitudes>> ConsultarSolicitudesTerminadasPorMesYAnio(int mes, int anio);
+
         Task ActualizarStatusOrden(int idSolicitud, int idStatusOrden);
         Task<IEnumerable<Solicitudes>> ObtenerSolicitudesConPrioridadAsync();
         Task<bool> EliminarSolicitud(int idSolicitud);

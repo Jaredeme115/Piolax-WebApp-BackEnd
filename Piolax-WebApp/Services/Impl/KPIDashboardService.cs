@@ -353,9 +353,9 @@ namespace Piolax_WebApp.Services.Impl
         /// Obtiene el MTBF segmentado por mes para un año específico
         /// </summary>
         public async Task<List<KpiSegmentadoDTO>> ObtenerMTBFSegmentado(
-    int? idArea = null,
-    int? anio = null,
-    int? objetivo = null)
+            int? idArea = null,
+            int? anio = null,
+            int? objetivo = null)
         {
             // Si no hay año especificado, usar el actual
             int yearToUse = anio ?? DateTime.Now.Year;
