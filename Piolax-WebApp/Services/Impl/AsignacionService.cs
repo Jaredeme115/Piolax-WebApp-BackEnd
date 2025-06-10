@@ -251,6 +251,7 @@ namespace Piolax_WebApp.Services.Impl
             return sumaTotalPorOrdenes / asignaciones.Count();
         }
 
+       
 
         /// <summary>
         /// Calcula el MTTA (Mean Time To Acknowledge) en minutos. Se toma el tiempo transcurrido entre la creación

@@ -928,10 +928,219 @@ namespace Piolax_WebApp.Services.Impl
             return solicitudesDetalleDTO;
         }
 
+        public async Task<IEnumerable<SolicitudesDetalleDTO>> ConsultarSolicitudesTerminadasPorAreaMesYAnio(string numNomina, int? mes, int? anio)
+        {
+
+            // valores por defecto
+            var now = DateTime.Now;
+            int mesFiltro = mes ?? now.Month;
+            int anioFiltro = anio ?? now.Year;
+
+            // Obtener el empleado para verificar a qué áreas pertenece
+            var empleado = await _empleadoService.Consultar(numNomina);
+            if (empleado == null)
+            {
+                throw new Exception($"No se encontró el empleado con número de nómina: {numNomina}");
+            }
+
+            // Obtener las áreas asignadas al empleado
+            var areasDelEmpleado = await _empleadoAreaRolService.ObtenerAreaPorEmpleado(numNomina);
+            var idsAreas = areasDelEmpleado.Select(a => a.idArea).ToList();
+
+            // Si no tiene áreas asignadas, regresamos una lista vacía
+            if (!idsAreas.Any())
+            {
+                return new List<SolicitudesDetalleDTO>();
+            }
+
+            // Obtener todas las solicitudes terminadas
+            var todasSolicitudesTerminadas = await _repository.ConsultarSolicitudesTerminadasPorMesYAnio(mesFiltro, anioFiltro);
+
+            // Filtrar las solicitudes por las áreas del empleado
+            var solicitudesFiltradas = todasSolicitudesTerminadas
+                .Where(s => idsAreas.Contains(s.idAreaSeleccionada))
+                .ToList();
+
+            var solicitudesDetalleDTO = new List<SolicitudesDetalleDTO>();
+
+            foreach (var solicitud in solicitudesFiltradas)
+            {
+                var solicitante = solicitud.Empleado;
+                if (solicitante == null)
+                {
+                    continue;
+                }
+
+                var areasRoles = solicitante.EmpleadoAreaRol ?? new List<EmpleadoAreaRol>();
+
+                var areaSeleccionada = areasRoles.FirstOrDefault(ar => ar.idArea == solicitud.idAreaSeleccionada);
+                var rolSeleccionado = areasRoles.FirstOrDefault(ar => ar.idRol == solicitud.idRolSeleccionado && ar.idArea == solicitud.idAreaSeleccionada);
+
+                // Obtener el técnico aprobado
+                var tecnico = solicitud.Asignaciones
+                    .SelectMany(a => a.Asignacion_Tecnico)
+                    .Where(t => t.idStatusAprobacionTecnico == 1)
+                    .Select(t => t.Empleado)
+                    .FirstOrDefault();
+
+                var nombreCompletoTecnico = tecnico != null
+                    ? $"{tecnico.nombre} {tecnico.apellidoPaterno} {tecnico.apellidoMaterno}"
+                    : "No asignado";
+
+                // Obtener la solución aplicada
+                var solucion = solicitud.Asignaciones
+                    .SelectMany(a => a.Asignacion_Tecnico)
+                    .Where(s => !string.IsNullOrEmpty(s.solucion))
+                    .Select(s => s.solucion)
+                    .FirstOrDefault();
+
+                // Obtener horas de inicio y término del técnico aprobado
+                var tecnicoAprobado = solicitud.Asignaciones
+                    .SelectMany(a => a.Asignacion_Tecnico)
+                    .FirstOrDefault(t => t.idStatusAprobacionTecnico == 1);
+
+                // Obtener las refacciones utilizadas
+                var refacciones = solicitud.Asignaciones
+                    .SelectMany(a => a.Asignacion_Tecnico)
+                    .SelectMany(at => at.Asignacion_Refacciones)
+                    .Select(ar => new RefaccionesDTO
+                    {
+                        NombreRefaccion = ar.Inventario.nombreProducto,
+                        Cantidad = ar.cantidad
+                    }).ToList();
+
+                var solicitudDetalleDTO = new SolicitudesDetalleDTO
+                {
+                    idSolicitud = solicitud.idSolicitud,
+                    descripcion = solicitud.descripcion,
+                    fechaSolicitud = solicitud.fechaSolicitud,
+                    nombreCompletoEmpleado = $"{solicitante.nombre} {solicitante.apellidoPaterno} {solicitante.apellidoMaterno}",
+                    idMaquina = solicitud.idMaquina,
+                    idTurno = solicitud.idTurno,
+                    idStatusOrden = solicitud.idStatusOrden,
+                    idStatusAprobacionSolicitante = solicitud.idStatusAprobacionSolicitante,
+                    area = areaSeleccionada?.Area?.nombreArea ?? "N/A",
+                    rol = rolSeleccionado?.Rol?.nombreRol ?? "N/A",
+                    idCategoriaTicket = solicitud.idCategoriaTicket,
+                    nombreMaquina = solicitud.Maquina?.nombreMaquina ?? "No disponible",
+                    nombreTurno = solicitud.Turno?.descripcion ?? "No disponible",
+                    nombreStatusOrden = solicitud.StatusOrden?.descripcionStatusOrden ?? "No disponible",
+                    nombreStatusAprobacionSolicitante = solicitud.StatusAprobacionSolicitante?.descripcionStatusAprobacionSolicitante ?? "No disponible",
+                    nombreCategoriaTicket = solicitud.categoriaTicket?.descripcionCategoriaTicket ?? "No disponible",
+                    nombreCompletoTecnico = nombreCompletoTecnico,
+                    solucion = solucion,
+                    Refacciones = refacciones,
+                    horaInicio = tecnicoAprobado?.horaInicio,
+                    horaTermino = tecnicoAprobado?.horaTermino,
+                    paroMaquinaSolicitante = solicitud.paroMaquinaSolicitante
+                };
+
+                solicitudesDetalleDTO.Add(solicitudDetalleDTO);
+            }
+
+            return solicitudesDetalleDTO;
+        }
+
         public async Task<IEnumerable<SolicitudesDetalleDTO>> ConsultarSolicitudesTerminadasPorEmpleado(string numNomina)
         {
             // Obtener todas las solicitudes terminadas
             var todasSolicitudesTerminadas = await _repository.ConsultarSolicitudesTerminadas();
+
+            // Filtrar las solicitudes que pertenecen al empleado específico
+            var solicitudesFiltradas = todasSolicitudesTerminadas
+                .Where(s => s.Empleado?.numNomina == numNomina)
+                .ToList();
+
+            var solicitudesDetalleDTO = new List<SolicitudesDetalleDTO>();
+
+            foreach (var solicitud in solicitudesFiltradas)
+            {
+                var empleado = solicitud.Empleado;
+                if (empleado == null)
+                {
+                    continue;
+                }
+
+                var areasRoles = empleado.EmpleadoAreaRol ?? new List<EmpleadoAreaRol>();
+
+                var areaSeleccionada = areasRoles.FirstOrDefault(ar => ar.idArea == solicitud.idAreaSeleccionada);
+                var rolSeleccionado = areasRoles.FirstOrDefault(ar => ar.idRol == solicitud.idRolSeleccionado && ar.idArea == solicitud.idAreaSeleccionada);
+
+                // Obtener el técnico aprobado
+                var tecnico = solicitud.Asignaciones
+                    .SelectMany(a => a.Asignacion_Tecnico)
+                    .Where(t => t.idStatusAprobacionTecnico == 1)
+                    .Select(t => t.Empleado)
+                    .FirstOrDefault();
+
+                var nombreCompletoTecnico = tecnico != null
+                    ? $"{tecnico.nombre} {tecnico.apellidoPaterno} {tecnico.apellidoMaterno}"
+                    : "No asignado";
+
+                // Obtener la solución aplicada
+                var solucion = solicitud.Asignaciones
+                    .SelectMany(a => a.Asignacion_Tecnico)
+                    .Where(s => !string.IsNullOrEmpty(s.solucion))
+                    .Select(s => s.solucion)
+                    .FirstOrDefault();
+
+                // Obtener horas de inicio y término del técnico aprobado
+                var tecnicoAprobado = solicitud.Asignaciones
+                    .SelectMany(a => a.Asignacion_Tecnico)
+                    .FirstOrDefault(t => t.idStatusAprobacionTecnico == 1);
+
+                // Obtener las refacciones utilizadas
+                var refacciones = solicitud.Asignaciones
+                    .SelectMany(a => a.Asignacion_Tecnico)
+                    .SelectMany(at => at.Asignacion_Refacciones)
+                    .Select(ar => new RefaccionesDTO
+                    {
+                        NombreRefaccion = ar.Inventario.nombreProducto,
+                        Cantidad = ar.cantidad
+                    }).ToList();
+
+                var solicitudDetalleDTO = new SolicitudesDetalleDTO
+                {
+                    idSolicitud = solicitud.idSolicitud,
+                    descripcion = solicitud.descripcion,
+                    fechaSolicitud = solicitud.fechaSolicitud,
+                    nombreCompletoEmpleado = $"{empleado.nombre} {empleado.apellidoPaterno} {empleado.apellidoMaterno}",
+                    idMaquina = solicitud.idMaquina,
+                    idTurno = solicitud.idTurno,
+                    idStatusOrden = solicitud.idStatusOrden,
+                    idStatusAprobacionSolicitante = solicitud.idStatusAprobacionSolicitante,
+                    area = areaSeleccionada?.Area?.nombreArea ?? "N/A",
+                    rol = rolSeleccionado?.Rol?.nombreRol ?? "N/A",
+                    idCategoriaTicket = solicitud.idCategoriaTicket,
+                    nombreMaquina = solicitud.Maquina?.nombreMaquina ?? "No disponible",
+                    nombreTurno = solicitud.Turno?.descripcion ?? "No disponible",
+                    nombreStatusOrden = solicitud.StatusOrden?.descripcionStatusOrden ?? "No disponible",
+                    nombreStatusAprobacionSolicitante = solicitud.StatusAprobacionSolicitante?.descripcionStatusAprobacionSolicitante ?? "No disponible",
+                    nombreCategoriaTicket = solicitud.categoriaTicket?.descripcionCategoriaTicket ?? "No disponible",
+                    nombreCompletoTecnico = nombreCompletoTecnico,
+                    solucion = solucion,
+                    Refacciones = refacciones,
+                    horaInicio = tecnicoAprobado?.horaInicio,
+                    horaTermino = tecnicoAprobado?.horaTermino,
+                    paroMaquinaSolicitante = solicitud.paroMaquinaSolicitante
+                };
+
+                solicitudesDetalleDTO.Add(solicitudDetalleDTO);
+            }
+
+            return solicitudesDetalleDTO;
+        }
+
+        public async Task<IEnumerable<SolicitudesDetalleDTO>> ConsultarSolicitudesTerminadasPorEmpleadoMesYAnio(string numNomina, int? mes, int? anio)
+        {
+
+            // valores por defecto
+            var now = DateTime.Now;
+            int mesFiltro = mes ?? now.Month;
+            int anioFiltro = anio ?? now.Year;
+
+            // Obtener todas las solicitudes terminadas
+            var todasSolicitudesTerminadas = await _repository.ConsultarSolicitudesTerminadasPorMesYAnio(mesFiltro, anioFiltro);
 
             // Filtrar las solicitudes que pertenecen al empleado específico
             var solicitudesFiltradas = todasSolicitudesTerminadas
