@@ -21,5 +21,8 @@ namespace Piolax_WebApp.DTOs
 
         public int anioPreventivo { get; set; }
 
+        public int idEstatusPreventivo { get; set; } // este campo debe existir
+
+
     }
 }

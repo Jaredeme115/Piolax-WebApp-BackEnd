@@ -63,6 +63,8 @@ namespace Piolax_WebApp.Repositories
         public DbSet<KpisMPDetalle> KpisMPDetalle { get; set; } = default!;
 
 
+        public DbSet<KpiMantenimiento_Tecnico> kpiMantenimiento_Tecnicos { get; set; } = default!;
+
 
         protected override void OnModelCreating(ModelBuilder modelBuilder)
         {
@@ -277,23 +279,28 @@ namespace Piolax_WebApp.Repositories
                 .WithMany(mpe => mpe.MantenimientoPreventivoEjecucion)
                 .HasForeignKey(mp => mp.idMP);
 
-            // Configurar la relacion entre KpisMantenimiento y Empleados
-            modelBuilder.Entity<KpisMantenimiento>()
-                .HasOne(km => km.Empleado)
-                .WithMany(e => e.KpisMantenimientos)
-                .HasForeignKey(km => km.idEmpleado);
 
-            // Configurar la relacion entre KpisMantenimiento y Areas
-            modelBuilder.Entity<KpisMantenimiento>()
-                .HasOne(km => km.Area)
-                .WithMany(a => a.KpisMantenimientos)
-                .HasForeignKey(km => km.idArea);
+            modelBuilder.Entity<KpisMantenimiento>(entity =>
+            {
+                // Relación opcional a Empleado
+                entity.HasOne(km => km.Empleado)
+                    .WithMany(e => e.KpisMantenimientos)
+                    .HasForeignKey(km => km.idEmpleado)
+                    .IsRequired(false)           // <-- aquí lo haces opcional
+                    .OnDelete(DeleteBehavior.Restrict);  // opcionalmente evitas borrado en cascada
 
-            // Configurar la relacion entre KpisMantenimiento y Maquinas   
-            modelBuilder.Entity<KpisMantenimiento>()
-                .HasOne(km => km.Maquina)
-                .WithMany(m => m.KpisMantenimientos)
-                .HasForeignKey(km => km.idMaquina);
+                // Áreas (requerido)
+                entity.HasOne(km => km.Area)
+                    .WithMany(a => a.KpisMantenimientos)
+                    .HasForeignKey(km => km.idArea)
+                    .IsRequired();
+
+                // Máquinas (requerido)
+                entity.HasOne(km => km.Maquina)
+                    .WithMany(m => m.KpisMantenimientos)
+                    .HasForeignKey(km => km.idMaquina)
+                    .IsRequired();
+            });
 
             // Configurar la relacion entre KpisDetalles y KpisMantenimiento
             modelBuilder.Entity<KpisDetalle>()
@@ -313,6 +320,19 @@ namespace Piolax_WebApp.Repositories
                 .WithMany(a => a.KpiObjetivos)
                 .HasForeignKey(ko => ko.idArea);
 
+            //nuevos
+            modelBuilder.Entity<KpiMantenimiento_Tecnico>()
+           .HasKey(kmt => new { kmt.idKPIMantenimiento, kmt.idEmpleado });
+
+            modelBuilder.Entity<KpiMantenimiento_Tecnico>()
+                .HasOne(kmt => kmt.KpisMantenimiento)
+                .WithMany(km => km.TecnicosInvolucrados)
+                .HasForeignKey(kmt => kmt.idKPIMantenimiento);
+
+            modelBuilder.Entity<KpiMantenimiento_Tecnico>()
+                .HasOne(kmt => kmt.Empleado)
+                .WithMany()
+                .HasForeignKey(kmt => kmt.idEmpleado);
 
 
 

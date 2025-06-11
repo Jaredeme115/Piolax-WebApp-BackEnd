@@ -8,7 +8,7 @@ namespace Piolax_WebApp.Models
         public int idKPIMantenimiento { get; set; }
 
         [Required]
-        public int idEmpleado { get; set; }
+        public int? idEmpleado { get; set; }
 
         public Empleado Empleado { get; set; }
 
@@ -24,5 +24,9 @@ namespace Piolax_WebApp.Models
         public DateTime fechaCalculo { get; set; }
 
         public virtual ICollection<KpisDetalle> KpisDetalle { get; set; } = new List<KpisDetalle>(); // Lista de KPI´s de Detalle asociados a KPI´s de Mantenimiento
+
+        public ICollection<KpiMantenimiento_Tecnico> TecnicosInvolucrados { get; set; }
+        public List<KpiMantenimiento_Tecnico> TecnicosParticipantes { get; set; } = new();
+
     }
 }

@@ -217,5 +217,21 @@ namespace Piolax_WebApp.Controllers
 
 
 
+
+        [HttpPut("ActualizarEstatus/{idMP:int}")]
+        public async Task<IActionResult> ActualizarEstatus(
+            int idMP,
+            [FromBody] ActualizarEstatusDTO dto)
+        {
+            if (!await _service.ActualizarEstatusPreventivo(idMP, dto.NuevoEstatus))
+                return NotFound(new { mensaje = "No existe el mantenimiento preventivo." });
+
+            return Ok(new { mensaje = "Estatus guardado correctamente." });
+        }
+        }
+
+
+
+
+
     }
-}

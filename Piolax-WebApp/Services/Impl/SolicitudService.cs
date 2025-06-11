@@ -96,7 +96,7 @@ namespace Piolax_WebApp.Services.Impl
                 idSolicitud = solicitud.idSolicitud,
                 descripcion = solicitud.descripcion,
                 fechaSolicitud = solicitud.fechaSolicitud,
-                nombreCompletoEmpleado = $"{empleado.nombre} {empleado.apellidoPaterno} {empleado.apellidoMaterno}",
+                nombreCompletoEmpleado = $"{empleado.nombre} {empleado.apellidoPaterno} ",
                 idMaquina = solicitud.idMaquina,
                 idTurno = solicitud.idTurno,
                 idStatusOrden = solicitud.idStatusOrden,
@@ -161,7 +161,7 @@ namespace Piolax_WebApp.Services.Impl
                 idSolicitud = solicitud.idSolicitud,
                 descripcion = solicitud.descripcion,
                 fechaSolicitud = solicitud.fechaSolicitud,
-                nombreCompletoEmpleado = $"{empleado.nombre} {empleado.apellidoPaterno} {empleado.apellidoMaterno}",
+                nombreCompletoEmpleado = $"{empleado.nombre} {empleado.apellidoPaterno} ",
                 idMaquina = solicitud.idMaquina,
                 idTurno = solicitud.idTurno,
                 idStatusOrden = solicitud.idStatusOrden,
@@ -215,7 +215,7 @@ namespace Piolax_WebApp.Services.Impl
                     idSolicitud = solicitud.idSolicitud,
                     descripcion = solicitud.descripcion,
                     fechaSolicitud = solicitud.fechaSolicitud,
-                    nombreCompletoEmpleado = $"{empleado.nombre} {empleado.apellidoPaterno} {empleado.apellidoMaterno}",
+                    nombreCompletoEmpleado = $"{empleado.nombre} {empleado.apellidoPaterno} ",
                     idMaquina = solicitud.idMaquina,
                     idTurno = solicitud.idTurno,
                     idStatusOrden = solicitud.idStatusOrden,
@@ -271,7 +271,7 @@ namespace Piolax_WebApp.Services.Impl
                     idSolicitud = solicitud.idSolicitud,
                     descripcion = solicitud.descripcion,
                     fechaSolicitud = solicitud.fechaSolicitud,
-                    nombreCompletoEmpleado = $"{empleado.nombre} {empleado.apellidoPaterno} {empleado.apellidoMaterno}",
+                    nombreCompletoEmpleado = $"{empleado.nombre} {empleado.apellidoPaterno}",
                     idMaquina = solicitud.idMaquina,
                     idTurno = solicitud.idTurno,
                     idStatusOrden = solicitud.idStatusOrden,
@@ -391,7 +391,7 @@ namespace Piolax_WebApp.Services.Impl
                     .FirstOrDefault();
 
                 var nombreCompletoTecnico = tecnico != null
-                    ? $"{tecnico.nombre} {tecnico.apellidoPaterno} {tecnico.apellidoMaterno}"
+                    ? $"{tecnico.nombre} {tecnico.apellidoPaterno} "
                     : "No asignado";
 
                 // Obtener la solución aplicada
@@ -421,7 +421,7 @@ namespace Piolax_WebApp.Services.Impl
                     idSolicitud = solicitud.idSolicitud,
                     descripcion = solicitud.descripcion,
                     fechaSolicitud = solicitud.fechaSolicitud,
-                    nombreCompletoEmpleado = $"{empleado.nombre} {empleado.apellidoPaterno} {empleado.apellidoMaterno}",
+                    nombreCompletoEmpleado = $"{empleado.nombre} {empleado.apellidoPaterno} ",
                     idMaquina = solicitud.idMaquina,
                     idTurno = solicitud.idTurno,
                     idStatusOrden = solicitud.idStatusOrden,
@@ -513,7 +513,7 @@ namespace Piolax_WebApp.Services.Impl
                     // Si hay un técnico activo, obtenemos su nombre completo
                     if (tecnicoActivo != null && tecnicoActivo.Empleado != null)
                     {
-                        nombreCompletoTecnico = $"{tecnicoActivo.Empleado.nombre} {tecnicoActivo.Empleado.apellidoPaterno} {tecnicoActivo.Empleado.apellidoMaterno}";
+                        nombreCompletoTecnico = $"{tecnicoActivo.Empleado.nombre} {tecnicoActivo.Empleado.apellidoPaterno} ";
                     }
                     // Si no hay técnico activo pero hay técnicos asignados, tomamos el primero
                     else
@@ -524,7 +524,7 @@ namespace Piolax_WebApp.Services.Impl
 
                         if (primerTecnico != null && primerTecnico.Empleado != null)
                         {
-                            nombreCompletoTecnico = $"{primerTecnico.Empleado.nombre} {primerTecnico.Empleado.apellidoPaterno} {primerTecnico.Empleado.apellidoMaterno}";
+                            nombreCompletoTecnico = $"{primerTecnico.Empleado.nombre} {primerTecnico.Empleado.apellidoPaterno} ";
                         }
                     }
                 }
@@ -534,7 +534,7 @@ namespace Piolax_WebApp.Services.Impl
                     idSolicitud = solicitud.idSolicitud,
                     descripcion = solicitud.descripcion,
                     fechaSolicitud = solicitud.fechaSolicitud,
-                    nombreCompletoEmpleado = $"{empleado.nombre} {empleado.apellidoPaterno} {empleado.apellidoMaterno}",
+                    nombreCompletoEmpleado = $"{empleado.nombre} {empleado.apellidoPaterno} ",
                     idMaquina = solicitud.idMaquina,
                     idTurno = solicitud.idTurno,
                     idStatusOrden = solicitud.idStatusOrden,
@@ -612,7 +612,7 @@ namespace Piolax_WebApp.Services.Impl
                     idSolicitud = solicitud.idSolicitud,
                     descripcion = solicitud.descripcion,
                     fechaSolicitud = solicitud.fechaSolicitud,
-                    nombreCompletoEmpleado = $"{empleado.nombre} {empleado.apellidoPaterno} {empleado.apellidoMaterno}",
+                    nombreCompletoEmpleado = $"{empleado.nombre} {empleado.apellidoPaterno} ",
                     idMaquina = solicitud.idMaquina,
                     idTurno = solicitud.idTurno,
                     idStatusOrden = solicitud.idStatusOrden,
@@ -683,7 +683,7 @@ namespace Piolax_WebApp.Services.Impl
                     .FirstOrDefault();
 
                 var nombreCompletoTecnico = tecnico != null
-                    ? $"{tecnico.nombre} {tecnico.apellidoPaterno} {tecnico.apellidoMaterno}"
+                    ? $"{tecnico.nombre} {tecnico.apellidoPaterno} "
                     : "No asignado";
 
                 // Obtener la solución aplicada
@@ -713,7 +713,7 @@ namespace Piolax_WebApp.Services.Impl
                     idSolicitud = solicitud.idSolicitud,
                     descripcion = solicitud.descripcion,
                     fechaSolicitud = solicitud.fechaSolicitud,
-                    nombreCompletoEmpleado = $"{solicitante.nombre} {solicitante.apellidoPaterno} {solicitante.apellidoMaterno}",
+                    nombreCompletoEmpleado = $"{solicitante.nombre} {solicitante.apellidoPaterno}",
                     idMaquina = solicitud.idMaquina,
                     idTurno = solicitud.idTurno,
                     idStatusOrden = solicitud.idStatusOrden,
@@ -802,7 +802,7 @@ namespace Piolax_WebApp.Services.Impl
                     idSolicitud = solicitud.idSolicitud,
                     descripcion = solicitud.descripcion,
                     fechaSolicitud = solicitud.fechaSolicitud,
-                    nombreCompletoEmpleado = $"{empleado.nombre} {empleado.apellidoPaterno} {empleado.apellidoMaterno}",
+                    nombreCompletoEmpleado = $"{empleado.nombre} {empleado.apellidoPaterno} ",
                     idMaquina = solicitud.idMaquina,
                     idTurno = solicitud.idTurno,
                     idStatusOrden = solicitud.idStatusOrden,

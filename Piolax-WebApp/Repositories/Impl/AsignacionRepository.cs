@@ -66,27 +66,47 @@ namespace Piolax_WebApp.Repositories.Impl
             return await _context.Asignaciones.AnyAsync(a => a.idAsignacion == idAsignacion);
         }
 
-         public async Task<IEnumerable<Asignaciones>> ConsultarAsignacionesCompletadas(int idMaquina, int idArea, int? idEmpleado)
-          {
-              // Suponemos que un idStatusAsignacion == 3 indica que la asignación está finalizada.
-              var query = _context.Asignaciones
-                  .Include(a => a.Solicitud)
-                  .Include(a => a.Asignacion_Tecnico)
-                  .Where(a => a.Solicitud.idMaquina == idMaquina &&
-                              a.Solicitud.idAreaSeleccionada == idArea &&
-                              a.idStatusAsignacion == 3);
-
-              if (idEmpleado.HasValue)
+        /* /*    public async Task<IEnumerable<Asignaciones>> ConsultarAsignacionesCompletadas(int idMaquina, int idArea, int? idEmpleado)
               {
-                  query = query.Where(a => a.Asignacion_Tecnico.Any(t => t.idEmpleado == idEmpleado.Value));
+                  // Suponemos que un idStatusAsignacion == 3 indica que la asignación está finalizada.
+                  var query = _context.Asignaciones
+                      .Include(a => a.Solicitud)
+                      .Include(a => a.Asignacion_Tecnico)
+                      .Where(a => a.Solicitud.idMaquina == idMaquina &&
+                                  a.Solicitud.idAreaSeleccionada == idArea &&
+                                  a.idStatusAsignacion == 3);
+
+                  if (idEmpleado.HasValue)
+                  {
+                      query = query.Where(a => a.Asignacion_Tecnico.Any(t => t.idEmpleado == idEmpleado.Value));
+                  }
+
+                  return await query.ToListAsync();
               }
 
-              return await query.ToListAsync();
-          }
-         
 
+            */
 
-   
+        public async Task<IEnumerable<Asignaciones>> ConsultarAsignacionesCompletadas(int idMaquina, int idArea, int? idEmpleado)
+        {
+            var asignaciones = await _context.Asignaciones
+                .Include(a => a.Solicitud)
+                .Include(a => a.Asignacion_Tecnico)
+                .Where(a => a.Solicitud.idMaquina == idMaquina &&
+                            a.Solicitud.idAreaSeleccionada == idArea &&
+                            a.idStatusAsignacion == 3)
+                .ToListAsync();
+
+            // ✅ Si se especifica técnico, filtrar en memoria (para conservar los Includes)
+            if (idEmpleado.HasValue)
+            {
+                asignaciones = asignaciones
+                    .Where(a => a.Asignacion_Tecnico.Any(t => t.idEmpleado == idEmpleado.Value))
+                    .ToList();
+            }
+
+            return asignaciones;
+        }
 
 
         public async Task<Asignaciones?> ObtenerAsignacionActivaPorSolicitud(int idSolicitud)
@@ -112,5 +132,8 @@ int idMaquina, int idArea, int? idEmpleado)
         }
 
 
+
+
+        
     }
 }

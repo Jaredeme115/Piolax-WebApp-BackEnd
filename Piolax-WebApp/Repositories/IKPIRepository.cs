@@ -52,5 +52,7 @@ namespace Piolax_WebApp.Repositories
 
         Task<IEnumerable<KpisMPDetalle>> ConsultarKPIsDetallePreventivo(string nombreKPI = null, int? año = null, int? mes = null);
 
+
+
     }
 }

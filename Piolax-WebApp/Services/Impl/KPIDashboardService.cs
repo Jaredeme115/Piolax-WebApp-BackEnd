@@ -4,6 +4,7 @@ using Piolax_WebApp.DTOs;
 using Piolax_WebApp.Models;
 using Piolax_WebApp.Repositories;
 using Piolax_WebApp.Repositories.Impl;
+using SkiaSharp;
 using System.Diagnostics.Metrics;
 using System.Globalization;
 
@@ -14,10 +15,7 @@ namespace Piolax_WebApp.Services.Impl
         private readonly IKPIRepository _repository = repository;
         private readonly IAsignacionService _asignacionService = asignacionService;
         private readonly IAreasService _areasService = areasService;
-        /// <summary>
-        /// Obtiene el MTTA filtrado por 
-        /// área y/o máquina
-        /// </summary>
+
         public async Task<KPIResponseDTO> ObtenerMTTA(int? idArea = null, int? idMaquina = null, int? anio = null, int? mes = null)
         {
             var kpiDetalles = await _repository.ConsultarMTTA(idArea, idMaquina, anio, mes);
@@ -51,13 +49,13 @@ namespace Piolax_WebApp.Services.Impl
                 // Año + Mes: retornar valor único del mes completo
                 float promedio = kpiDetalles.Average(k => k.kpiValor);
                 return new List<KpiSegmentadoDTO>
-        {
-            new KpiSegmentadoDTO
             {
-                etiqueta = $"Mes {mes}",
-                valor = promedio
-            }
-        };
+                new KpiSegmentadoDTO
+                {
+                    etiqueta = $"Mes {mes}",
+                    valor = promedio
+                }
+            };
             }
             else if (anio.HasValue)
             {
@@ -75,6 +73,9 @@ namespace Piolax_WebApp.Services.Impl
 
             return new List<KpiSegmentadoDTO>();
         }
+
+
+
 
         /// Obtiene el MTTR filtrado por área, máquina y/o técnico
         /*    public async Task<KPIResponseDTO> ObtenerMTTR(int? idArea = null, int? idMaquina = null, int? idEmpleado = null, int? anio = null, int? mes = null)
@@ -94,6 +95,107 @@ namespace Piolax_WebApp.Services.Impl
                 };
             }
      */
+        /* ESTE ES EL MERO CASI BUENO   public async Task<KPIResponseDTO> ObtenerMTTR(
+               int? idArea = null,
+               int? idMaquina = null,
+               int? idEmpleado = null,
+               int? anio = null,
+               int? mes = null)
+           {
+               var kpiDetalles = await _repository.ConsultarMTTR(idArea, idMaquina, idEmpleado, anio, mes);
+
+               if (!kpiDetalles.Any())
+                   return new KPIResponseDTO { Nombre = "MTTR", Valor = 0, UnidadMedida = "minutos" };
+
+               float promedio = kpiDetalles.Average(k => k.kpiValor);
+
+               return new KPIResponseDTO
+               {
+                   Nombre = "MTTR",
+                   Valor = promedio,
+                   UnidadMedida = "minutos"
+               };
+           }
+
+           public async Task<List<KpiSegmentadoDTO>> ObtenerMTTRSegmentado(
+               int? idArea = null,
+               int? idMaquina = null,
+               int? idEmpleado = null,
+               int? anio = null,
+               int? mes = null)
+           {
+               var resultado = new List<KpiSegmentadoDTO>();
+
+               if (idEmpleado.HasValue)
+               {
+                   // 🔹 MTTR del técnico (usa cálculo real)
+                   double mttrTecnico = await _asignacionService.CalcularMTTR(idMaquina ?? 0, idArea ?? 0, idEmpleado);
+                   resultado.Add(new KpiSegmentadoDTO
+                   {
+                       etiqueta = "MTTR del técnico",
+                       valor = (float)mttrTecnico
+                   });
+
+                   // 🔹 MTTR global (misma área y máquina, pero sin técnico)
+                   double mttrGlobal = await _asignacionService.CalcularMTTR(idMaquina ?? 0, idArea ?? 0, null);
+                   resultado.Add(new KpiSegmentadoDTO
+                   {
+                       etiqueta = "MTTR global",
+                       valor = (float)mttrGlobal
+                   });
+
+                   return resultado;
+               }
+
+               // 🔹 Si solo hay área y máquina (sin técnico), usa el cálculo real también
+               if (idArea.HasValue && idMaquina.HasValue)
+               {
+                   double mttrGlobal = await _asignacionService.CalcularMTTR(idMaquina.Value, idArea.Value, null);
+                   resultado.Add(new KpiSegmentadoDTO
+                   {
+                       etiqueta = "MTTR global",
+                       valor = (float)mttrGlobal
+                   });
+
+                   return resultado;
+               }
+
+               // 🔹 Si hay año y mes (para vistas mensuales históricas desde BD guardada)
+               var kpiDetalles = await _repository.ConsultarMTTR(idArea, idMaquina, null, anio, mes);
+               if (!kpiDetalles.Any())
+                   return new List<KpiSegmentadoDTO>();
+
+               if (anio.HasValue && mes.HasValue)
+               {
+                   float promedio = kpiDetalles.Average(k => k.kpiValor);
+                   return new List<KpiSegmentadoDTO>
+           {
+               new KpiSegmentadoDTO
+               {
+                   etiqueta = $"Mes {mes}",
+                   valor = promedio
+               }
+           };
+               }
+
+               // 🔹 Si solo hay año → agrupar por mes
+               if (anio.HasValue)
+               {
+                   return kpiDetalles
+                       .GroupBy(k => k.KpisMantenimiento.fechaCalculo.Month)
+                       .Select(g => new KpiSegmentadoDTO
+                       {
+                           etiqueta = $"Mes {g.Key}",
+                           valor = g.Average(x => x.kpiValor)
+                       })
+                       .OrderBy(x => x.etiqueta)
+                       .ToList();
+               }
+
+               return new List<KpiSegmentadoDTO>();
+           }
+
+           */
         public async Task<KPIResponseDTO> ObtenerMTTR(
             int? idArea = null,
             int? idMaquina = null,
@@ -106,7 +208,7 @@ namespace Piolax_WebApp.Services.Impl
             if (!kpiDetalles.Any())
                 return new KPIResponseDTO { Nombre = "MTTR", Valor = 0, UnidadMedida = "minutos" };
 
-            float promedio = kpiDetalles.Average(k => k.kpiValor);
+            float promedio = (float)kpiDetalles.Average(k => k.kpiValor);
 
             return new KPIResponseDTO
             {
@@ -127,57 +229,32 @@ namespace Piolax_WebApp.Services.Impl
 
             if (idEmpleado.HasValue)
             {
-                // 🔹 MTTR del técnico (usa cálculo real)
                 double mttrTecnico = await _asignacionService.CalcularMTTR(idMaquina ?? 0, idArea ?? 0, idEmpleado);
-                resultado.Add(new KpiSegmentadoDTO
-                {
-                    etiqueta = "MTTR del técnico",
-                    valor = (float)mttrTecnico
-                });
+                resultado.Add(new KpiSegmentadoDTO { etiqueta = "MTTR del técnico", valor = (float)mttrTecnico });
 
-                // 🔹 MTTR global (misma área y máquina, pero sin técnico)
                 double mttrGlobal = await _asignacionService.CalcularMTTR(idMaquina ?? 0, idArea ?? 0, null);
-                resultado.Add(new KpiSegmentadoDTO
-                {
-                    etiqueta = "MTTR global",
-                    valor = (float)mttrGlobal
-                });
+                resultado.Add(new KpiSegmentadoDTO { etiqueta = "MTTR global", valor = (float)mttrGlobal });
 
                 return resultado;
             }
 
-            // 🔹 Si solo hay área y máquina (sin técnico), usa el cálculo real también
             if (idArea.HasValue && idMaquina.HasValue)
             {
                 double mttrGlobal = await _asignacionService.CalcularMTTR(idMaquina.Value, idArea.Value, null);
-                resultado.Add(new KpiSegmentadoDTO
-                {
-                    etiqueta = "MTTR global",
-                    valor = (float)mttrGlobal
-                });
-
+                resultado.Add(new KpiSegmentadoDTO { etiqueta = "MTTR global", valor = (float)mttrGlobal });
                 return resultado;
             }
 
-            // 🔹 Si hay año y mes (para vistas mensuales históricas desde BD guardada)
             var kpiDetalles = await _repository.ConsultarMTTR(idArea, idMaquina, null, anio, mes);
             if (!kpiDetalles.Any())
                 return new List<KpiSegmentadoDTO>();
 
             if (anio.HasValue && mes.HasValue)
             {
-                float promedio = kpiDetalles.Average(k => k.kpiValor);
-                return new List<KpiSegmentadoDTO>
-        {
-            new KpiSegmentadoDTO
-            {
-                etiqueta = $"Mes {mes}",
-                valor = promedio
-            }
-        };
+                float promedio = (float)kpiDetalles.Average(k => k.kpiValor);
+                return new List<KpiSegmentadoDTO> { new KpiSegmentadoDTO { etiqueta = $"Mes {mes}", valor = promedio } };
             }
 
-            // 🔹 Si solo hay año → agrupar por mes
             if (anio.HasValue)
             {
                 return kpiDetalles
@@ -185,7 +262,7 @@ namespace Piolax_WebApp.Services.Impl
                     .Select(g => new KpiSegmentadoDTO
                     {
                         etiqueta = $"Mes {g.Key}",
-                        valor = g.Average(x => x.kpiValor)
+                        valor = (float)g.Average(x => x.kpiValor)
                     })
                     .OrderBy(x => x.etiqueta)
                     .ToList();
@@ -193,7 +270,6 @@ namespace Piolax_WebApp.Services.Impl
 
             return new List<KpiSegmentadoDTO>();
         }
-
 
 
         ////////segmento para que funcionen los  filtros por promedio////

@@ -162,6 +162,51 @@ namespace Piolax_WebApp.Repositories.Impl
             return mp;
         }
 
+        public async Task<bool> ActualizarEstatus(int idMP, int nuevoEstatus)
+        {
+            var mp = await _context.MantenimientoPreventivo.FindAsync(idMP);
+            if (mp == null)
+                return false;
+
+            mp.idEstatusPreventivo = nuevoEstatus;
+
+            // Si lo quieres marcar automático como “Realizado”
+            if (nuevoEstatus == 3)
+            {
+                mp.fechaEjecucion = DateTime.Now;
+                mp.ultimaEjecucion = DateTime.Now;
+            }
+
+            await _context.SaveChangesAsync();
+            return true;
+        }
+
+
+        public async Task<MantenimientoPreventivo> MarcarFinalizadoPorTecnico(int idMP)
+        {
+            // 1) Traer la entidad con sus relaciones si las necesitas en el DTO
+            var mantenimiento = await _context.MantenimientoPreventivo
+                .Include(mp => mp.Area)
+                .Include(mp => mp.Maquina)
+                .Include(mp => mp.Empleado)
+                .Include(mp => mp.EstatusPreventivo)
+                .Include(mp => mp.FrecuenciaMP)
+                .FirstOrDefaultAsync(mp => mp.idMP == idMP);
+
+            if (mantenimiento == null)
+                return null;
+
+            // 2) Cambiar el estatus al ID que corresponda en tu tabla (aquí 6)
+            mantenimiento.idEstatusPreventivo = 6;        // Finalizado por técnico
+            mantenimiento.fechaEjecucion = DateTime.Now;
+            mantenimiento.ultimaEjecucion = DateTime.Now;
+
+            // 3) Guardar cambios
+            await _context.SaveChangesAsync();
+
+            // 4) Devolver la entidad actualizada
+            return mantenimiento;
+        }
 
     }
 }

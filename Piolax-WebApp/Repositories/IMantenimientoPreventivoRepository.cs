@@ -16,5 +16,8 @@ namespace Piolax_WebApp.Repositories
        Task<MantenimientoPreventivo> DesactivarMP(int idMP);
        Task<MantenimientoPreventivo> CambiarEstatusEnProceso(int idMP);
        Task<MantenimientoPreventivo> CancelarMantenimientoEnProceso(int idMP);
+
+       Task<bool> ActualizarEstatus(int idMP, int nuevoEstatus);
+       Task<MantenimientoPreventivo> MarcarFinalizadoPorTecnico(int idMP);
     }
 }

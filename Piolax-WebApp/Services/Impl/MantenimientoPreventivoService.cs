@@ -152,7 +152,6 @@ namespace Piolax_WebApp.Services.Impl
         }
 
 
-
         //Consultar un mantenimiento preventivo con detalles
         public async Task<MantenimientoPreventivoDetallesDTO> ConsultarMPConDetalles(int idMP)
         {
@@ -198,126 +197,6 @@ namespace Piolax_WebApp.Services.Impl
             return mantenimientoPreventivoDetallesDTO;
         }
 
-        // Método para modificar un mantenimiento preventivo
-        /*public async Task<MantenimientoPreventivoDTO> ModificarMantenimientoPreventivo(int idMP, MantenimientoPreventivoModificarDTO mantenimientoPreventivoModificarDTO)
-        {
-            // Buscar el mantenimiento preventivo por ID en el repositorio
-            var mantenimientoExistente = await _repository.ConsultarMP(idMP);
-
-            // Si no se encuentra el mantenimiento, devolver null o lanzar una excepción
-            if (mantenimientoExistente == null)
-            {
-                return null; // O puedes lanzar una excepción si prefieres
-            }
-
-            // Si la semana se modifica, cambiar el estatus a "Reprogramado"
-            if (mantenimientoExistente.semanaPreventivo != mantenimientoPreventivoModificarDTO.semanaPreventivo)
-            {
-                mantenimientoExistente.idEstatusPreventivo = 4; // "Reprogramado"
-            }
-
-            // Actualizar la frecuencia solo si se modificó, y ajustar la semana si la frecuencia cambia
-            if (mantenimientoExistente.idFrecuenciaPreventivo != mantenimientoPreventivoModificarDTO.idFrecuenciaPreventivo)
-            {
-                // Actualizar la frecuencia con el nuevo valor
-                mantenimientoExistente.idFrecuenciaPreventivo = mantenimientoPreventivoModificarDTO.idFrecuenciaPreventivo;
-
-                // Recalcular la semana en función de la nueva frecuencia
-                DateTime nuevaFechaEjecucion = GetStartOfWeek(DateTime.Now.Year, mantenimientoExistente.semanaPreventivo);
-
-                switch (mantenimientoExistente.idFrecuenciaPreventivo)
-                {
-                    case 1: // Frecuencia Mensual
-                        nuevaFechaEjecucion = nuevaFechaEjecucion.AddMonths(1);
-                        break;
-
-                    case 2: // Frecuencia Bimestral
-                        nuevaFechaEjecucion = nuevaFechaEjecucion.AddMonths(2);
-                        break;
-
-                    case 3: // Frecuencia Trimestral
-                        nuevaFechaEjecucion = nuevaFechaEjecucion.AddMonths(3);
-                        break;
-
-                    case 4: // Frecuencia Anual
-                        nuevaFechaEjecucion = nuevaFechaEjecucion.AddYears(1);
-                        break;
-
-                    default:
-                        break;
-                }
-
-                // Recalcular la semana de la nueva fecha de ejecución
-                mantenimientoExistente.semanaPreventivo = GetWeekOfYear(nuevaFechaEjecucion);
-            }
-
-            // Asignamos los demás campos que pueden haberse actualizado
-            mantenimientoExistente.semanaPreventivo = mantenimientoPreventivoModificarDTO.semanaPreventivo;
-            mantenimientoExistente.activo = mantenimientoPreventivoModificarDTO.activo;
-
-            // Verificamos si el técnico ha cambiado, y si es así, actualizamos
-            if (mantenimientoPreventivoModificarDTO.idEmpleado != 0)
-            {
-                mantenimientoExistente.idEmpleado = mantenimientoPreventivoModificarDTO.idEmpleado;
-            }
-
-            // Actualizar la `proximaEjecucion` según la frecuencia
-            DateTime nuevaProximaEjecucion;
-
-            if (mantenimientoExistente.fechaEjecucion.HasValue)
-            {
-                // Dependiendo de la frecuencia, sumamos el número de meses o años a la fecha de ejecución
-                switch (mantenimientoExistente.idFrecuenciaPreventivo)
-                {
-                    case 1: // Frecuencia mensual
-                        nuevaProximaEjecucion = mantenimientoExistente.fechaEjecucion.Value.AddMonths(1); // Sumar 1 mes
-                        break;
-
-                    case 2: // Frecuencia bimestral
-                        nuevaProximaEjecucion = mantenimientoExistente.fechaEjecucion.Value.AddMonths(2); // Sumar 2 meses
-                        break;
-
-                    case 3: // Frecuencia trimestral
-                        nuevaProximaEjecucion = mantenimientoExistente.fechaEjecucion.Value.AddMonths(3); // Sumar 3 meses
-                        break;
-
-                    case 4: // Frecuencia Anual
-                        nuevaProximaEjecucion = mantenimientoExistente.fechaEjecucion.Value.AddYears(1); // Sumar 1 año
-                        break;
-
-                    default:
-                        nuevaProximaEjecucion = mantenimientoExistente.fechaEjecucion.Value; // Si no se encuentra la frecuencia, no hacer ningún ajuste
-                        break;
-                }
-            }
-            else
-            {
-                // Si fechaEjecucion es null, asignamos una fecha predeterminada para proximaEjecucion
-                nuevaProximaEjecucion = DateTime.Now; // O una fecha de tu elección
-            }
-
-            // Asignar la nueva fecha de la próxima ejecución
-            mantenimientoExistente.proximaEjecucion = nuevaProximaEjecucion;
-
-            // Guardar los cambios en la base de datos
-            await _repository.Modificar(idMP, mantenimientoExistente);
-
-            // Convertir el objeto MantenimientoPreventivo modificado a DTO para devolverlo
-            var mantenimientoPreventivoDTOResult = new MantenimientoPreventivoDTO
-            {
-                idFrecuenciaPreventivo = mantenimientoExistente.idFrecuenciaPreventivo,
-                semanaPreventivo = mantenimientoExistente.semanaPreventivo,
-                activo = mantenimientoExistente.activo,
-                idEmpleado = mantenimientoExistente.idEmpleado,
-                ultimaEjecucion = mantenimientoExistente.ultimaEjecucion,
-                proximaEjecucion = mantenimientoExistente.proximaEjecucion,
-                fechaEjecucion = mantenimientoExistente.fechaEjecucion,
-                idEstatusPreventivo = mantenimientoExistente.idEstatusPreventivo
-            };
-
-            return mantenimientoPreventivoDTOResult;
-        }*/
-
         public async Task<MantenimientoPreventivoDTO> ModificarMantenimientoPreventivo(int idMP, MantenimientoPreventivoModificarDTO mantenimientoPreventivoModificarDTO)
         {
             // Buscar el mantenimiento preventivo por ID en el repositorio
@@ -329,45 +208,6 @@ namespace Piolax_WebApp.Services.Impl
                 return null; // O puedes lanzar una excepción si prefieres
             }
 
-            // Si es una reprogramación (cambio de semana)
-            /*if (mantenimientoExistente.semanaPreventivo != mantenimientoPreventivoModificarDTO.semanaPreventivo)
-            {
-                // CORRECCIÓN: Asegurar que semanaOriginalMP siempre tenga un valor válido
-                // Si es la primera reprogramación O si semanaOriginalMP no es válida
-                if (mantenimientoExistente.idEstatusPreventivo != 4 ||
-                    mantenimientoExistente.semanaOriginalMP == 0 ||
-                    mantenimientoExistente.semanaOriginalMP == mantenimientoExistente.semanaPreventivo)
-                {
-                    // Guardamos la semana actual como la original antes de cambiarla
-                    mantenimientoExistente.semanaOriginalMP = mantenimientoExistente.semanaPreventivo;
-
-                    // Si la semana original sigue siendo igual a la nueva semana (caso extraño)
-                    if (mantenimientoExistente.semanaOriginalMP == mantenimientoPreventivoModificarDTO.semanaPreventivo)
-                    {
-                        // Calcular una semana original diferente basada en el intervalo
-                        int intervalo = ObtenerIntervaloDeFrecuencia(mantenimientoExistente.idFrecuenciaPreventivo);
-                        mantenimientoExistente.semanaOriginalMP = mantenimientoPreventivoModificarDTO.semanaPreventivo - intervalo;
-
-                        // Asegurar que esté en rango válido (1-52)
-                        if (mantenimientoExistente.semanaOriginalMP <= 0)
-                        {
-                            mantenimientoExistente.semanaOriginalMP += 52;
-                        }
-                    }
-                }
-
-                
-
-                // Cambio a estado reprogramado
-                mantenimientoExistente.idEstatusPreventivo = 4; // "Reprogramado"
-
-                // Actualizamos a la nueva semana
-                mantenimientoExistente.semanaPreventivo = mantenimientoPreventivoModificarDTO.semanaPreventivo;
-
-                // Actualizamos el año si es que la semana pasa del mes de diciembre
-                var fechaSemana = GetStartOfWeek(DateTime.Now.Year, mantenimientoExistente.semanaPreventivo);
-                mantenimientoExistente.anioPreventivo = fechaSemana.Year;
-            }*/
 
             // Lógica de reprogramación
             if (mantenimientoExistente.semanaPreventivo != mantenimientoPreventivoModificarDTO.semanaPreventivo)
@@ -461,8 +301,6 @@ namespace Piolax_WebApp.Services.Impl
 
             return mantenimientoPreventivoDTOResult;
         }
-
-
 
 
         // Método para Eliminar un mantenimiento preventivo
@@ -854,6 +692,53 @@ namespace Piolax_WebApp.Services.Impl
             }
         }
 
+        //nuevo
+        public async Task<bool> ActualizarEstatusPreventivo(int idMP, int nuevoEstatus)
+        {
+            // Aquí puedes validar reglas de negocio antes de llamar al repo
+            return await _repository.ActualizarEstatus(idMP, nuevoEstatus);
+        }
 
+        public async Task<MantenimientoPreventivoDetallesDTO> MarcarFinalizadoPorTecnico(int idMP)
+        {
+            // 1) Llamar al repositorio para cambiar el estatus
+            var mp = await _repository.MarcarFinalizadoPorTecnico(idMP);
+            // (repositorio debe implementar CambiarEstatusEnProceso dejando 6 en lugar de 5)
+
+            if (mp == null)
+                return null;
+
+            // 2) Cargar relaciones necesarias
+            var area = await _areasRepository.Consultar(mp.idArea);
+            var maquina = await _maquinasRepository.Consultar(mp.idMaquina);
+            var frecuencia = await _frecuenciaRepository.ConsultarFrecuenciaPreventivoPorID(mp.idFrecuenciaPreventivo);
+            var estatus = await _estatusRepository.ConsultarEstatusPreventivoPorID(mp.idEstatusPreventivo);
+            var empleado = await _empleadoRepository.ConsultarPorId(mp.idEmpleado);
+
+            // 3) Mapear a DTO
+            return new MantenimientoPreventivoDetallesDTO
+            {
+                idMP = mp.idMP,
+                idArea = mp.idArea,
+                nombreArea = area?.nombreArea ?? "",
+                idMaquina = mp.idMaquina,
+                nombreMaquina = maquina?.nombreMaquina ?? "",
+                semanaPreventivo = mp.semanaPreventivo,
+                semanaOriginalMP = mp.semanaOriginalMP,
+                idFrecuenciaPreventivo = mp.idFrecuenciaPreventivo,
+                nombreFrecuenciaPreventivo = frecuencia?.nombreFrecuenciaMP ?? "",
+                idEstatusPreventivo = mp.idEstatusPreventivo,
+                nombreEstatusPreventivo = estatus?.nombreEstatusPreventivo ?? "",
+                idEmpleado = mp.idEmpleado,
+                nombreCompletoTecnicoMP = empleado == null
+                    ? ""
+                    : $"{empleado.nombre} {empleado.apellidoPaterno} {empleado.apellidoMaterno}".Trim(),
+                activo = mp.activo,
+                ultimaEjecucion = mp.ultimaEjecucion,
+                proximaEjecucion = mp.proximaEjecucion,
+                fechaEjecucion = mp.fechaEjecucion,
+                anioPreventivo = mp.anioPreventivo
+            };
+        }
     }
 }

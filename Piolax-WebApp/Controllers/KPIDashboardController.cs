@@ -75,6 +75,9 @@ namespace Piolax_WebApp.Controllers
             var resultado = await _service.ObtenerMTTRSegmentado(idArea, idMaquina, idEmpleado, anio, mes);
             return Ok(resultado);
         }
+
+
+
         #endregion
 
         #region MTBF Endpoints
