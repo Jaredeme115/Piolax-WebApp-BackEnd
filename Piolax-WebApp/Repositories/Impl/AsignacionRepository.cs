@@ -1,5 +1,6 @@
 ﻿using Microsoft.EntityFrameworkCore;
 using Piolax_WebApp.Models;
+using System.Threading.Tasks;
 
 namespace Piolax_WebApp.Repositories.Impl
 {
@@ -104,10 +105,18 @@ namespace Piolax_WebApp.Repositories.Impl
         }
 
 
-        public async Task<Asignaciones?> ObtenerAsignacionActivaPorSolicitud(int idSolicitud)
+        /*public async Task<Asignaciones?> ObtenerAsignacionActivaPorSolicitud(int idSolicitud)
         {
             return await _context.Asignaciones
                 .FirstOrDefaultAsync(a => a.idSolicitud == idSolicitud && (a.idStatusAsignacion == 1 || a.idStatusAsignacion == 2));
+        }*/
+
+        public async Task<Asignaciones?> ObtenerAsignacionActivaPorSolicitud(int idSolicitud)
+        {
+            return await _context.Asignaciones
+                .Where(a => a.idSolicitud == idSolicitud &&
+                       (a.idStatusAsignacion == 1 || a.idStatusAsignacion == 2 || a.idStatusAsignacion == 6))
+                .FirstOrDefaultAsync();
         }
 
     }

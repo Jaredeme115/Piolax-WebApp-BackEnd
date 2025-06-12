@@ -62,6 +62,9 @@ namespace Piolax_WebApp.Repositories
         public DbSet<KpisMP> KpisMP { get; set; } = default!;
         public DbSet<KpisMPDetalle> KpisMPDetalle { get; set; } = default!;
 
+        //Pausas por el Sistema
+        public DbSet<CronConfig> CronConfig { get; set; } = default!;
+
 
 
         protected override void OnModelCreating(ModelBuilder modelBuilder)

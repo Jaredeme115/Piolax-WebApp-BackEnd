@@ -17,6 +17,7 @@ using System.Security.Claims;
 //Para cargar el archivo de configuración
 using Microsoft.AspNetCore.Http.Features;
 using Piolax_WebApp.Services.BackgroundServices;
+using Piolax_WebApp.Jobs;
 
 
 
@@ -153,6 +154,9 @@ builder.Services.AddHostedService<AutoApprovalService>();
 
 // Para recordar ordenes no tomadas tras 15 minutos
 //builder.Services.AddHostedService<PendingOrderMonitorService>();
+
+// Para pausar fin de semana y reanudar lunes
+builder.Services.AddScoped<AsignacionJobs>();
 
 
 builder.Configuration

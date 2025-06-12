@@ -251,7 +251,7 @@ namespace Piolax_WebApp.Services.Impl
             return sumaTotalPorOrdenes / asignaciones.Count();
         }
 
-       
+
 
         /// <summary>
         /// Calcula el MTTA (Mean Time To Acknowledge) en minutos. Se toma el tiempo transcurrido entre la creación
@@ -319,16 +319,15 @@ namespace Piolax_WebApp.Services.Impl
                 // 2) Para cada re-toma, suma la pausa anterior
                 for (int i = 1; i < techs.Count; i++)
                 {
-                    // Calcula finAnterior sin usar '??'
-                    DateTime finAnterior;
-                    if (techs[i - 1].horaTermino != DateTime.MinValue)
-                        finAnterior = techs[i - 1].horaTermino;
-                    else
-                        finAnterior = techs[i - 1].horaInicio.AddMinutes(techs[i - 1].tiempoAcumuladoMinutos);
+                    DateTime finAnterior = techs[i - 1].horaTermino != DateTime.MinValue
+                        ? techs[i - 1].horaTermino
+                        : techs[i - 1].horaInicio.AddMinutes(techs[i - 1].tiempoAcumuladoMinutos);
 
-                    // Espera desde finAnterior hasta el nuevo inicio
                     espera += (techs[i].horaInicio - finAnterior).TotalMinutes;
                 }
+
+                // 3) Restar TODO el tiempo de pausas (manuales + sistema)
+                espera -= asignacion.tiempoEsperaAcumuladoMinutos;
 
                 sumaEsperaTotal += espera;
                 count++;
@@ -336,6 +335,7 @@ namespace Piolax_WebApp.Services.Impl
 
             return (count > 0) ? sumaEsperaTotal / count : 0;
         }
+
 
 
         /// <summary>
