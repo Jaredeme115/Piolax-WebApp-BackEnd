@@ -19,6 +19,7 @@ namespace Piolax_WebApp.Services
             int? idAreaMTBF = null,
             int? idAreaDowntime = null, int? idMaquinaDowntime = null,
             int? añoDowntime = null, int? mesDowntime = null, int? semanaDowntime = null, int? diaSemanaDowntime = null);
+           
 
         // Método para obtener MTTR segmentado
         Task<List<KpiSegmentadoDTO>> ObtenerMTTRSegmentado(

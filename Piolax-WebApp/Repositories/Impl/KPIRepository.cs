@@ -60,8 +60,12 @@ namespace Piolax_WebApp.Repositories.Impl
         public async Task<IEnumerable<KpisDetalle>> ConsultarMTTR(int? idArea = null, int? idMaquina = null, int? idEmpleado = null, int? anio = null, int? mes = null)
         {
             var query = _context.KpisDetalle
-                .Include(kd => kd.KpisMantenimiento)
-                .Where(kd => kd.kpiNombre == "MTTR");
+                                .Include(kd => kd.KpisMantenimiento)
+                                .Where(kd =>
+                                    (idEmpleado == null
+                                        ? kd.kpiNombre == "MTTR_Global"  // global
+                                        : kd.kpiNombre == "MTTR")        // individual
+                                );
 
             if (idArea.HasValue)
             {

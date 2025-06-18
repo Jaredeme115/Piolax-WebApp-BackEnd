@@ -221,6 +221,8 @@ namespace Piolax_WebApp.Services.Impl
             };
         }
 
+
+
         /// Devuelve una serie segmentada de Total Downtime para graficar.
         public async Task<List<KpiSegmentadoDTO>> ObtenerTotalDowntimeSegmentado(
             int? idArea = null,

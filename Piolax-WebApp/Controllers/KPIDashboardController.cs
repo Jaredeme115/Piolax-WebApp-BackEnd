@@ -154,7 +154,7 @@ namespace Piolax_WebApp.Controllers
         [HttpGet("totaldowntime")]
         public async Task<IActionResult> GetTotalDowntime(
             int? idArea = null, int? idMaquina = null,
-            int? anio = null, int? mes = null, int? semana = null, int? diaSemana = null)
+            int? anio = null, int? mes = null, int? semana = null, int? diaSemana = null, bool? soloConParoMaquina = true)
         {
             var result = await _service.ObtenerTotalDowntime(
                 idArea, idMaquina, anio, mes, semana, diaSemana);
@@ -168,7 +168,8 @@ namespace Piolax_WebApp.Controllers
         int? anio = null,
         int? mes = null,
         int? semana = null,
-        int? diaSemana = null)
+        int? diaSemana = null,
+        bool? soloConParoMaquina = true)
         {
             var resultado = await _service.ObtenerTotalDowntimeSegmentado(
                 idArea, idMaquina, anio, mes, semana, diaSemana);
@@ -184,10 +185,10 @@ namespace Piolax_WebApp.Controllers
         public async Task<IActionResult> GetResumenKPIs(
             // Parámetros MTTA
             int? idAreaMTTA = null, int? idMaquinaMTTA = null,
-            int? anioMTTA = null, int? mesMTTA = null,
+            int? anioMTTA = null, int? mesMTTA = null,  
             // Parámetros MTTR
             int? idAreaMTTR = null, int? idMaquinaMTTR = null, int? idEmpleadoMTTR = null,
-            int? anioMTTR = null, int? mesMTTR = null,
+            int? anioMTTR = null, int? mesMTTR = null, 
             // Parámetros MTBF
             int? idAreaMTBF = null, int? objetivoMTBF = null,
             // Parámetros TotalDowntime
@@ -195,11 +196,11 @@ namespace Piolax_WebApp.Controllers
             int? anioDowntime = null, int? mesDowntime = null, int? semanaDowntime = null, int? diaSemanaDowntime = null)
         {
             var result = await _service.ObtenerResumenKPIs(
-                idAreaMTTA, idMaquinaMTTA, anioMTTA, mesMTTA,
-                idAreaMTTR, idMaquinaMTTR, idEmpleadoMTTR, anioMTTR, mesMTTR,
-                idAreaMTBF,
-                idAreaDowntime, idMaquinaDowntime,
-                anioDowntime, mesDowntime, semanaDowntime, diaSemanaDowntime);
+                 idAreaMTTA, idMaquinaMTTA, anioMTTA, mesMTTA, null, null,
+                 idAreaMTTR, idMaquinaMTTR, idEmpleadoMTTR, anioMTTR, mesMTTR, null, null, 
+                 idAreaMTBF, 
+                 idAreaDowntime, idMaquinaDowntime,
+                 anioDowntime, mesDowntime, semanaDowntime, diaSemanaDowntime);
 
             return Ok(result);
         }
@@ -212,7 +213,8 @@ namespace Piolax_WebApp.Controllers
             int? idArea = null,
             int? idMaquina = null,
             int? idEmpleado = null,
-            int? objetivoMTBF = null)
+            int? objetivoMTBF = null,
+            bool? soloConParoMaquina = true)
         {
             // Obtener datos básicos para el dashboard
             var mtta = await _service.ObtenerMTTA(idArea, idMaquina);
