@@ -206,32 +206,7 @@ namespace Piolax_WebApp.Services.Impl
         /// <param name="idArea">Identificador del área.</param>
         /// <param name="idEmpleado">Opcional: para filtrar por un técnico específico.</param>
         /// <returns>Promedio de tiempo de reparación en minutos.</returns>
-        /*public async Task<double> CalcularMTTR(int idMaquina, int idArea, int? idEmpleado = null)
-        {
-            var asignaciones = await _repository.ConsultarAsignacionesCompletadas(idMaquina, idArea, idEmpleado);
-            if (!asignaciones.Any())
-                return 0;
-
-            double tiempoTotalReparacion = 0;
-            int count = 0;
-
-            foreach (var asignacion in asignaciones)
-            {
-                foreach (var tecnico in asignacion.Asignacion_Tecnico)
-                {
-                    // En lugar de restar (horaTermino - horaInicio),
-                    // usamos tecnico.tiempoAcumuladoMinutos:
-                    if (tecnico.tiempoAcumuladoMinutos > 0)
-                    {
-                        tiempoTotalReparacion += tecnico.tiempoAcumuladoMinutos;
-                        count++;
-                    }
-                }
-            }
-            return count > 0 ? tiempoTotalReparacion / count : 0;
-        }*/
-
-        public async Task<double> CalcularMTTA(int idMaquina, int idArea)
+        /*public async Task<double> CalcularMTTA(int idMaquina, int idArea)
         {
             if (idArea == 19) return 0;
 
@@ -274,9 +249,66 @@ namespace Piolax_WebApp.Services.Impl
 
             return (count > 0) ? (sumaEsperaTotal / count) / 60.0 : 0; //de minutos lo convierte a horas y se guarda como horas
 
+        }*/
+
+        //ovalado y piedra chiquita
+
+
+        //
+
+        public async Task<double> CalcularMTTA(int idMaquina, int idArea, DateTime? fechaHasta = null)
+        {
+            if (idArea == 19) return 0;
+
+            var solicitudes = await _solicitudRepository
+                .ConsultarSolicitudesPorMaquinaYArea2(idMaquina, idArea, fechaHasta);
+
+            double sumaEsperaTotal = 0;
+            int count = 0;
+
+            foreach (var s in solicitudes)
+            {
+                var asignacion = s.Asignaciones?
+                    .Where(a => a.idStatusAsignacion >= 1)
+                    .OrderBy(a => a.Asignacion_Tecnico.Min(t => t.horaInicio))
+                    .FirstOrDefault(a =>
+                        !fechaHasta.HasValue ||
+                        a.Asignacion_Tecnico.Min(t => t.horaInicio) <= fechaHasta.Value
+
+                     );
+
+                if (asignacion == null) continue;
+
+                var techs = asignacion.Asignacion_Tecnico
+                    .OrderBy(t => t.horaInicio)
+                    .ToList();
+                if (techs.Count < 1) continue;
+
+                // 1) Espera inicial
+                double espera = (techs[0].horaInicio - s.fechaSolicitud).TotalMinutes;
+
+                // 2) Para cada re-toma, suma la pausa anterior
+                for (int i = 1; i < techs.Count; i++)
+                {
+                    DateTime finAnterior = techs[i - 1].horaTermino != DateTime.MinValue
+                        ? techs[i - 1].horaTermino
+                        : techs[i - 1].horaInicio.AddMinutes(techs[i - 1].tiempoAcumuladoMinutos);
+
+                    espera += (techs[i].horaInicio - finAnterior).TotalMinutes;
+                }
+
+                // 3) Restar TODO el tiempo de pausas (manuales + sistema)
+                espera -= asignacion.tiempoEsperaAcumuladoMinutos;
+
+                sumaEsperaTotal += espera;
+                count++;
+            }
+
+            return (count > 0) ? (sumaEsperaTotal / count) / 60.0 : 0; //de minutos lo convierte a horas y se guarda como horas
+
         }
 
-        public async Task<double> CalcularMTTR(int idMaquina, int idArea, int? idEmpleado = null)
+        /*public async Task<double> CalcularMTTR(int idMaquina, int idArea, int? idEmpleado = null)
         {
             if (idArea == 19) return 0;
 
@@ -300,6 +332,45 @@ namespace Piolax_WebApp.Services.Impl
                 {
                     double tiempoTecnico = asignacion.Asignacion_Tecnico
                         .Where(t => t.idEmpleado == idEmpleado && t.tiempoAcumuladoMinutos > 0)
+                        .Sum(t => t.tiempoAcumuladoMinutos);
+
+                    if (tiempoTecnico > 0)
+                    {
+                        sumaTotal += tiempoTecnico;
+                        count++;
+                    }
+                }
+            }
+
+            return (idEmpleado == null)
+                ? (asignaciones.Count() > 0 ? (sumaTotal / asignaciones.Count()) / 60.0 : 0) // en horas
+                : (count > 0 ? (sumaTotal / count) / 60.0 : 0); // en horas
+        }*/
+
+        public async Task<double> CalcularMTTR(int idMaquina, int idArea, int? idEmpleado = null, DateTime? fechaHasta = null)
+        {
+            if (idArea == 19) return 0;
+
+            var asignaciones = await _repository.ConsultarAsignacionesCompletadas(idMaquina, idArea, null, fechaHasta);
+            if (!asignaciones.Any()) return 0;
+
+            double sumaTotal = 0;
+            int count = 0;
+
+            foreach (var asignacion in asignaciones)
+            {
+                if (idEmpleado == null)
+                {
+                    double sumaGlobal = asignacion.Asignacion_Tecnico
+                        .Where(t => t.tiempoAcumuladoMinutos > 0 && (!fechaHasta.HasValue || t.horaInicio <= fechaHasta.Value))
+                        .Sum(t => t.tiempoAcumuladoMinutos);
+
+                    sumaTotal += sumaGlobal;
+                }
+                else
+                {
+                    double tiempoTecnico = asignacion.Asignacion_Tecnico
+                        .Where(t => t.idEmpleado == idEmpleado && t.tiempoAcumuladoMinutos > 0 && (!fechaHasta.HasValue || t.horaInicio <= fechaHasta.Value))
                         .Sum(t => t.tiempoAcumuladoMinutos);
 
                     if (tiempoTecnico > 0)

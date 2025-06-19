@@ -9,11 +9,14 @@ using System.Globalization;
 
 namespace Piolax_WebApp.Services.Impl
 {
-    public class KPIDashboardService(IKPIRepository repository, IAsignacionService asignacionService, IAreasService areasService) : IKPIDashboardService
+    public class KPIDashboardService(IKPIRepository repository, IAsignacionService asignacionService, IAreasService areasService, IAsignacionRepository asignacionRepository, AppDbContext context) : IKPIDashboardService
     {
         private readonly IKPIRepository _repository = repository;
         private readonly IAsignacionService _asignacionService = asignacionService;
         private readonly IAreasService _areasService = areasService;
+        private readonly IAsignacionRepository _asignacionRepository = asignacionRepository;
+        private readonly AppDbContext _context = context;
+
         /// <summary>
         /// Obtiene el MTTA filtrado por 
         /// área y/o máquina
@@ -652,6 +655,92 @@ namespace Piolax_WebApp.Services.Impl
                 .OrderBy(k => k.etiqueta)
                 .ToList();
         }
+
+
+        public async Task RecalcularHistoricoKPIs(DateTime fechaDesde, DateTime fechaHasta)
+        {
+            // 1) Borra solo el rango que quieras
+            await _context.Database.ExecuteSqlRawAsync(@"
+        DELETE kd
+        FROM kpisdetalle kd
+        JOIN kpismantenimiento km 
+          ON kd.idKPIMantenimiento = km.idKPIMantenimiento
+        WHERE km.fechaCalculo BETWEEN {0} AND {1};
+    ", fechaDesde, fechaHasta);
+            await _context.Database.ExecuteSqlRawAsync(@"
+        DELETE km
+        FROM kpismantenimiento km
+        WHERE km.fechaCalculo BETWEEN {0} AND {1};
+    ", fechaDesde, fechaHasta);
+
+            // 2) En lugar de leer de kpismantenimiento,
+            //    saco la lista de meses distintos de las solicitudes
+            var meses = await _context.Solicitudes
+                .Where(s => s.fechaSolicitud >= fechaDesde && s.fechaSolicitud <= fechaHasta)
+                .Select(s => new { s.idMaquina, s.idAreaSeleccionada })
+                .Distinct()
+                .ToListAsync();
+
+            foreach (var combo in meses)
+            {
+                // Recorremos mes a mes dentro del rango
+                var primerDia = new DateTime(fechaDesde.Year, fechaDesde.Month, 1);
+                var ultimoDia = new DateTime(fechaHasta.Year, fechaHasta.Month,
+                                             DateTime.DaysInMonth(fechaHasta.Year, fechaHasta.Month));
+
+                for (var mes = primerDia; mes <= ultimoDia; mes = mes.AddMonths(1))
+                {
+                    var mesInicio = new DateTime(mes.Year, mes.Month, 1);
+                    var mesFin = mesInicio.AddMonths(1).AddTicks(-1);
+
+                    // 3) Calcula con tu lógica, pasándole mesFin como corte
+                    double mtta = await _asignacionService.CalcularMTTA(combo.idMaquina, combo.idAreaSeleccionada, mesFin);
+                    double mttrGlobal = await _asignacionService.CalcularMTTR(combo.idMaquina, combo.idAreaSeleccionada, null, mesFin);
+
+                    // 4) Guarda un único registro “global” para ese mes
+                    var kmGlobal = new KpisMantenimiento
+                    {
+                        idMaquina = combo.idMaquina,
+                        idArea = combo.idAreaSeleccionada,
+                        idEmpleado = null,           // nulo o algún código “Global”
+                        fechaCalculo = mesInicio       // o mesFin, según prefieras
+                    };
+                    await _repository.GuardarKPIMantenimiento(kmGlobal);
+
+                    var detalles = new List<KpisDetalle> {
+                new KpisDetalle { kpiNombre = "MTTA",        kpiValor = (float)mtta },
+                new KpisDetalle { kpiNombre = "MTTR_Global", kpiValor = (float)mttrGlobal }
+            };
+
+                    // 5) Cada técnico individual dentro de ese mes
+                    var asigns = await _asignacionRepository.ConsultarAsignacionesCompletadas(
+                        combo.idMaquina, combo.idAreaSeleccionada, null, mesFin);
+
+                    var tecnicos = asigns
+                        .SelectMany(a => a.Asignacion_Tecnico)
+                        .Where(t => t.tiempoAcumuladoMinutos > 0 && t.horaInicio <= mesFin)
+                        .Select(t => t.idEmpleado)
+                        .Distinct();
+
+                    foreach (var emp in tecnicos)
+                    {
+                        double mttrInd = await _asignacionService.CalcularMTTR(
+                            combo.idMaquina, combo.idAreaSeleccionada, emp, mesFin);
+
+                        // Inserto detalle individual
+                        detalles.Add(new KpisDetalle
+                        {
+                            kpiNombre = "MTTR",
+                            kpiValor = (float)mttrInd
+                        });
+                    }
+
+                    await _repository.GuardarKPIDetalles(kmGlobal.idKPIMantenimiento, detalles);
+                }
+            }
+        }
+
+
 
 
 

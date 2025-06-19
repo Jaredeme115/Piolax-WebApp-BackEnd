@@ -129,6 +129,32 @@ namespace Piolax_WebApp.Repositories.Impl
                 .ToListAsync();
         }
 
+        public async Task<IEnumerable<Solicitudes>> ConsultarSolicitudesPorMaquinaYArea2(int idMaquina, int idArea, DateTime? fechaHasta = null)
+        {
+            var query = _context.Solicitudes
+                .Include(s => s.Asignaciones)
+                    .ThenInclude(a => a.Asignacion_Tecnico)
+                .Where(s =>
+                    s.idMaquina == idMaquina &&
+                    s.idAreaSeleccionada == idArea
+                );
+            
+            // 2) Si pasaron fechaHasta, filtra sólo segmentos técnicos iniciados antes de esa fecha
+                if (fechaHasta.HasValue)
+                {
+                    query = query.Where(s =>
+                        s.Asignaciones.Any(a =>
+                            a.Asignacion_Tecnico.Any(t =>
+                                t.horaInicio <= fechaHasta.Value
+                             )
+                        )
+                    );
+                }
+
+            
+                return await query.ToListAsync();
+        }
+
         public async Task<IEnumerable<Solicitudes>> ConsultarSolicitudesNoTomadas()
         {
             return await _context.Solicitudes

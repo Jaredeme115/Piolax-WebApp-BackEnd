@@ -141,6 +141,9 @@ builder.Services.AddScoped<IKPIMantenimientoPreventivoService, KPIMantenimientoP
 //builder.Services.AddScoped<IKPIRepository, KPIRepository>();
 builder.Services.AddScoped<IKPIDashboardService, KPIDashboardService>();
 
+//RecalcularHistoricoKPIs
+builder.Services.AddScoped<IKPIDashboardService, KPIDashboardService>();
+
 
 // Para pausar fin de semana y reanudar lunes
 builder.Services.AddScoped<AsignacionJobs>();

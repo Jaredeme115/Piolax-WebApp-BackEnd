@@ -15,7 +15,8 @@ namespace Piolax_WebApp.Repositories
 
         // Utilidades
         Task<bool> AsignacionExiste(int idAsignacion);
-        Task<IEnumerable<Asignaciones>> ConsultarAsignacionesCompletadas(int idMaquina, int idArea, int? idEmpleado);
+        //Task<IEnumerable<Asignaciones>> ConsultarAsignacionesCompletadas(int idMaquina, int idArea, int? idEmpleado);
+        Task<IEnumerable<Asignaciones>> ConsultarAsignacionesCompletadas(int idMaquina, int idArea, int? idEmpleado, DateTime? fechaHasta = null);
         Task<Asignaciones?> ObtenerAsignacionActivaPorSolicitud(int idSolicitud);
 
 

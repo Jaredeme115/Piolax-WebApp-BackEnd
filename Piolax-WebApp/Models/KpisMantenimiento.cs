@@ -8,7 +8,7 @@ namespace Piolax_WebApp.Models
         public int idKPIMantenimiento { get; set; }
 
         [Required]
-        public int idEmpleado { get; set; }
+        public int? idEmpleado { get; set; }
 
         public Empleado Empleado { get; set; }
 

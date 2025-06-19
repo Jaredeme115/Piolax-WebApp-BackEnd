@@ -58,5 +58,11 @@ namespace Piolax_WebApp.Services
         Task<List<KpiObjetivos>> ObtenerObjetivosPorAnioAsync(int anio);
         Task<List<KpiObjetivosSeriesDTO>> ObtenerObjetivosSeriesAsync(int anio);
 
+        // RecalcularKPIs
+        Task RecalcularHistoricoKPIs(
+            DateTime fechaDesde,
+            DateTime fechaHasta
+        );
+
     }
 }
