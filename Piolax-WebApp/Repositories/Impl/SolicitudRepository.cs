@@ -58,7 +58,7 @@ namespace Piolax_WebApp.Repositories.Impl
         {
             return await _context.Solicitudes
                 .Where(s => s.Empleado.numNomina == numNomina &&
-                            (s.idStatusOrden == 3 || s.idStatusOrden == 6 || s.idStatusOrden == 5 || s.idStatusOrden == 4 || s.idStatusOrden == 2))
+                            (s.idStatusOrden == 3 || s.idStatusOrden == 6 || s.idStatusOrden == 5 || s.idStatusOrden == 7 || s.idStatusOrden == 4 || s.idStatusOrden == 2))
                 .Include(s => s.Empleado)
                     .ThenInclude(e => e.EmpleadoAreaRol)
                         .ThenInclude(ar => ar.Area)
@@ -73,6 +73,7 @@ namespace Piolax_WebApp.Repositories.Impl
                 .OrderByDescending(s => s.idStatusOrden == 3 ? s.fechaSolicitud : DateTime.MinValue) // Prioridad a "No tomada"
                 .ThenByDescending(s => s.idStatusOrden == 6 ? s.fechaSolicitud : DateTime.MinValue) // Luego "Rechazada"
                 .ThenByDescending(s => s.idStatusOrden == 5 ? s.fechaSolicitud : DateTime.MinValue) // Luego "Pausada"
+                .ThenByDescending(s => s.idStatusOrden == 7 ? s.fechaSolicitud : DateTime.MinValue) // Luego "Pausada Por Sistema"
                 .ThenByDescending(s => s.idStatusOrden == 4 ? s.fechaSolicitud : DateTime.MinValue) // Luego "Esperando validación"
                 .ThenByDescending(s => s.idStatusOrden == 2 ? s.fechaSolicitud : DateTime.MinValue) // Luego "En proceso"
                 .ToListAsync();
@@ -234,7 +235,7 @@ namespace Piolax_WebApp.Repositories.Impl
         public async Task<IEnumerable<Solicitudes>> ObtenerSolicitudesConPrioridadAsync()
         {
             return await _context.Solicitudes
-                .Where(s => s.idStatusOrden == 3 || s.idStatusOrden == 6 || s.idStatusOrden == 5 || s.idStatusOrden == 4 || s.idStatusOrden == 2)
+                .Where(s => s.idStatusOrden == 3 || s.idStatusOrden == 6 || s.idStatusOrden == 5 || s.idStatusOrden == 7 || s.idStatusOrden == 4 || s.idStatusOrden == 2)
                 .Include(s => s.Empleado)
                     .ThenInclude(e => e.EmpleadoAreaRol)
                         .ThenInclude(ar => ar.Area)
@@ -253,6 +254,7 @@ namespace Piolax_WebApp.Repositories.Impl
                 .OrderByDescending(s => s.idStatusOrden == 3 ? s.fechaSolicitud : DateTime.MinValue) // Prioridad a "No tomada"
                 .ThenByDescending(s => s.idStatusOrden == 6 ? s.fechaSolicitud : DateTime.MinValue) // Luego "Rechazada"
                 .ThenByDescending(s => s.idStatusOrden == 5 ? s.fechaSolicitud : DateTime.MinValue) // Luego "Pausada"
+                .ThenByDescending(s => s.idStatusOrden == 7 ? s.fechaSolicitud : DateTime.MinValue) // Luego "Pausada Por Sistema"
                 .ThenByDescending(s => s.idStatusOrden == 4 ? s.fechaSolicitud : DateTime.MinValue) // Luego "Esperando validación"
                 .ThenByDescending(s => s.idStatusOrden == 2 ? s.fechaSolicitud : DateTime.MinValue) // Luego "En proceso"
                 .ToListAsync();
@@ -287,7 +289,7 @@ namespace Piolax_WebApp.Repositories.Impl
         {
             return await _context.Solicitudes
                 .Where(s => s.idAreaSeleccionada == idArea &&
-                            (s.idStatusOrden == 3 || s.idStatusOrden == 6 || s.idStatusOrden == 5 || s.idStatusOrden == 4 || s.idStatusOrden == 2))
+                            (s.idStatusOrden == 3 || s.idStatusOrden == 6 || s.idStatusOrden == 5 || s.idStatusOrden == 7 || s.idStatusOrden == 4 || s.idStatusOrden == 2))
                 .Include(s => s.Empleado)
                     .ThenInclude(e => e.EmpleadoAreaRol)
                         .ThenInclude(ar => ar.Area)
@@ -302,6 +304,7 @@ namespace Piolax_WebApp.Repositories.Impl
                 .OrderByDescending(s => s.idStatusOrden == 3 ? s.fechaSolicitud : DateTime.MinValue) // Prioridad a "No tomada"
                 .ThenByDescending(s => s.idStatusOrden == 6 ? s.fechaSolicitud : DateTime.MinValue) // Luego "Rechazada"
                 .ThenByDescending(s => s.idStatusOrden == 5 ? s.fechaSolicitud : DateTime.MinValue) // Luego "Pausada"
+                .ThenByDescending(s => s.idStatusOrden == 7 ? s.fechaSolicitud : DateTime.MinValue) // Luego "Pausada Por Sistema"
                 .ThenByDescending(s => s.idStatusOrden == 4 ? s.fechaSolicitud : DateTime.MinValue) // Luego "Esperando validación"
                 .ThenByDescending(s => s.idStatusOrden == 2 ? s.fechaSolicitud : DateTime.MinValue) // Luego "En proceso"
                 .ToListAsync();

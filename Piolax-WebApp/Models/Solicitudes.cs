@@ -47,10 +47,15 @@ namespace Piolax_WebApp.Models
         [Required]
         public bool paroMaquinaSolicitante { get; set; } = false;
 
-        //Nuevo atributo agregado para el envio de notificaciones mediante SignalR
+        // Nuevo atributo agregado para el envio de notificaciones mediante SignalR
 
         [Required]
         public bool notificado { get; set; } = false;
+
+        // Nuevos atributos agregados para pausas del sistema
+        public DateTime? fechaPausaSistema { get; set; } = null; // Fecha de pausa del sistema, nullable
+
+        public double tiempoEsperaPausaSistema { get; set; } = 0; // Tiempo de espera en pausa del sistema
 
         public virtual ICollection<Asignaciones> Asignaciones { get; set; } = new List<Asignaciones>(); // Lista de Asignaciones asociados a Solicitud
 

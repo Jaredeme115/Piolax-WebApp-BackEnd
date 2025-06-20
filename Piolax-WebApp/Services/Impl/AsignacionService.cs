@@ -241,8 +241,12 @@ namespace Piolax_WebApp.Services.Impl
                     espera += (techs[i].horaInicio - finAnterior).TotalMinutes;
                 }
 
-                // 3) Restar TODO el tiempo de pausas (manuales + sistema)
+                // 3) Restar pausas manuales
                 espera -= asignacion.tiempoEsperaAcumuladoMinutos;
+
+                // 4) Restar la pausa de sistema almacenada en la solicitud
+                espera -= s.tiempoEsperaPausaSistema;
+
 
                 sumaEsperaTotal += espera;
                 count++;

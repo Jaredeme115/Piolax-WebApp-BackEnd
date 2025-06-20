@@ -165,14 +165,14 @@ builder.Services.AddHostedService(sp =>
     new DynamicCronService(
         sp.GetRequiredService<IServiceScopeFactory>(),
         "PausarFinSemana",                     // nombre exacto en la tabla CronConfig
-        prov => prov.GetRequiredService<AsignacionJobs>().PausarFinDeSemana()
+        prov => prov.GetRequiredService<AsignacionJobs>().PausarSolicitudesNoTomadas()
     ));
 
 builder.Services.AddHostedService(sp =>
     new DynamicCronService(
         sp.GetRequiredService<IServiceScopeFactory>(),
         "ReanudarLunes",
-        prov => prov.GetRequiredService<AsignacionJobs>().ReanudarLunes()
+        prov => prov.GetRequiredService<AsignacionJobs>().ReanudarSolicitudes()
     ));
 
 // Para recordar ordenes no tomadas tras 15 minutos
