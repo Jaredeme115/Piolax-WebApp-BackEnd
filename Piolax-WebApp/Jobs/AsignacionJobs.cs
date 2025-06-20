@@ -6,36 +6,47 @@ namespace Piolax_WebApp.Jobs
     public class AsignacionJobs
     {
         private readonly AppDbContext _ctx;
-        public AsignacionJobs(AppDbContext ctx) => _ctx = ctx;
+        private readonly ILogger<AsignacionJobs> _log;
+        private readonly TimeZoneInfo _tz = TimeZoneInfo.FindSystemTimeZoneById("America/Monterrey");
 
-        public async Task PausarFinDeSemana()
+        public AsignacionJobs(AppDbContext ctx, ILogger<AsignacionJobs> log)
         {
-            var toPause = await _ctx.Asignaciones
-               .Where(a => a.idStatusAsignacion == 4)
-               .ToListAsync();
-            foreach (var a in toPause)
+            _ctx = ctx;
+            _log = log;
+        }
+
+        public async Task PausarSolicitudesNoTomadas()
+        {
+            var ahora = TimeZoneInfo.ConvertTimeFromUtc(DateTime.UtcNow, _tz);
+            var pendientes = await _ctx.Solicitudes
+              .Where(s => s.idStatusOrden == 3)
+              .ToListAsync();
+
+            foreach (var s in pendientes)
             {
-                a.ultimaVezSinTecnico = DateTime.Now;
-                a.idStatusAsignacion = 6; // Pausada por Sistema
+                s.idStatusOrden = 7;
+                s.fechaPausaSistema = ahora;
             }
 
             await _ctx.SaveChangesAsync();
         }
 
-        public async Task ReanudarLunes()
+        public async Task ReanudarSolicitudes()
         {
-            var toResume = await _ctx.Asignaciones
-               .Where(a => a.idStatusAsignacion == 6 && a.ultimaVezSinTecnico != null)
-               .ToListAsync();
-            foreach (var a in toResume)
+            var ahora = TimeZoneInfo.ConvertTimeFromUtc(DateTime.UtcNow, _tz);
+            var pausadas = await _ctx.Solicitudes
+              .Where(s => s.idStatusOrden == 7 && s.fechaPausaSistema != null)
+              .ToListAsync();
+
+            foreach (var s in pausadas)
             {
-                a.tiempoEsperaAcumuladoMinutos +=
-                  (DateTime.Now - a.ultimaVezSinTecnico.Value).TotalMinutes;
-                a.ultimaVezSinTecnico = null;
-                a.idStatusAsignacion = 4; // No tomada
+                // acumula minutos de pausa de sistema
+                s.tiempoEsperaPausaSistema += (ahora - s.fechaPausaSistema.Value).TotalMinutes;
+                s.idStatusOrden = 3;
+                s.fechaPausaSistema = null;
             }
+
             await _ctx.SaveChangesAsync();
         }
-
     }
 }

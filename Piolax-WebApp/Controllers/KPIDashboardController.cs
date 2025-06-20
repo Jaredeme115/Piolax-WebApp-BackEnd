@@ -352,26 +352,5 @@ namespace Piolax_WebApp.Controllers
         #endregion
 
 
-
-        /// <summary>
-        /// Endpoint temporal para borrar y recalcular todo el histórico de KPIs (MTTA, MTTR y MTBF)
-        /// entre dos fechas. Úsalo sólo una vez y protégelo (p.ej. con [Authorize(Roles="Admin")]).
-        /// </summary>
-        [HttpPost("migrar-historico")]
-        public async Task<IActionResult> MigrarHistoricoKPIs(
-            [FromQuery] DateTime fechaDesde,
-            [FromQuery] DateTime fechaHasta)
-        {
-            // validaciones básicas
-            if (fechaDesde > fechaHasta)
-                return BadRequest("fechaDesde no puede ser posterior a fechaHasta.");
-
-            await _service.RecalcularHistoricoKPIs(fechaDesde, fechaHasta);
-            return Ok(new
-            {
-                Message = $"KPIs recalculados desde {fechaDesde:yyyy-MM-dd} hasta {fechaHasta:yyyy-MM-dd}"
-            });
-        }
-
     }
 }

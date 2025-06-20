@@ -14,10 +14,10 @@ namespace Piolax_WebApp.Services
         Task GuardarKPIs(int idMaquina, int idArea, int? idEmpleado = null);
 
         // Métodos de apoyo para MTTA
-        Task<double> CalcularMTTA(int idMaquina, int idArea, DateTime? fechaHasta = null);
+        Task<double> CalcularMTTA(int idMaquina, int idArea);
 
         // Métodos de apoyo para MTTR
-        Task<double> CalcularMTTR(int idMaquina, int idArea, int? idEmpleado = null, DateTime? fechaHasta = null);
+        Task<double> CalcularMTTR(int idMaquina, int idArea, int? idEmpleado = null);
 
         // Métodos de apoyo para MTBF
         Task<double> CalcularMTBF(int idArea, int anio, int mes);

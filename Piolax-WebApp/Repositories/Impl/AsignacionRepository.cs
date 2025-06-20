@@ -85,7 +85,7 @@ namespace Piolax_WebApp.Repositories.Impl
             return await query.ToListAsync();
         }*/
 
-        /*public async Task<IEnumerable<Asignaciones>> ConsultarAsignacionesCompletadas(int idMaquina, int idArea, int? idEmpleado)
+        public async Task<IEnumerable<Asignaciones>> ConsultarAsignacionesCompletadas(int idMaquina, int idArea, int? idEmpleado)
         {
             var query = _context.Asignaciones
                 .Include(a => a.Solicitud)
@@ -94,50 +94,6 @@ namespace Piolax_WebApp.Repositories.Impl
                             a.Solicitud.idAreaSeleccionada == idArea &&
                             (a.idStatusAsignacion == 3 ||                  // Asignaciones ya finalizadas (estado 3)
                              a.Solicitud.idStatusOrden == 4));            // O asignaciones con solicitud en "Esperando Validación"
-
-            // Filtro por empleado si se proporciona
-            if (idEmpleado.HasValue)
-            {
-                query = query.Where(a => a.Asignacion_Tecnico.Any(t => t.idEmpleado == idEmpleado.Value));
-            }
-
-            return await query.ToListAsync();
-        }*/
-
-
-
-        public async Task<IEnumerable<Asignaciones>> ConsultarAsignacionesCompletadas(int idMaquina, int idArea, int? idEmpleado, DateTime? fechaHasta = null)
-        {
-            var query = _context.Asignaciones
-                .Include(a => a.Solicitud)
-                .Include(a => a.Asignacion_Tecnico)
-                .Where(a => a.Solicitud.idMaquina == idMaquina &&
-                            a.Solicitud.idAreaSeleccionada == idArea &&
-                            (a.idStatusAsignacion == 3 ||                  // Asignaciones ya finalizadas (estado 3)
-                             a.Solicitud.idStatusOrden == 4));            // O asignaciones con solicitud en "Esperando Validación"
-
-            if (fechaHasta.HasValue)
-             {
-                // 1) Excluir solicitudes posteriores
-                query = query.Where(a =>
-                a.Solicitud.fechaSolicitud <= fechaHasta.Value);
-
-                // 2) Sólo asignaciones que arrancaron Y terminaron antes de fechaHasta
-                query = query.Where(a =>
-                     a.Asignacion_Tecnico.Any(t => t.horaInicio <= fechaHasta.Value)
-                  && a.Asignacion_Tecnico.Max(t =>
-                         t.horaTermino != DateTime.MinValue
-                         ? t.horaTermino
-                         : t.horaInicio.AddMinutes(t.tiempoAcumuladoMinutos)
-                     ) <= fechaHasta.Value
-                 );
-
-            }
-
-            if (fechaHasta.HasValue)
-            {
-                query = query.Where(a => a.Asignacion_Tecnico.Any(t => t.horaInicio <= fechaHasta.Value));
-            }
 
             // Filtro por empleado si se proporciona
             if (idEmpleado.HasValue)
@@ -149,18 +105,10 @@ namespace Piolax_WebApp.Repositories.Impl
         }
 
 
-        /*public async Task<Asignaciones?> ObtenerAsignacionActivaPorSolicitud(int idSolicitud)
-        {
-            return await _context.Asignaciones
-                .FirstOrDefaultAsync(a => a.idSolicitud == idSolicitud && (a.idStatusAsignacion == 1 || a.idStatusAsignacion == 2));
-        }*/
-
         public async Task<Asignaciones?> ObtenerAsignacionActivaPorSolicitud(int idSolicitud)
         {
             return await _context.Asignaciones
-                .Where(a => a.idSolicitud == idSolicitud &&
-                       (a.idStatusAsignacion == 1 || a.idStatusAsignacion == 2 || a.idStatusAsignacion == 6))
-                .FirstOrDefaultAsync();
+                .FirstOrDefaultAsync(a => a.idSolicitud == idSolicitud && (a.idStatusAsignacion == 1 || a.idStatusAsignacion == 2));
         }
 
     }

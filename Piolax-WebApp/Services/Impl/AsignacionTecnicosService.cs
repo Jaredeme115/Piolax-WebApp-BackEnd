@@ -104,7 +104,7 @@ namespace Piolax_WebApp.Services.Impl
                         {
 
                             // ← Acumular pausa sistema --> Agregado para Pausa Por Sistema
-                            AcumularPausaSistema(asignacion);
+                            //AcumularPausaSistema(asignacion);
 
                             asignacion.idStatusAsignacion = 1;
                             await _asignacionRepository.ActualizarAsignacion(asignacion.idAsignacion, asignacion);
@@ -137,7 +137,7 @@ namespace Piolax_WebApp.Services.Impl
                         await _solicitudService.ActualizarStatusOrden(asignacion.Solicitud.idSolicitud, 2);
 
                         // ← Nuevo: si venimos de pausa sistema, acumula el tiempo --> Agregado para Pausa Por Sistema
-                        AcumularPausaSistema(asignacion);
+                        //AcumularPausaSistema(asignacion);
 
                         if (asignacion.idStatusAsignacion != 1)
                         {
@@ -157,7 +157,7 @@ namespace Piolax_WebApp.Services.Impl
                         idStatusAprobacionTecnico = 3,
                         comentarioPausa = "N/A",
                         esTecnicoActivo = asignacionTecnicoDTO.esTecnicoActivo,
-                        // Asegúrate de inicializar otros campos si fuera necesario
+                        
                     };
 
                     var entidadCreada = await _repository.CrearAsignacionTecnico(nuevaEntidad);
@@ -534,7 +534,7 @@ namespace Piolax_WebApp.Services.Impl
             return await _repository.RetomarAsignacion(idAsignacion, idEmpleado);
         }
 
-        void AcumularPausaSistema(Asignaciones asignacion)
+        /*void AcumularPausaSistema(Asignaciones asignacion)
         {
             if (asignacion.idStatusAsignacion == 6
                 && asignacion.ultimaVezSinTecnico.HasValue)
@@ -543,7 +543,7 @@ namespace Piolax_WebApp.Services.Impl
                   (DateTime.Now - asignacion.ultimaVezSinTecnico.Value).TotalMinutes;
                 asignacion.ultimaVezSinTecnico = null;
             }
-        }
+        }*/
 
     }
 }
