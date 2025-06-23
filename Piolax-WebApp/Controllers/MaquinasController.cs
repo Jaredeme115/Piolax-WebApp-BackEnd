@@ -146,7 +146,7 @@ namespace Piolax_WebApp.Controllers
             }
         }
 
-        [HttpPatch("cambiarEstadoMaquina/{id}")]
+        [HttpPatch("cambiarEstadoMaquina/{idMaquina}")]
         public async Task<ActionResult> CambiarEstado(int idMaquina, [FromQuery] bool activa)
         {
             var exito = await _service.CambiarEstado(idMaquina, activa);

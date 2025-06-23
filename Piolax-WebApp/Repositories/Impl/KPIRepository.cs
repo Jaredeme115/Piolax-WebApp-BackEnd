@@ -141,7 +141,7 @@ namespace Piolax_WebApp.Repositories.Impl
 
 
 
-        public async Task<IEnumerable<KpisMantenimiento>> ConsultarTotalDowntime(
+        /*public async Task<IEnumerable<KpisMantenimiento>> ConsultarTotalDowntime(
         int? idArea = null,
         int? idMaquina = null,
         int? anio = null,
@@ -186,7 +186,70 @@ namespace Piolax_WebApp.Repositories.Impl
             }
 
             return lista;
+        }*/
+
+        public async Task<IEnumerable<KpisMantenimiento>> ConsultarTotalDowntime(
+            int? idArea = null,
+            int? idMaquina = null,
+            int? anio = null,
+            int? mes = null,
+            int? semana = null,
+            int? diaSemana = null)
+        {
+            // 1) Filtros traducibles a SQL
+            var query = _context.KpisMantenimiento
+                .Include(km => km.KpisDetalle)
+                // Excluir idArea = 19 (Servicios Generales)
+                .Where(km => km.idArea != 19)
+                .AsQueryable();
+
+            // Obtener IDs de máquinas y áreas con solicitudes que tienen paroMaquinaSolicitante = true
+            var solicitudesConParo = _context.Solicitudes
+                .Where(s => s.paroMaquinaSolicitante == true)
+                .Select(s => new { s.idMaquina, idArea = s.idAreaSeleccionada })
+                .Distinct();
+
+            // Aplicar filtro para incluir solo KpisMantenimiento relacionados con solicitudes que tienen paroMaquinaSolicitante = true
+            query = query.Join(solicitudesConParo,
+                km => new { km.idMaquina, km.idArea },
+                s => new { s.idMaquina, s.idArea },
+                (km, s) => km)
+                .Distinct();
+
+            if (idArea.HasValue)
+                query = query.Where(km => km.idArea == idArea.Value);
+
+            if (idMaquina.HasValue)
+                query = query.Where(km => km.idMaquina == idMaquina.Value);
+
+            if (anio.HasValue)
+                query = query.Where(km => km.fechaCalculo.Year == anio.Value);
+
+            if (mes.HasValue)
+                query = query.Where(km => km.fechaCalculo.Month == mes.Value);
+
+            // 2) Materializar la lista
+            var lista = await query.ToListAsync();
+
+            // 3) Filtrar por semana en memoria
+            if (semana.HasValue)
+            {
+                lista = lista
+                    .Where(km => System.Globalization.ISOWeek.GetWeekOfYear(km.fechaCalculo) == semana.Value)
+                    .ToList();
+            }
+
+            // 4) Filtrar por día de la semana en memoria
+            if (diaSemana.HasValue)
+            {
+                lista = lista
+                    .Where(km => (int)km.fechaCalculo.DayOfWeek == diaSemana.Value)
+                    .ToList();
+            }
+
+            return lista;
         }
+
 
         public async Task<List<MTBFPorAreaMesDTO>> ConsultarMTBFPorAreaMes(int anio)
         {

@@ -198,6 +198,32 @@ namespace Piolax_WebApp.Services.Impl
 
 
         /// Calcula el tiempo total de inactividad (TotalDowntime) filtrado por área, máquina y período de tiempo
+        /*public async Task<KPIResponseDTO> ObtenerTotalDowntime(int? idArea = null, int? idMaquina = null, int? anio = null, int? mes = null, int? semana = null, int? diaSemana = null)
+        {
+            var mantenimientos = await _repository.ConsultarTotalDowntime(
+                idArea, idMaquina, anio, mes, semana, diaSemana);
+
+            if (!mantenimientos.Any())
+                return new KPIResponseDTO
+                {
+                    Nombre = "TotalDowntime",
+                    Valor = 0,
+                    UnidadMedida = "horas"
+                };
+
+            float totalDowntime = mantenimientos
+                .SelectMany(m => m.KpisDetalle)
+                .Where(d => d.kpiNombre == "MTTR")
+                .Sum(d => d.kpiValor) / 60f;
+
+            return new KPIResponseDTO
+            {
+                Nombre = "TotalDowntime",
+                Valor = totalDowntime,
+                UnidadMedida = "horas"
+            };
+        }*/
+
         public async Task<KPIResponseDTO> ObtenerTotalDowntime(int? idArea = null, int? idMaquina = null, int? anio = null, int? mes = null, int? semana = null, int? diaSemana = null)
         {
             var mantenimientos = await _repository.ConsultarTotalDowntime(
@@ -208,26 +234,34 @@ namespace Piolax_WebApp.Services.Impl
                 {
                     Nombre = "TotalDowntime",
                     Valor = 0,
-                    UnidadMedida = "minutos"
+                    UnidadMedida = "horas"
                 };
 
-            float totalDowntime = mantenimientos
+            // 1. Suma de todos los tiempos de reparación (MTTR)
+            float totalMTTR = mantenimientos
                 .SelectMany(m => m.KpisDetalle)
-                .Where(d => d.kpiNombre == "MTTR")
+                .Where(d => d.kpiNombre == "MTTR_Global")
                 .Sum(d => d.kpiValor);
+
+            // 2. Suma de todos los tiempos de respuesta (MTTA)
+            float totalMTTA = mantenimientos
+                .SelectMany(m => m.KpisDetalle)
+                .Where(d => d.kpiNombre == "MTTA")
+                .Sum(d => d.kpiValor);
+
+            // 3. Total Downtime es la suma de ambos, convertido a horas
+            float totalDowntime = (totalMTTR + totalMTTA);
 
             return new KPIResponseDTO
             {
                 Nombre = "TotalDowntime",
                 Valor = totalDowntime,
-                UnidadMedida = "minutos"
+                UnidadMedida = "horas"
             };
         }
 
-
-
         /// Devuelve una serie segmentada de Total Downtime para graficar.
-        public async Task<List<KpiSegmentadoDTO>> ObtenerTotalDowntimeSegmentado(
+        /*public async Task<List<KpiSegmentadoDTO>> ObtenerTotalDowntimeSegmentado(
             int? idArea = null,
             int? idMaquina = null,
             int? anio = null,
@@ -284,7 +318,7 @@ namespace Piolax_WebApp.Services.Impl
                     .Select(g => new KpiSegmentadoDTO
                     {
                         etiqueta = $"Semana {g.Key}",
-                        valor = g.Sum(x => x.kpiValor)
+                        valor = g.Sum(x => x.kpiValor) / 60f
                     })
                     .OrderBy(x => x.etiqueta)
                     .ToList();
@@ -317,8 +351,108 @@ namespace Piolax_WebApp.Services.Impl
             new KpiSegmentadoDTO { etiqueta = "Total Downtime", valor = total }
         };
             }
-        }
+        }*/
 
+        public async Task<List<KpiSegmentadoDTO>> ObtenerTotalDowntimeSegmentado(
+    int? idArea = null,
+    int? idMaquina = null,
+    int? anio = null,
+    int? mes = null,
+    int? semana = null,
+    int? diaSemana = null)
+        {
+            var mantenimientos = await _repository.ConsultarTotalDowntime(
+                idArea, idMaquina, anio, mes, semana, diaSemana);
+
+            // Obtenemos todos los detalles de MTTR y MTTA
+            var detallesMttr = mantenimientos
+                .SelectMany(m => m.KpisDetalle)
+                .Where(d => d.kpiNombre == "MTTR_Global")
+                .ToList();
+
+            var detallesMtta = mantenimientos
+                .SelectMany(m => m.KpisDetalle)
+                .Where(d => d.kpiNombre == "MTTA")
+                .ToList();
+
+            // Combinamos ambos detalles para tener la lista completa
+            var detallesDowntime = detallesMttr.Concat(detallesMtta).ToList();
+
+            if (!detallesDowntime.Any())
+                return new List<KpiSegmentadoDTO>();
+
+            // Día X de la semana Y
+            if (semana.HasValue && diaSemana.HasValue)
+            {
+                return detallesDowntime
+                    .Where(d =>
+                        ISOWeek.GetWeekOfYear(d.KpisMantenimiento.fechaCalculo) == semana.Value &&
+                        (int)d.KpisMantenimiento.fechaCalculo.DayOfWeek == diaSemana.Value
+                    )
+                    .GroupBy(d => d.KpisMantenimiento.fechaCalculo.Date)
+                    .Select(g => new KpiSegmentadoDTO
+                    {
+                        etiqueta = g.Key.ToString("dd/MM/yyyy"),
+                        valor = g.Sum(x => x.kpiValor) // convertir a horas
+                    })
+                    .ToList();
+            }
+            // Por día de la semana dentro de esa semana
+            else if (semana.HasValue)
+            {
+                return detallesDowntime
+                    .Where(d => ISOWeek.GetWeekOfYear(d.KpisMantenimiento.fechaCalculo) == semana.Value)
+                    .GroupBy(d => d.KpisMantenimiento.fechaCalculo.DayOfWeek)
+                    .Select(g => new KpiSegmentadoDTO
+                    {
+                        etiqueta = g.Key.ToString(),
+                        valor = g.Sum(x => x.kpiValor)
+                    })
+                    .OrderBy(g => (int)Enum.Parse(typeof(DayOfWeek), g.etiqueta))
+                    .ToList();
+            }
+            // Por semana ISO dentro del mes
+            else if (mes.HasValue)
+            {
+                return detallesDowntime
+                    .GroupBy(d => ISOWeek.GetWeekOfYear(d.KpisMantenimiento.fechaCalculo))
+                    .Select(g => new KpiSegmentadoDTO
+                    {
+                        etiqueta = $"Semana {g.Key}",
+                        valor = g.Sum(x => x.kpiValor)
+                    })
+                    .OrderBy(x => x.etiqueta)
+                    .ToList();
+            }
+            // Por mes dentro del año
+            else if (anio.HasValue)
+            {
+                var raw = detallesDowntime
+                    .GroupBy(d => d.KpisMantenimiento.fechaCalculo.Month)
+                    .Select(g => new KpiSegmentadoDTO
+                    {
+                        etiqueta = $"Mes {g.Key}",
+                        valor = g.Sum(x => x.kpiValor)
+                    })
+                    .ToList();
+
+                // Asegura siempre tener 12 meses
+                return Enumerable.Range(1, 12)
+                    .Select(m =>
+                        raw.FirstOrDefault(r => r.etiqueta == $"Mes {m}")
+                        ?? new KpiSegmentadoDTO { etiqueta = $"Mes {m}", valor = 0 }
+                    )
+                    .ToList();
+            }
+            // Sin segmentación temporal: un único punto
+            else
+            {
+                float total = detallesDowntime.Sum(d => d.kpiValor);
+                return new List<KpiSegmentadoDTO> {
+            new KpiSegmentadoDTO { etiqueta = "Total Downtime", valor = total }
+        };
+            }
+        }
 
         /// <summary>
         /// Obtiene un resumen de todos los KPIs aplicando los filtros correspondientes a cada uno
