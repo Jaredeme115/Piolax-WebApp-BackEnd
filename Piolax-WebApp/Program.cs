@@ -13,10 +13,10 @@ using Piolax_WebApp.Hubs;
 using Piolax_WebApp.Utilities;
 using System.IdentityModel.Tokens.Jwt;
 using System.Security.Claims;
-
 //Para cargar el archivo de configuración
 using Microsoft.AspNetCore.Http.Features;
 using Piolax_WebApp.Services.BackgroundServices;
+using Piolax_WebApp.Jobs;
 
 
 
@@ -138,8 +138,17 @@ builder.Services.AddScoped<IKPIRepository, KPIRepository>();
 builder.Services.AddScoped<IKPIMantenimientoPreventivoService, KPIMantenimientoPreventivoService>();
 
 //Dashboard
-builder.Services.AddScoped<IKPIRepository, KPIRepository>();
+//builder.Services.AddScoped<IKPIRepository, KPIRepository>();
 builder.Services.AddScoped<IKPIDashboardService, KPIDashboardService>();
+
+//RecalcularHistoricoKPIs
+builder.Services.AddScoped<IKPIDashboardService, KPIDashboardService>();
+
+
+// Para pausar fin de semana y reanudar lunes
+builder.Services.AddScoped<AsignacionJobs>();
+builder.Services.AddScoped<ICronConfigRepository, CronConfigRepository>();
+builder.Services.AddScoped<ICronConfigService, CronConfigService>();
 
 //Notificaciones
 //builder.Services.AddScoped<NewRequestNotificationService>();
@@ -150,6 +159,21 @@ builder.Services.AddHostedService<KPIRealTimeService>();
 
 // Para cerrar orden pasados 15 minutos
 builder.Services.AddHostedService<AutoApprovalService>();
+
+// Asegúrate de registrar los dos servicios dinámicos:
+builder.Services.AddHostedService(sp =>
+    new DynamicCronService(
+        sp.GetRequiredService<IServiceScopeFactory>(),
+        "PausarFinSemana",                     // nombre exacto en la tabla CronConfig
+        prov => prov.GetRequiredService<AsignacionJobs>().PausarSolicitudesNoTomadas()
+    ));
+
+builder.Services.AddHostedService(sp =>
+    new DynamicCronService(
+        sp.GetRequiredService<IServiceScopeFactory>(),
+        "ReanudarLunes",
+        prov => prov.GetRequiredService<AsignacionJobs>().ReanudarSolicitudes()
+    ));
 
 // Para recordar ordenes no tomadas tras 15 minutos
 //builder.Services.AddHostedService<PendingOrderMonitorService>();
@@ -314,7 +338,8 @@ var app = builder.Build();
 
 
 
-//Usar esta función unicamente para debugeo en desarrollo, NO DEJAR EN PRODUCCIÓN ==> app.UseDeveloperExceptionPage();
+//Usar esta función unicamente para debugeo en desarrollo, NO DEJAR EN PRODUCCIÓN ==>
+app.UseDeveloperExceptionPage();
 
 
 if (app.Environment.IsDevelopment())

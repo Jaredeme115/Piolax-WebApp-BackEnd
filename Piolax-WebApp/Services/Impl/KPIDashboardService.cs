@@ -9,11 +9,14 @@ using System.Globalization;
 
 namespace Piolax_WebApp.Services.Impl
 {
-    public class KPIDashboardService(IKPIRepository repository, IAsignacionService asignacionService, IAreasService areasService) : IKPIDashboardService
+    public class KPIDashboardService(IKPIRepository repository, IAsignacionService asignacionService, IAreasService areasService, IAsignacionRepository asignacionRepository, AppDbContext context) : IKPIDashboardService
     {
         private readonly IKPIRepository _repository = repository;
         private readonly IAsignacionService _asignacionService = asignacionService;
         private readonly IAreasService _areasService = areasService;
+        private readonly IAsignacionRepository _asignacionRepository = asignacionRepository;
+        private readonly AppDbContext _context = context;
+
         /// <summary>
         /// Obtiene el MTTA filtrado por 
         /// área y/o máquina
@@ -137,37 +140,22 @@ namespace Piolax_WebApp.Services.Impl
             return new List<KpiSegmentadoDTO>();
         }
 
-
-        /// Obtiene el MTBF filtrado por área (Minutos)
-        /*public async Task<KPIResponseDTO> ObtenerMTBF(int? idArea = null)
-        {
-            var kpiDetalles = await _repository.ConsultarMTBF(idArea);
-            if (!kpiDetalles.Any())
-                return new KPIResponseDTO { Nombre = "MTBF", Valor = 0, UnidadMedida = "minutos" };
-
-            // Calcular el promedio de los valores de MTBF
-            float valorPromedio = kpiDetalles.Average(k => k.kpiValor);
-
-            return new KPIResponseDTO
-            {
-                Nombre = "MTBF",
-                Valor = valorPromedio,
-                UnidadMedida = "minutos"
-            };
-        }*/
-
-        /// Obtiene el MTBF filtrado por área (Horas)
+        /// <summary>
+        /// Obtiene el MTBF filtrado por área (HORAS).
+        /// Ahora suponemos que _repository.ConsultarMTBF(...) ya devuelve kpiValor en HORAS.
+        /// </summary>
         public async Task<KPIResponseDTO> ObtenerMTBF(int? idArea = null)
         {
-            var kpiDetalles = await _repository.ConsultarMTBF(idArea);
+            // Llamamos a la nueva firma que trae el DTO con MTBF_HorasNueva
+            var kpiDetalles = await _repository.ConsultarMTBF_Nueva(idArea);
+
             if (!kpiDetalles.Any())
                 return new KPIResponseDTO { Nombre = "MTBF", Valor = 0, UnidadMedida = "horas" };
 
-            // Calcular el promedio de los valores de MTBF en minutos
-            float valorPromedioMinutos = kpiDetalles.Average(k => k.kpiValor);
-
-            // Convertir minutos a horas
-            float valorPromedioHoras = valorPromedioMinutos / 60f;
+            // Promediamos la propiedad MTBF_HorasNueva (ya en horas)
+            float valorPromedioHoras = kpiDetalles
+                .Where(k => k.MTBF_HorasNueva > 0)   // opcional: podemos ignorar registros en 0
+                .Average(k => (float)k.MTBF_HorasNueva);
 
             return new KPIResponseDTO
             {
@@ -177,7 +165,65 @@ namespace Piolax_WebApp.Services.Impl
             };
         }
 
+
+
+        /// <summary>
+        /// Obtiene el MTBF segmentado por cada mes del año (en HORAS) para un área dada.
+        /// Recorre los 12 meses y llama a CalcularMTBF(area, año, mes) por cada uno.
+        /// </summary>
+        public async Task<List<KpiSegmentadoDTO>> ObtenerMTBFPorAreaMes(int idArea, int anio)
+        {
+            var listaSegmentada = new List<KpiSegmentadoDTO>();
+
+            for (int mes = 1; mes <= 12; mes++)
+            {
+                // 1) Llamamos al método que ya tienes, que devuelve MTBF en HORAS para ese mes
+                double mtbfHoras = await _asignacionService.CalcularMTBF(idArea, anio, mes);
+
+                // 2) Obtenemos el nombre del mes ("enero", "febrero", ...)
+                string nombreMes = CultureInfo.CurrentCulture
+                    .DateTimeFormat
+                    .GetMonthName(mes);
+
+                // 3) Creamos el DTO con etiqueta = nombre del mes y valor = MTBF en horas
+                listaSegmentada.Add(new KpiSegmentadoDTO
+                {
+                    etiqueta = nombreMes,
+                    valor = (float)mtbfHoras
+                });
+            }
+
+            return listaSegmentada;
+        }
+
+
         /// Calcula el tiempo total de inactividad (TotalDowntime) filtrado por área, máquina y período de tiempo
+        /*public async Task<KPIResponseDTO> ObtenerTotalDowntime(int? idArea = null, int? idMaquina = null, int? anio = null, int? mes = null, int? semana = null, int? diaSemana = null)
+        {
+            var mantenimientos = await _repository.ConsultarTotalDowntime(
+                idArea, idMaquina, anio, mes, semana, diaSemana);
+
+            if (!mantenimientos.Any())
+                return new KPIResponseDTO
+                {
+                    Nombre = "TotalDowntime",
+                    Valor = 0,
+                    UnidadMedida = "horas"
+                };
+
+            float totalDowntime = mantenimientos
+                .SelectMany(m => m.KpisDetalle)
+                .Where(d => d.kpiNombre == "MTTR")
+                .Sum(d => d.kpiValor) / 60f;
+
+            return new KPIResponseDTO
+            {
+                Nombre = "TotalDowntime",
+                Valor = totalDowntime,
+                UnidadMedida = "horas"
+            };
+        }*/
+
         public async Task<KPIResponseDTO> ObtenerTotalDowntime(int? idArea = null, int? idMaquina = null, int? anio = null, int? mes = null, int? semana = null, int? diaSemana = null)
         {
             var mantenimientos = await _repository.ConsultarTotalDowntime(
@@ -188,24 +234,34 @@ namespace Piolax_WebApp.Services.Impl
                 {
                     Nombre = "TotalDowntime",
                     Valor = 0,
-                    UnidadMedida = "minutos"
+                    UnidadMedida = "horas"
                 };
 
-            float totalDowntime = mantenimientos
+            // 1. Suma de todos los tiempos de reparación (MTTR)
+            float totalMTTR = mantenimientos
                 .SelectMany(m => m.KpisDetalle)
-                .Where(d => d.kpiNombre == "MTTR")
+                .Where(d => d.kpiNombre == "MTTR_Global")
                 .Sum(d => d.kpiValor);
+
+            // 2. Suma de todos los tiempos de respuesta (MTTA)
+            float totalMTTA = mantenimientos
+                .SelectMany(m => m.KpisDetalle)
+                .Where(d => d.kpiNombre == "MTTA")
+                .Sum(d => d.kpiValor);
+
+            // 3. Total Downtime es la suma de ambos, convertido a horas
+            float totalDowntime = (totalMTTR + totalMTTA);
 
             return new KPIResponseDTO
             {
                 Nombre = "TotalDowntime",
                 Valor = totalDowntime,
-                UnidadMedida = "minutos"
+                UnidadMedida = "horas"
             };
         }
 
         /// Devuelve una serie segmentada de Total Downtime para graficar.
-        public async Task<List<KpiSegmentadoDTO>> ObtenerTotalDowntimeSegmentado(
+        /*public async Task<List<KpiSegmentadoDTO>> ObtenerTotalDowntimeSegmentado(
             int? idArea = null,
             int? idMaquina = null,
             int? anio = null,
@@ -262,7 +318,7 @@ namespace Piolax_WebApp.Services.Impl
                     .Select(g => new KpiSegmentadoDTO
                     {
                         etiqueta = $"Semana {g.Key}",
-                        valor = g.Sum(x => x.kpiValor)
+                        valor = g.Sum(x => x.kpiValor) / 60f
                     })
                     .OrderBy(x => x.etiqueta)
                     .ToList();
@@ -295,8 +351,108 @@ namespace Piolax_WebApp.Services.Impl
             new KpiSegmentadoDTO { etiqueta = "Total Downtime", valor = total }
         };
             }
-        }
+        }*/
 
+        public async Task<List<KpiSegmentadoDTO>> ObtenerTotalDowntimeSegmentado(
+    int? idArea = null,
+    int? idMaquina = null,
+    int? anio = null,
+    int? mes = null,
+    int? semana = null,
+    int? diaSemana = null)
+        {
+            var mantenimientos = await _repository.ConsultarTotalDowntime(
+                idArea, idMaquina, anio, mes, semana, diaSemana);
+
+            // Obtenemos todos los detalles de MTTR y MTTA
+            var detallesMttr = mantenimientos
+                .SelectMany(m => m.KpisDetalle)
+                .Where(d => d.kpiNombre == "MTTR_Global")
+                .ToList();
+
+            var detallesMtta = mantenimientos
+                .SelectMany(m => m.KpisDetalle)
+                .Where(d => d.kpiNombre == "MTTA")
+                .ToList();
+
+            // Combinamos ambos detalles para tener la lista completa
+            var detallesDowntime = detallesMttr.Concat(detallesMtta).ToList();
+
+            if (!detallesDowntime.Any())
+                return new List<KpiSegmentadoDTO>();
+
+            // Día X de la semana Y
+            if (semana.HasValue && diaSemana.HasValue)
+            {
+                return detallesDowntime
+                    .Where(d =>
+                        ISOWeek.GetWeekOfYear(d.KpisMantenimiento.fechaCalculo) == semana.Value &&
+                        (int)d.KpisMantenimiento.fechaCalculo.DayOfWeek == diaSemana.Value
+                    )
+                    .GroupBy(d => d.KpisMantenimiento.fechaCalculo.Date)
+                    .Select(g => new KpiSegmentadoDTO
+                    {
+                        etiqueta = g.Key.ToString("dd/MM/yyyy"),
+                        valor = g.Sum(x => x.kpiValor) // convertir a horas
+                    })
+                    .ToList();
+            }
+            // Por día de la semana dentro de esa semana
+            else if (semana.HasValue)
+            {
+                return detallesDowntime
+                    .Where(d => ISOWeek.GetWeekOfYear(d.KpisMantenimiento.fechaCalculo) == semana.Value)
+                    .GroupBy(d => d.KpisMantenimiento.fechaCalculo.DayOfWeek)
+                    .Select(g => new KpiSegmentadoDTO
+                    {
+                        etiqueta = g.Key.ToString(),
+                        valor = g.Sum(x => x.kpiValor)
+                    })
+                    .OrderBy(g => (int)Enum.Parse(typeof(DayOfWeek), g.etiqueta))
+                    .ToList();
+            }
+            // Por semana ISO dentro del mes
+            else if (mes.HasValue)
+            {
+                return detallesDowntime
+                    .GroupBy(d => ISOWeek.GetWeekOfYear(d.KpisMantenimiento.fechaCalculo))
+                    .Select(g => new KpiSegmentadoDTO
+                    {
+                        etiqueta = $"Semana {g.Key}",
+                        valor = g.Sum(x => x.kpiValor)
+                    })
+                    .OrderBy(x => x.etiqueta)
+                    .ToList();
+            }
+            // Por mes dentro del año
+            else if (anio.HasValue)
+            {
+                var raw = detallesDowntime
+                    .GroupBy(d => d.KpisMantenimiento.fechaCalculo.Month)
+                    .Select(g => new KpiSegmentadoDTO
+                    {
+                        etiqueta = $"Mes {g.Key}",
+                        valor = g.Sum(x => x.kpiValor)
+                    })
+                    .ToList();
+
+                // Asegura siempre tener 12 meses
+                return Enumerable.Range(1, 12)
+                    .Select(m =>
+                        raw.FirstOrDefault(r => r.etiqueta == $"Mes {m}")
+                        ?? new KpiSegmentadoDTO { etiqueta = $"Mes {m}", valor = 0 }
+                    )
+                    .ToList();
+            }
+            // Sin segmentación temporal: un único punto
+            else
+            {
+                float total = detallesDowntime.Sum(d => d.kpiValor);
+                return new List<KpiSegmentadoDTO> {
+            new KpiSegmentadoDTO { etiqueta = "Total Downtime", valor = total }
+        };
+            }
+        }
 
         /// <summary>
         /// Obtiene un resumen de todos los KPIs aplicando los filtros correspondientes a cada uno
@@ -343,51 +499,46 @@ namespace Piolax_WebApp.Services.Impl
             // Si no hay año especificado, usar el actual
             int yearToUse = anio ?? DateTime.Now.Year;
 
-            // Obtener todos los registros de MTBF para el área y año especificados
-            var kpiDetalles = await _repository.ConsultarMTBF(idArea);
+            // 1) Obtener todos los registros de MTBF_HorasNueva para el área y año especificados
+            //    Aquí llamamos a la nueva consulta que devuelve KpisDetalleDTO con MTBF_HorasNueva (en horas)
+            var kpiDetalles = await _repository.ConsultarMTBF_Nueva(idArea);
 
             if (!kpiDetalles.Any())
                 return new List<KpiSegmentadoDTO>();
 
-            // Filtrar por año si está especificado
+            // 2) Filtrar por año si está especificado
             if (anio.HasValue)
             {
-                kpiDetalles = kpiDetalles.Where(kd => kd.KpisMantenimiento.fechaCalculo.Year == anio.Value);
+                kpiDetalles = kpiDetalles
+                    .Where(kd => kd.fechaCalculo.Year == anio.Value)
+                    .ToList();
             }
 
-            // Agrupar por mes y calcular el promedio de cada mes
-            /*var mtbfPorMes = kpiDetalles
-                .GroupBy(kd => kd.KpisMantenimiento.fechaCalculo.Month)
-                .Select(g => new KpiSegmentadoDTO
-                {
-                    etiqueta = ObtenerNombreMes(g.Key),
-                    valor = (int)Math.Round(g.Average(kd => kd.kpiValor))
-                })
-                .OrderBy(k => Array.IndexOf(
-                    new[] { "Enero", "Febrero", "Marzo", "Abril", "Mayo", "Junio",
-                    "Julio", "Agosto", "Septiembre", "Octubre", "Noviembre", "Diciembre" },
-                    k.etiqueta))
-                .ToList();*/
-
-            // Agrupar por mes y calcular el promedio de cada mes (convertido a horas)
+            // 3) Agrupar por mes y calcular el promedio de MTBF_HorasNueva (ya en horas)
             var mtbfPorMes = kpiDetalles
-                .GroupBy(kd => kd.KpisMantenimiento.fechaCalculo.Month)
+                .GroupBy(kd => kd.fechaCalculo.Month)
                 .Select(g => new KpiSegmentadoDTO
                 {
                     etiqueta = ObtenerNombreMes(g.Key),
-                    valor = (float)Math.Round(g.Average(kd => kd.kpiValor) / 60, 2) // Convertir minutos a horas
+                    valor = (float)Math.Round(g.Average(kd => kd.MTBF_HorasNueva), 2)
                 })
-                .OrderBy(k => Array.IndexOf(
-                    new[] { "Enero", "Febrero", "Marzo", "Abril", "Mayo", "Junio",
-            "Julio", "Agosto", "Septiembre", "Octubre", "Noviembre", "Diciembre" },
-                    k.etiqueta))
+                .OrderBy(k =>
+                    Array.IndexOf(
+                        new[]
+                        {
+                    "Enero", "Febrero", "Marzo", "Abril",
+                    "Mayo", "Junio", "Julio", "Agosto",
+                    "Septiembre", "Octubre", "Noviembre", "Diciembre"
+                        },
+                        k.etiqueta))
                 .ToList();
 
-            // Si hay un objetivo, añadirlo como una línea de referencia
+            // 4) Si hay un objetivo, agregar meses faltantes para que la serie tenga siempre 12 puntos
             if (objetivo.HasValue && objetivo.Value > 0)
             {
-                // Completar los meses faltantes (si es necesario para mostrar todos los meses en el gráfico)
-                var mesesExistentes = mtbfPorMes.Select(k => ObtenerNumeroMes(k.etiqueta)).ToList();
+                var mesesExistentes = mtbfPorMes
+                    .Select(k => ObtenerNumeroMes(k.etiqueta))
+                    .ToList();
 
                 for (int mes = 1; mes <= 12; mes++)
                 {
@@ -396,20 +547,28 @@ namespace Piolax_WebApp.Services.Impl
                         mtbfPorMes.Add(new KpiSegmentadoDTO
                         {
                             etiqueta = ObtenerNombreMes(mes),
-                            valor = 0 // Sin datos para este mes
+                            valor = 0f
                         });
                     }
                 }
 
-                // Reordenar después de añadir los meses faltantes
-                mtbfPorMes = mtbfPorMes.OrderBy(k => Array.IndexOf(
-                    new[] { "Enero", "Febrero", "Marzo", "Abril", "Mayo", "Junio",
-                    "Julio", "Agosto", "Septiembre", "Octubre", "Noviembre", "Diciembre" },
-                    k.etiqueta)).ToList();
+                // Reordenamos después de añadir los faltantes
+                mtbfPorMes = mtbfPorMes
+                    .OrderBy(k =>
+                        Array.IndexOf(
+                            new[]
+                            {
+                        "Enero", "Febrero", "Marzo", "Abril",
+                        "Mayo", "Junio", "Julio", "Agosto",
+                        "Septiembre", "Octubre", "Noviembre", "Diciembre"
+                            },
+                            k.etiqueta))
+                    .ToList();
             }
 
             return mtbfPorMes;
         }
+
 
         public async Task<List<KpiAreaMesSeriesDTO>> ObtenerMTBFPorAreaMes(int? anio = null)
         {
@@ -630,8 +789,6 @@ namespace Piolax_WebApp.Services.Impl
                 .OrderBy(k => k.etiqueta)
                 .ToList();
         }
-
-
 
     }
 }

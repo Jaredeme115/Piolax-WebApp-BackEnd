@@ -11,5 +11,7 @@ namespace Piolax_WebApp.Repositories
         Task<Areas> Eliminar(int idArea);
         Task<bool> AreaExiste(int idArea);
         Task<bool> AreaExisteRegistro(string nombreArea);
+        Task ActualizarContadorMaquinasActivas(int idArea);
+        Task RecalcularTodosLosContadores();
     }
 }

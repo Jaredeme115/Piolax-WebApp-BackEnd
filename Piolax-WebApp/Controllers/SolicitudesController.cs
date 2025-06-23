@@ -155,6 +155,41 @@ namespace Piolax_WebApp.Controllers
             return Ok(solicitudesFormateadas);
         }
 
+        [HttpGet("ConsultarSolicitudesTerminadasPorMesYAnio")]
+        public async Task<ActionResult<IEnumerable<SolicitudesDetalleDTO>>> ConsultarSolicitudesTerminadasPorMesYAnio( [FromQuery] int? mes, [FromQuery] int? anio)
+        {
+            var solicitudes = await _service.ConsultarSolicitudesTerminadasPorMesYAnio(mes, anio);
+            var solicitudesFormateadas = solicitudes.Select(s => new
+            {
+                s.idSolicitud,
+                s.descripcion,
+                fechaSolicitud = s.fechaSolicitud.ToString("dd/MM/yyyy HH:mm:ss"),
+                s.nombreCompletoEmpleado,
+                s.nombreMaquina,
+                s.nombreTurno,
+                s.nombreStatusOrden,
+                s.nombreStatusAprobacionSolicitante,
+                s.area,
+                s.rol,
+                s.nombreCategoriaTicket,
+                s.nombreCompletoTecnico,
+                s.solucion,
+                s.paroMaquinaSolicitante,
+                // Nuevos campos formateados de horaInicio y horaTermino
+                horaInicio = s.horaInicio.HasValue ? s.horaInicio.Value.ToString("dd/MM/yyyy HH:mm:ss") : null,
+                horaTermino = s.horaTermino.HasValue ? s.horaTermino.Value.ToString("dd/MM/yyyy HH:mm:ss") : null,
+                refacciones = s.Refacciones?.Select(r => new
+                {
+                    nombreRefaccion = r.NombreRefaccion,
+                    cantidad = r.Cantidad
+                })
+            });
+
+            return Ok(solicitudesFormateadas);
+        }
+
+
+
         [HttpGet("ObtenerSolicitudesConPrioridad")]
         public async Task<ActionResult<IEnumerable<SolicitudesDetalleDTO>>> ObtenerSolicitudesConPrioridad()
         {
@@ -248,12 +283,92 @@ namespace Piolax_WebApp.Controllers
             }
         }
 
+        [HttpGet("ConsultarSolicitudesTerminadasPorAreaMesYAnio/{numNomina}")]
+        public async Task<ActionResult<IEnumerable<SolicitudesDetalleDTO>>> ConsultarSolicitudesTerminadasPorAreaMesYAnio(string numNomina, [FromQuery] int? mes, [FromQuery] int? anio)
+        {
+            try
+            {
+                var solicitudes = await _service.ConsultarSolicitudesTerminadasPorAreaMesYAnio(numNomina, mes, anio);
+
+                var solicitudesFormateadas = solicitudes.Select(s => new
+                {
+                    s.idSolicitud,
+                    s.descripcion,
+                    fechaSolicitud = s.fechaSolicitud.ToString("dd/MM/yyyy HH:mm:ss"),
+                    s.nombreCompletoEmpleado,
+                    s.nombreMaquina,
+                    s.paroMaquinaSolicitante,
+                    s.nombreTurno,
+                    s.nombreStatusOrden,
+                    s.nombreStatusAprobacionSolicitante,
+                    s.area,
+                    s.rol,
+                    s.nombreCategoriaTicket,
+                    s.nombreCompletoTecnico,
+                    s.solucion,
+                    horaInicio = s.horaInicio.HasValue ? s.horaInicio.Value.ToString("dd/MM/yyyy HH:mm:ss") : null,
+                    horaTermino = s.horaTermino.HasValue ? s.horaTermino.Value.ToString("dd/MM/yyyy HH:mm:ss") : null,
+                    refacciones = s.Refacciones?.Select(r => new
+                    {
+                        nombreRefaccion = r.NombreRefaccion,
+                        cantidad = r.Cantidad
+                    })
+                });
+
+                return Ok(solicitudesFormateadas);
+            }
+            catch (Exception ex)
+            {
+                return BadRequest($"Error al consultar solicitudes terminadas por área: {ex.Message}");
+            }
+        }
+
         [HttpGet("ConsultarSolicitudesTerminadasPorEmpleado/{numNomina}")]
         public async Task<ActionResult<IEnumerable<SolicitudesDetalleDTO>>> ConsultarSolicitudesTerminadasPorEmpleado(string numNomina)
         {
             try
             {
                 var solicitudes = await _service.ConsultarSolicitudesTerminadasPorEmpleado(numNomina);
+
+                var solicitudesFormateadas = solicitudes.Select(s => new
+                {
+                    s.idSolicitud,
+                    s.descripcion,
+                    fechaSolicitud = s.fechaSolicitud.ToString("dd/MM/yyyy HH:mm:ss"),
+                    s.nombreCompletoEmpleado,
+                    s.nombreMaquina,
+                    s.paroMaquinaSolicitante,
+                    s.nombreTurno,
+                    s.nombreStatusOrden,
+                    s.nombreStatusAprobacionSolicitante,
+                    s.area,
+                    s.rol,
+                    s.nombreCategoriaTicket,
+                    s.nombreCompletoTecnico,
+                    s.solucion,
+                    horaInicio = s.horaInicio.HasValue ? s.horaInicio.Value.ToString("dd/MM/yyyy HH:mm:ss") : null,
+                    horaTermino = s.horaTermino.HasValue ? s.horaTermino.Value.ToString("dd/MM/yyyy HH:mm:ss") : null,
+                    refacciones = s.Refacciones?.Select(r => new
+                    {
+                        nombreRefaccion = r.NombreRefaccion,
+                        cantidad = r.Cantidad
+                    })
+                });
+
+                return Ok(solicitudesFormateadas);
+            }
+            catch (Exception ex)
+            {
+                return BadRequest($"Error al consultar solicitudes terminadas del empleado: {ex.Message}");
+            }
+        }
+
+        [HttpGet("ConsultarSolicitudesTerminadasPorEmpleadoMesYAnio/{numNomina}")]
+        public async Task<ActionResult<IEnumerable<SolicitudesDetalleDTO>>> ConsultarSolicitudesTerminadasPorEmpleadoMesYAnio(string numNomina, [FromQuery] int? mes, [FromQuery] int? anio)
+        {
+            try
+            {
+                var solicitudes = await _service.ConsultarSolicitudesTerminadasPorEmpleadoMesYAnio(numNomina, mes, anio);
 
                 var solicitudesFormateadas = solicitudes.Select(s => new
                 {
@@ -295,6 +410,31 @@ namespace Piolax_WebApp.Controllers
             {
                 // Llamar al servicio para generar el Excel
                 byte[] excelBytes = await _service.ExportarSolicitudesTerminadasExcel();
+
+                // Devolver el archivo para descarga
+                return File(
+                    excelBytes,
+                    "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
+                    $"SolicitudesTerminadas_{DateTime.Now:yyyyMMdd}.xlsx");
+            }
+            catch (Exception ex)
+            {
+                return StatusCode(500, $"Error al generar el archivo Excel: {ex.Message}");
+            }
+        }
+
+        [HttpGet("ExportarSolicitudesTerminadasPorMesYAnioExcel")]
+        public async Task<IActionResult> ExportarSolicitudesTerminadasPorMesYAnioExcel([FromQuery] int? mes, [FromQuery] int? anio)
+        {
+            try
+            {
+
+                var ahora = DateTime.Now;
+                int mesFiltro = mes ?? ahora.Month;
+                int anioFiltro = anio ?? ahora.Year;
+
+                // Llamar al servicio para generar el Excel
+                byte[] excelBytes = await _service.ExportarSolicitudesTerminadasPorMesYAnioExcel(mes, anio);
 
                 // Devolver el archivo para descarga
                 return File(

@@ -55,5 +55,13 @@ namespace Piolax_WebApp.Services.Impl
         {
             return await _repository.AreaExisteRegistro(nombreArea);
         }
+
+        public async Task RecalcularTodosLosContadores()
+        {
+            await _repository.RecalcularTodosLosContadores();
+        }
+
+
+
     }
 }

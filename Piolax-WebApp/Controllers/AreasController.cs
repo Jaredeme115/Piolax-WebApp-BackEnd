@@ -3,6 +3,7 @@ using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using Piolax_WebApp.DTOs;
 using Piolax_WebApp.Models;
+using Piolax_WebApp.Services.Impl;
 
 namespace Piolax_WebApp.Controllers
 {
@@ -67,6 +68,14 @@ namespace Piolax_WebApp.Controllers
             }
 
             return Ok(await _service.Eliminar(idArea));
+        }
+
+
+        [HttpPost("recalcular-contadores")]
+        public async Task<IActionResult> RecalcularContadores()
+        {
+            await _service.RecalcularTodosLosContadores();
+            return Ok(new { mensaje = "Contadores actualizados correctamente." });
         }
     }
 }

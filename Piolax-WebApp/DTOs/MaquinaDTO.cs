@@ -17,6 +17,8 @@ namespace Piolax_WebApp.DTOs
         [Required]
         public int idArea { get; set; }
 
+        [Required]
+        public bool maquinaActiva { get; set; } = true;
 
     }
 }

@@ -146,5 +146,22 @@ namespace Piolax_WebApp.Controllers
             }
         }
 
+        [HttpPatch("cambiarEstadoMaquina/{idMaquina}")]
+        public async Task<ActionResult> CambiarEstado(int idMaquina, [FromQuery] bool activa)
+        {
+            var exito = await _service.CambiarEstado(idMaquina, activa);
+            if (!exito)
+                return NotFound();
+
+            return Ok(new { mensaje = $"Estado actualizado a {(activa ? "activa" : "inactiva")}" });
+        }
+
+        [HttpGet("activas/por-area/{idArea}")]
+        public async Task<ActionResult<int>> GetActivasPorArea(int idArea)
+        {
+            var cantidad = await _service.ContarMaquinasActivasPorArea(idArea);
+            return Ok(new { idArea, maquinasActivas = cantidad });
+        }
+
     }
 }

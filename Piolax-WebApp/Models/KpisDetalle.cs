@@ -17,5 +17,8 @@ namespace Piolax_WebApp.Models
 
         [Required]
         public float kpiValor { get; set; }
+
+        // Nueva propiedad que mapeará la columna "MTBF_HorasNueva" en la BD:
+        public double? MTBF_HorasNueva { get; set; }
     }
 }

@@ -2,6 +2,7 @@
 using Piolax_WebApp.Models;
 using Piolax_WebApp.Repositories;
 using Piolax_WebApp.Repositories.Impl;
+using System.Globalization;
 using System.Linq;
 
 namespace Piolax_WebApp.Services.Impl
@@ -141,7 +142,7 @@ namespace Piolax_WebApp.Services.Impl
                 idAsignacionTecnico = tecnico.idAsignacionTecnico,
                 idAsignacion = tecnico.idAsignacion,
                 idEmpleado = tecnico.idEmpleado,
-                nombreCompletoTecnico = $"{tecnico.Empleado?.nombre} {tecnico.Empleado?.apellidoPaterno} {tecnico.Empleado?.apellidoMaterno}",
+                nombreCompletoTecnico = $"{tecnico.Empleado?.nombre} {tecnico.Empleado?.apellidoPaterno}",
                 horaInicio = tecnico.horaInicio,
                 horaTermino = tecnico.horaTermino,
                 solucion = tecnico.solucion,
@@ -166,7 +167,7 @@ namespace Piolax_WebApp.Services.Impl
                 idSolicitud = asignacion.Solicitud?.idSolicitud ?? 0,
                 descripcion = asignacion.Solicitud?.descripcion,
                 fechaSolicitud = asignacion.Solicitud?.fechaSolicitud ?? DateTime.MinValue,
-                nombreCompletoEmpleado = $"{asignacion.Solicitud?.Empleado?.nombre} {asignacion.Solicitud?.Empleado?.apellidoPaterno} {asignacion.Solicitud?.Empleado?.apellidoMaterno}",
+                nombreCompletoEmpleado = $"{asignacion.Solicitud?.Empleado?.nombre} {asignacion.Solicitud?.Empleado?.apellidoPaterno}",
                 idMaquina = asignacion.Solicitud?.idMaquina ?? 0,
                 idTurno = asignacion.Solicitud?.idTurno ?? 0,
                 idStatusOrden = asignacion.Solicitud?.idStatusOrden ?? 0,
@@ -205,95 +206,11 @@ namespace Piolax_WebApp.Services.Impl
         /// <param name="idArea">Identificador del área.</param>
         /// <param name="idEmpleado">Opcional: para filtrar por un técnico específico.</param>
         /// <returns>Promedio de tiempo de reparación en minutos.</returns>
-        public async Task<double> CalcularMTTR(int idMaquina, int idArea, int? idEmpleado = null)
-        {
-            var asignaciones = await _repository.ConsultarAsignacionesCompletadas(idMaquina, idArea, idEmpleado);
-            if (!asignaciones.Any())
-                return 0;
-
-            double tiempoTotalReparacion = 0;
-            int count = 0;
-
-            foreach (var asignacion in asignaciones)
-            {
-                foreach (var tecnico in asignacion.Asignacion_Tecnico)
-                {
-                    // En lugar de restar (horaTermino - horaInicio),
-                    // usamos tecnico.tiempoAcumuladoMinutos:
-                    if (tecnico.tiempoAcumuladoMinutos > 0)
-                    {
-                        tiempoTotalReparacion += tecnico.tiempoAcumuladoMinutos;
-                        count++;
-                    }
-                }
-            }
-            return count > 0 ? tiempoTotalReparacion / count : 0;
-        }
-
-        /*public async Task<double> CalcularMTTR(int idMaquina, int idArea, int? idEmpleado = null)
-        {
-            var asignaciones = await _repository.ConsultarAsignacionesCompletadas(idMaquina, idArea, idEmpleado);
-            if (!asignaciones.Any())
-                return 0;
-
-            double sumaTotalPorOrdenes = 0;
-            foreach (var asignacion in asignaciones)
-            {
-                double sumaSegmentos = asignacion.Asignacion_Tecnico
-                    .Where(t => t.tiempoAcumuladoMinutos > 0)
-                    .Sum(t => t.tiempoAcumuladoMinutos);
-
-                sumaTotalPorOrdenes += sumaSegmentos;
-            }
-
-            // Aquí llamamos correctamente a Count()
-            return sumaTotalPorOrdenes / asignaciones.Count();
-        }*/
-
-
-        /// <summary>
-        /// Calcula el MTTA (Mean Time To Acknowledge) en minutos. Se toma el tiempo transcurrido entre la creación
-        /// de la solicitud y el inicio del primer técnico asignado para cada solicitud.
-        /// </summary>
-        /// <param name="idMaquina">Identificador de la máquina.</param>
-        /// <param name="idArea">Identificador del área.</param>
-        /// <returns>Promedio de tiempo de asignación (MTTA) en minutos.</returns>
+         
         public async Task<double> CalcularMTTA(int idMaquina, int idArea)
         {
-            // Obtiene solicitudes
-            var solicitudes = await _solicitudRepository.ConsultarSolicitudesPorMaquinaYArea(idMaquina, idArea);
-            if (!solicitudes.Any())
-                return 0;
+            if (idArea == 19) return 0;
 
-            double tiempoTotal = 0;
-            int count = 0;
-
-            foreach (var s in solicitudes)
-            {
-                // Podrías buscar la asignación principal o la primera
-                var asignacion = s.Asignaciones?.FirstOrDefault(a => a.idStatusAsignacion >= 1);
-                if (asignacion == null) continue;
-
-                // Encuentra primer técnico
-                var primerTecnico = asignacion.Asignacion_Tecnico.OrderBy(t => t.horaInicio).FirstOrDefault();
-                if (primerTecnico == null) continue;
-
-                // Espera inicial: primerTecnico.horaInicio - s.fechaSolicitud
-                double esperaInicial = (primerTecnico.horaInicio - s.fechaSolicitud).TotalMinutes;
-
-                // Espera por pausas: asignacion.tiempoEsperaAcumuladoMinutos
-                // (Asumiendo que has ido sumando en cada pausa)
-                double esperaPausas = asignacion.tiempoEsperaAcumuladoMinutos;
-
-                tiempoTotal += (esperaInicial + esperaPausas);
-                count++;
-            }
-
-            return (count > 0) ? (tiempoTotal / count) : 0;
-        }
-
-        /*public async Task<double> CalcularMTTA(int idMaquina, int idArea)
-        {
             var solicitudes = await _solicitudRepository
                 .ConsultarSolicitudesPorMaquinaYArea(idMaquina, idArea);
 
@@ -317,88 +234,220 @@ namespace Piolax_WebApp.Services.Impl
                 // 2) Para cada re-toma, suma la pausa anterior
                 for (int i = 1; i < techs.Count; i++)
                 {
-                    // Calcula finAnterior sin usar '??'
-                    DateTime finAnterior;
-                    if (techs[i - 1].horaTermino != DateTime.MinValue)
-                        finAnterior = techs[i - 1].horaTermino;
-                    else
-                        finAnterior = techs[i - 1].horaInicio.AddMinutes(techs[i - 1].tiempoAcumuladoMinutos);
+                    DateTime finAnterior = techs[i - 1].horaTermino != DateTime.MinValue
+                        ? techs[i - 1].horaTermino
+                        : techs[i - 1].horaInicio.AddMinutes(techs[i - 1].tiempoAcumuladoMinutos);
 
-                    // Espera desde finAnterior hasta el nuevo inicio
                     espera += (techs[i].horaInicio - finAnterior).TotalMinutes;
                 }
+
+                // 3) Restar pausas manuales
+                espera -= asignacion.tiempoEsperaAcumuladoMinutos;
+
+                // 4) Restar la pausa de sistema almacenada en la solicitud
+                espera -= s.tiempoEsperaPausaSistema;
+
 
                 sumaEsperaTotal += espera;
                 count++;
             }
 
-            return (count > 0) ? sumaEsperaTotal / count : 0;
-        }*/
+            return (count > 0) ? (sumaEsperaTotal / count) / 60.0 : 0; //de minutos lo convierte a horas y se guarda como horas
+
+        }
 
 
-        /// <summary>
-        /// Calcula el MTBF (Mean Time Between Failures) en minutos. Dado que no se cuenta con la fecha de instalación de la máquina,
-        /// se utiliza la fecha mínima de solicitud registrada para la máquina y área como proxy del inicio de operación.
-        /// </summary>
-        /// <param name="idMaquina">Identificador de la máquina.</param>
-        /// <param name="idArea">Identificador del área.</param>
-        /// <returns>Promedio de tiempo entre fallas en minutos.</returns>
-        /*public async Task<double> CalcularMTBF(int idMaquina, int idArea)
+        public async Task<double> CalcularMTTR(int idMaquina, int idArea, int? idEmpleado = null)
         {
-            var solicitudes = await _solicitudRepository.ConsultarSolicitudesPorMaquinaYArea(idMaquina, idArea);
-            if (!solicitudes.Any())
-                return 0;
+            if (idArea == 19) return 0;
 
-            // Se utiliza la fecha mínima de solicitud como proxy para el inicio de operación
-            DateTime fechaInicioOperacion = solicitudes.Min(s => s.fechaSolicitud);
-            double tiempoTotalOperacion = (DateTime.Now - fechaInicioOperacion).TotalMinutes;
-            int cantidadFallas = solicitudes.Count(); // Se asume cada solicitud es una "falla"
-            return cantidadFallas > 0 ? tiempoTotalOperacion / cantidadFallas : 0;
-        }*/
+            var asignaciones = await _repository.ConsultarAsignacionesCompletadas(idMaquina, idArea, null);
+            if (!asignaciones.Any()) return 0;
 
-        /// <summary>
-        /// Calcula el MTBF (Mean Time Between Failures) en minutos.
-        /// Se resta el tiempo perdido en reparaciones (MTTR) del tiempo total 
-        /// disponible desde la primera falla hasta ahora.
-        /// </summary>
-        public async Task<double> CalcularMTBF(int idMaquina, int idArea)
-        {
-            // 1) Todas las solicitudes (cada una es una falla)
-            var solicitudes = await _solicitudRepository
-                .ConsultarSolicitudesPorMaquinaYArea(idMaquina, idArea);
-            if (!solicitudes.Any())
-                return 0;
+            double sumaTotal = 0;
+            int count = 0;
 
-            // 2) Fecha de inicio de operación = primera solicitud (proxy de instalación)
-            DateTime fechaInicioOperacion = solicitudes.Min(s => s.fechaSolicitud);
-
-            // 3) Tiempo total disponible en minutos
-            double tiempoTotalDisponible = (DateTime.Now - fechaInicioOperacion).TotalMinutes;
-
-            // 4) Sumar todo el tiempo perdido (MTTR) en minutos
-            double tiempoPerdido = 0;
-            foreach (var sol in solicitudes)
+            foreach (var asignacion in asignaciones)
             {
-                // Obtenemos la asignación principal (fase de reparación)
-                var asign = sol.Asignaciones?
-                    .FirstOrDefault(a => a.idStatusAsignacion >= 1);
-                if (asign == null)
-                    continue;
+                if (idEmpleado == null)
+                {
+                    double sumaGlobal = asignacion.Asignacion_Tecnico
+                        .Where(t => t.tiempoAcumuladoMinutos > 0)
+                        .Sum(t => t.tiempoAcumuladoMinutos);
 
-                // Sumamos el tiempo acumulado de cada técnico en esa falla
-                tiempoPerdido += asign.Asignacion_Tecnico
-                    .Sum(t => t.tiempoAcumuladoMinutos);
+                    sumaTotal += sumaGlobal;
+                }
+                else
+                {
+                    double tiempoTecnico = asignacion.Asignacion_Tecnico
+                        .Where(t => t.idEmpleado == idEmpleado && t.tiempoAcumuladoMinutos > 0)
+                        .Sum(t => t.tiempoAcumuladoMinutos);
+
+                    if (tiempoTecnico > 0)
+                    {
+                        sumaTotal += tiempoTecnico;
+                        count++;
+                    }
+                }
             }
 
-            // 5) Número de paradas = número de solicitudes (fallas)
-            int numeroParadas = solicitudes.Count();
+            return (idEmpleado == null)
+                ? (asignaciones.Count() > 0 ? (sumaTotal / asignaciones.Count()) / 60.0 : 0) // en horas
+                : (count > 0 ? (sumaTotal / count) / 60.0 : 0); // en horas
+        }
 
-            // 6) Aplicar fórmula MTBF = (Disponible – Perdido) / Paradas
-            var mtbfMinutos = numeroParadas > 0
-                ? (tiempoTotalDisponible - tiempoPerdido) / numeroParadas
-                : 0;
 
-            return mtbfMinutos;
+        public async Task<double> CalcularMTBF(int idArea, int anio, int mes)
+        {
+            // 1) Obtener el día de la primera solicitud en ese mes:
+            int? primerDiaNullable = await _solicitudRepository
+                .ObtenerPrimerDiaSolicitudPorAreaEnMes(idArea, anio, mes);
+
+            // Si no hay solicitudes, retorno 0
+            if (primerDiaNullable == null)
+                return 0;
+
+            int primerDia = primerDiaNullable.Value;
+            // Ejemplo: primerDia = 19 si la primera falla en mayo es 19/05/2025
+
+            // 2) Contar cuántas fallas hay desde "primerDia" hasta fin de mes
+            int numeroParadas = await _solicitudRepository
+                .ContarFallasPorAreaEnMesDesdeDia(idArea, anio, mes, primerDia);
+
+            // Si no hay ninguna falla en ese rango, retorno 0
+            if (numeroParadas == 0)
+                return 0;
+
+            // 3) Cantidad de máquinas activas en el área
+            int numMaquinasActivas = await _maquinaRepository
+                .ContarMaquinasActivasPorArea(idArea);
+            if (numMaquinasActivas == 0)
+                return 0;
+
+            // 4) Días del mes completo
+            int diasDelMes = DateTime.DaysInMonth(anio, mes);
+
+            // 5) Calcular “días ajustados”:
+            var hoy = DateTime.Today;
+            int diasAjustados;
+            if (anio == hoy.Year && mes == hoy.Month)
+            {
+                // Mes actual: solo hasta el día de hoy
+                int diaHoy = hoy.Day;
+                diasAjustados = diaHoy - (primerDia - 1);
+            }
+            else
+            {
+                // Mes pasado o mes completo: hasta fin de mes
+                diasAjustados = diasDelMes - (primerDia - 1);
+            }
+            diasAjustados = Math.Max(diasAjustados, 0);
+
+            // 6) "Días efectivos" en el mes = (22 / díasDelMes) * díasAjustados
+            double diasEfectivos = (22.0 / diasDelMes) * diasAjustados;
+
+            // 7) Horas por máquina en esos días efectivos = díasEfectivos × 21.75
+            double horasPorMaquinaEnMes = diasEfectivos * 21.75;
+
+            // 8) Horas totales disponibles = horasPorMaquinaEnMes × numMaquinasActivas
+            double horasTotalesDisponibles = horasPorMaquinaEnMes * numMaquinasActivas;
+
+            // 9) MTBF = horasTotalesDisponibles / numeroParadas
+            double mtbfHoras = horasTotalesDisponibles / numeroParadas;
+            return mtbfHoras;
+        }
+
+
+        /// <summary>
+        /// Recorre los meses del año y devuelve un DTO con el MTBF calculado
+        /// para cada mes (usando la nueva fórmula). 
+        /// </summary>
+        public async Task<List<KpiSegmentadoDTO>> ObtenerMTBFPorAreaMes(int idArea, int anio)
+        {
+            var listaSegmentada = new List<KpiSegmentadoDTO>();
+
+            // Para cada mes de 1 a 12
+            for (int mes = 1; mes <= 12; mes++)
+            {
+                double valorHoras = await CalcularMTBF(idArea, anio, mes);
+
+                // Nombre del mes en la cultura actual (p.ej. "enero", "febrero", …)
+                string nombreMes = CultureInfo.CurrentCulture
+                    .DateTimeFormat
+                    .GetMonthName(mes);
+
+                listaSegmentada.Add(new KpiSegmentadoDTO
+                {
+                    etiqueta = nombreMes,
+                    valor = (float)valorHoras
+                });
+            }
+
+            return listaSegmentada;
+        }
+
+        /// <summary>
+        /// Si aún necesitas el MTBF “hasta hoy” (día a día) con la nueva lógica, 
+        /// podrías adaptar CalcularMTBF_DiaAHoy de esta manera:
+        ///
+        ///   MTBF_DiaAHoy = 
+        ///     { 
+        ///       [((22 / DíasMes) × DíasAjustadosHastaHoy) × 21.75 × MáquinasActivas] 
+        ///         / paradasHastaHoy 
+        ///       , si paradasHastaHoy > 0 
+        ///       ; 0 en otro caso
+        ///     }
+        ///
+        ///   Aquí “DíasAjustadosHastaHoy” = (díaHoy – (primerDia – 1)), 
+        ///   pero no supera (díasDelMes – (primerDia – 1)) si estamos después del mes.
+        /// </summary>
+        public async Task<double> CalcularMTBF_DiaAHoy(int idArea, int anio, int mes, int diaHoy)
+        {
+            // 1) Paradas acumuladas HASTA el día “diaHoy” del mes
+            int paradasHastaHoy = await _solicitudRepository
+                .ContarFallasPorAreaEnMesHastaDia(idArea, anio, mes, diaHoy);
+
+            if (paradasHastaHoy == 0)
+                return 0;
+
+            // 2) Cantidad de máquinas activas en el área
+            int numMaquinasActivas = await _maquinaRepository
+                .ContarMaquinasActivasPorArea(idArea);
+
+            if (numMaquinasActivas == 0)
+                return 0;
+
+            // 3) Obtener primer día de solicitud en ese mes
+            int? primerDiaNullable = await _solicitudRepository
+                .ObtenerPrimerDiaSolicitudPorAreaEnMes(idArea, anio, mes);
+
+            if (primerDiaNullable == null)
+                return 0;
+
+            int primerDia = primerDiaNullable.Value;
+
+            // 4) Días del mes
+            int diasDelMes = DateTime.DaysInMonth(anio, mes);
+
+            // 5) Calcular "días ajustados hasta hoy":
+            //    No puede ser negativo, ni mayor que (díasDelMes - (primerDia - 1))
+            int diasAjustadosHastaHoy = diaHoy - (primerDia - 1);
+            diasAjustadosHastaHoy = Math.Max(diasAjustadosHastaHoy, 0);
+            diasAjustadosHastaHoy = Math.Min(diasAjustadosHastaHoy, diasDelMes - (primerDia - 1));
+
+            // 6) “Días efectivos hasta hoy” = (22 / díasDelMes) * diasAjustadosHastaHoy
+            double diasEfectivosHastaHoy = (22.0 / diasDelMes) * diasAjustadosHastaHoy;
+
+            // 7) Horas por máquina hasta hoy = diasEfectivosHastaHoy × 21.75
+            double horasPorMaquinaHastaHoy = diasEfectivosHastaHoy * 21.75;
+
+            // 8) Horas totales disponibles hasta hoy = horasPorMaquinaHastaHoy × numMaquinasActivas
+            double horasDisponiblesHastaHoy = horasPorMaquinaHastaHoy * numMaquinasActivas;
+
+            // 9) MTBF hasta hoy = horasDisponiblesHastaHoy / paradasHastaHoy
+            double mtbfHoras = horasDisponiblesHastaHoy / paradasHastaHoy;
+
+            return mtbfHoras;
         }
 
 
@@ -406,31 +455,58 @@ namespace Piolax_WebApp.Services.Impl
 
         public async Task GuardarKPIs(int idMaquina, int idArea, int? idEmpleado = null)
         {
-            var mttr = await CalcularMTTR(idMaquina, idArea, idEmpleado);
-            var mtta = await CalcularMTTA(idMaquina, idArea);
-            var mtbf = await CalcularMTBF(idMaquina, idArea);
+            if (idArea == 19) return;
 
-            // Si la propiedad idEmpleado en el modelo es no nullable, se asigna un valor por defecto (por ejemplo, 0)
-            var kpiMantenimiento = new KpisMantenimiento
+            var asignaciones = await _repository.ConsultarAsignacionesCompletadas(idMaquina, idArea, null);
+            if (!asignaciones.Any()) return;
+
+            var anioActual = DateTime.Now.Year;
+            var mesActual = DateTime.Now.Month;
+
+            var mtta = await CalcularMTTA(idMaquina, idArea); // este también en horas
+            var mtbf = await CalcularMTBF(idArea, anioActual, mesActual);
+            var mttrGlobal = await CalcularMTTR(idMaquina, idArea, null); // ahora en horas
+
+            // Técnicos involucrados
+            var tecnicos = asignaciones
+                .SelectMany(a => a.Asignacion_Tecnico)
+                .Where(t => t.tiempoAcumuladoMinutos > 0)
+                .Select(t => t.idEmpleado)
+                .Distinct()
+                .ToList();
+
+            bool esPrimero = true;
+
+            foreach (var tecnicoId in tecnicos)
             {
-                idMaquina = idMaquina,
-                idArea = idArea,
-                idEmpleado = idEmpleado ?? 0,
-                fechaCalculo = DateTime.Now
-            };
+                var mttrIndividual = await CalcularMTTR(idMaquina, idArea, tecnicoId); // en horas
 
-            await _kpiRepository.GuardarKPIMantenimiento(kpiMantenimiento);
+                var kpiMantenimiento = new KpisMantenimiento
+                {
+                    idMaquina = idMaquina,
+                    idArea = idArea,
+                    idEmpleado = tecnicoId,
+                    fechaCalculo = DateTime.Now
+                };
 
-            var kpiDetalles = new List<KpisDetalle>
-            {
-                new KpisDetalle { kpiNombre = "MTTR", kpiValor = (float)mttr },
-                new KpisDetalle { kpiNombre = "MTTA", kpiValor = (float)mtta },
-                new KpisDetalle { kpiNombre = "MTBF", kpiValor = (float)mtbf }
-            };
+                await _kpiRepository.GuardarKPIMantenimiento(kpiMantenimiento);
 
-            await _kpiRepository.GuardarKPIDetalles(kpiMantenimiento.idKPIMantenimiento, kpiDetalles);
+                var detalles = new List<KpisDetalle>
+        {
+            new KpisDetalle { kpiNombre = "MTTR", kpiValor = (float)mttrIndividual }
+        };
+
+                if (esPrimero)
+                {
+                    detalles.Add(new KpisDetalle { kpiNombre = "MTTA", kpiValor = (float)mtta });
+                    detalles.Add(new KpisDetalle { kpiNombre = "MTTR_Global", kpiValor = (float)mttrGlobal });
+                    detalles.Add(new KpisDetalle { kpiNombre = "MTBF", MTBF_HorasNueva = mtbf });
+                    esPrimero = false;
+                }
+
+                await _kpiRepository.GuardarKPIDetalles(kpiMantenimiento.idKPIMantenimiento, detalles);
+            }
         }
-
 
 
     }
