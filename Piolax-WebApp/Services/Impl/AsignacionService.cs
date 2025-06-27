@@ -206,7 +206,7 @@ namespace Piolax_WebApp.Services.Impl
         /// <param name="idArea">Identificador del área.</param>
         /// <param name="idEmpleado">Opcional: para filtrar por un técnico específico.</param>
         /// <returns>Promedio de tiempo de reparación en minutos.</returns>
-         
+
         public async Task<double> CalcularMTTA(int idMaquina, int idArea)
         {
             if (idArea == 19) return 0;
@@ -224,38 +224,54 @@ namespace Piolax_WebApp.Services.Impl
                 if (asignacion == null) continue;
 
                 var techs = asignacion.Asignacion_Tecnico
+                    .Where(t => t.horaInicio >= s.fechaSolicitud)
                     .OrderBy(t => t.horaInicio)
                     .ToList();
+
                 if (techs.Count < 1) continue;
 
-                // 1) Espera inicial
-                double espera = (techs[0].horaInicio - s.fechaSolicitud).TotalMinutes;
+                // ✅ 1. Elegir técnico con más tiempo acumulado
+                var tecnicoPrincipal = techs
+                    .OrderByDescending(t => t.tiempoAcumuladoMinutos)
+                    .ThenBy(t => t.horaInicio)
+                    .First();
 
-                // 2) Para cada re-toma, suma la pausa anterior
+                // ✅ 2. Espera inicial desde que se generó la solicitud hasta que ese técnico entró
+                double espera = (tecnicoPrincipal.horaInicio - s.fechaSolicitud).TotalMinutes;
+
+                // ✅ 3. Pausas reales entre técnicos (solo si no hubo traslapes)
                 for (int i = 1; i < techs.Count; i++)
                 {
-                    DateTime finAnterior = techs[i - 1].horaTermino != DateTime.MinValue
+                    var finAnterior = techs[i - 1].horaTermino != DateTime.MinValue
                         ? techs[i - 1].horaTermino
                         : techs[i - 1].horaInicio.AddMinutes(techs[i - 1].tiempoAcumuladoMinutos);
 
-                    espera += (techs[i].horaInicio - finAnterior).TotalMinutes;
+                    var inicioActual = techs[i].horaInicio;
+
+                    bool huboTraslape = techs.Any(t =>
+                        t.horaInicio < inicioActual &&
+                        t.horaTermino > finAnterior);
+
+                    if (!huboTraslape && inicioActual > finAnterior)
+                    {
+                        espera += (inicioActual - finAnterior).TotalMinutes;
+                    }
                 }
 
-                // 3) Restar pausas manuales
+                // ✅ 4. Restar pausas del sistema y manuales si existen
                 espera -= asignacion.tiempoEsperaAcumuladoMinutos;
-
-                // 4) Restar la pausa de sistema almacenada en la solicitud
                 espera -= s.tiempoEsperaPausaSistema;
 
+                // ✅ 5. Asegurar que no sea negativo
+                if (espera < 0) espera = 0;
 
                 sumaEsperaTotal += espera;
                 count++;
             }
 
-            return (count > 0) ? (sumaEsperaTotal / count) / 60.0 : 0; //de minutos lo convierte a horas y se guarda como horas
-
+            // ✅ 6. Promedio convertido a HORAS
+            return (count > 0) ? (sumaEsperaTotal / count) / 60.0 : 0;
         }
-
 
         public async Task<double> CalcularMTTR(int idMaquina, int idArea, int? idEmpleado = null)
         {

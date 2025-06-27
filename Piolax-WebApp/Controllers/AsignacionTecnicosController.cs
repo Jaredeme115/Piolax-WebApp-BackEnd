@@ -12,11 +12,12 @@ using Piolax_WebApp.Repositories;
 
 namespace Piolax_WebApp.Controllers
 {
-    public class AsignacionTecnicosController(IAsignacionTecnicosService service, IHubContext<NotificationHub> hubContext, AppDbContext dbContext) : BaseApiController
+    public class AsignacionTecnicosController(IAsignacionTecnicosService service, IHubContext<NotificationHub> hubContext, AppDbContext dbContext, ILogger<AsignacionTecnicosController> logger) : BaseApiController
     {
         private readonly IAsignacionTecnicosService _service = service;
         private readonly IHubContext<NotificationHub> _hubContext = hubContext;
         private readonly AppDbContext _dbContext = dbContext;
+        private readonly ILogger<AsignacionTecnicosController> _logger = logger;
 
         [HttpGet("ConsultarTecnicosPorAsignacion")]
         public async Task<ActionResult<IEnumerable<Asignacion_TecnicoDetallesDTO>>> ConsultarTecnicosPorAsignacion(int idAsignacion)
@@ -24,10 +25,35 @@ namespace Piolax_WebApp.Controllers
             return Ok(await _service.ConsultarTecnicosPorAsignacion(idAsignacion));
         }
 
-        [HttpPost("CrearAsignacionTecnico")]
+        /*[HttpPost("CrearAsignacionTecnico")]
         public async Task<ActionResult<Asignacion_TecnicoResponseDTO?>> CrearAsignacionTecnico([FromBody] Asignacion_TecnicoDTO asignacionTecnicoDTO)
         {
             return await _service.CrearAsignacionTecnico(asignacionTecnicoDTO);
+        }*/
+
+
+        [HttpPost("CrearAsignacionTecnico")]
+        [ProducesResponseType(typeof(Asignacion_TecnicoResponseDTO), 200)]
+        [ProducesResponseType(typeof(ProblemDetails), 400)]
+        [ProducesResponseType(typeof(ProblemDetails), 500)]
+        public async Task<IActionResult> CrearAsignacionTecnico([FromBody] Asignacion_TecnicoDTO dto)
+        {
+            try
+            {
+                var resp = await _service.CrearAsignacionTecnico(dto);
+                return Ok(resp);
+            }
+            catch (InvalidOperationException ex)
+            {
+                // error de negocio (p. ej. "Ya hay dos técnicos…")
+                return BadRequest(new { message = ex.Message });
+            }
+            catch (Exception ex)
+            {
+                // error inesperado
+                _logger.LogError(ex, "Error al crear asignación del técnico");
+                return StatusCode(500, new { message = "Error interno del servidor." });
+            }
         }
 
         [HttpPost("FinalizarAsignacionTecnico")]
