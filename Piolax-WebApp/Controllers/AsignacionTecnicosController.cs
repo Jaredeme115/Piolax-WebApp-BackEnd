@@ -196,6 +196,13 @@ namespace Piolax_WebApp.Controllers
             return Ok(new { idAsignacionTecnico = asignacionTecnico.idAsignacionTecnico });
         }
 
+        [HttpPut("salida/{idAsignacionTecnico}")]
+        public async Task<IActionResult> MarcarSalida(int idAsignacionTecnico)
+        {
+            var resultado = await _service.MarcarSalidaDeAsignacion(idAsignacionTecnico);
+            return Ok(resultado);
+        }
+
 
 
     }

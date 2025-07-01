@@ -17,5 +17,6 @@ namespace Piolax_WebApp.Services
         Task<IEnumerable<Asignacion_TecnicoDetallesDTO>> ConsultarTecnicosConDetallesPorAsignacion(int idAsignacion);
         Task<IEnumerable<SolicitudesDetalleDTO>> ConsultarSolicitudesPausadasPorTecnico(int idTecnico);
         Task<bool> RetomarAsignacion(int idAsignacion, int idEmpleado);
+        Task<bool> MarcarSalidaDeAsignacion(int idAsignacionTecnico);
     }
 }
