@@ -8,15 +8,33 @@ namespace Piolax_WebApp.Repositories.Impl
     {
         private readonly AppDbContext _context = context;
 
-        /*public async Task<IEnumerable<Asignacion_Tecnico>> ConsultarTecnicosPorAsignacion(int idAsignacion)
+        public async Task<IEnumerable<Asignacion_Tecnico>> ConsultarTecnicosPorAsignacion(int idAsignacion)
         {
             return await _context.Asignacion_Tecnico
             .Where(x => x.idAsignacion == idAsignacion)
             .Include(x => x.Empleado) // Cargar datos del técnico
             .ToListAsync();
+        }
+
+        /*public async Task<IEnumerable<Asignacion_Tecnico>> ConsultarTecnicosPorAsignacion(int idAsignacion, bool incluirRetirados = false)
+        {
+            // Base de la consulta con todos los Include que ya tenías
+            var query = _context.Asignacion_Tecnico
+                .Include(t => t.Empleado)
+                .Include(t => t.StatusAprobacionTecnico)
+                .Include(t => t.Asignacion_Refacciones)
+                    .ThenInclude(r => r.Inventario)
+                .Where(t => t.idAsignacion == idAsignacion);
+
+            // Si no piden incluir retirados, filtramos por retirado == false
+            if (!incluirRetirados)
+                query = query.Where(t => !t.retirado);
+
+            return await query.ToListAsync();
         }*/
 
-        public async Task<IEnumerable<Asignacion_Tecnico>> ConsultarTecnicosPorAsignacion(int idAsignacion)
+
+        /*public async Task<IEnumerable<Asignacion_Tecnico>> ConsultarTecnicosPorAsignacion(int idAsignacion)
         {
             return await _context.Asignacion_Tecnico
                 .Include(t => t.Empleado)
@@ -25,7 +43,7 @@ namespace Piolax_WebApp.Repositories.Impl
                     .ThenInclude(r => r.Inventario)
                 .Where(t => t.idAsignacion == idAsignacion)
                 .ToListAsync();
-        }
+        }*/
 
         public async Task<Asignacion_Tecnico?> ConsultarTecnicoPorID(int idAsignacion)
         {
