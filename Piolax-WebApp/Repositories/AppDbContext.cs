@@ -51,7 +51,12 @@ namespace Piolax_WebApp.Repositories
         public DbSet<MantenimientoPreventivoPDFs> MantenimientoPreventivoPDFs { get; set; } = default!;
         public DbSet<ObservacionesMP> ObservacionesMP { get; set; } = default!;
         public DbSet<MantenimientoPreventivo_Refacciones> MantenimientoPreventivo_Refacciones { get; set; } = default!;
-        public DbSet<MantenimientoPreventivoEjecuciones> MantenimientoPreventivoEjecuciones { get; set; } = default!;
+        public DbSet<HistoricoMP> HistoricoMP { get; set; } = default!;
+        public DbSet<EstatusAprobacionMPMantenimiento> EstatusAprobacionMPMantenimiento { get; set; } = default!;
+        public DbSet<EstatusAprobacionMPProduccion> EstatusAprobacionMPProduccion { get; set; } = default!;
+        public DbSet<Firmas> Firmas { get; set; } = default!;
+        public DbSet<TipoFirmas> TipoFirmas { get; set; } = default!;
+        public DbSet<HistoricoMPFirma> HistoricoMPFirma { get; set; } = default!;
 
         //KPI´s Mantenimiento Correctivo
         public DbSet<KpisMantenimiento> KpisMantenimiento { get; set; } = default!;
@@ -221,7 +226,7 @@ namespace Piolax_WebApp.Repositories
                .HasConversion<string>() // Almacena el ENUM como texto en la BD
                .HasColumnType("ENUM('Semana', 'Mes', 'Año')");
 
-            // Configurar la relación entre MantenimientoPreventivo y Areas, Maquinas, EstatusPreventivo, FrecuenciaMP
+            // Configurar la relación entre MantenimientoPreventivo y Areas, Maquinas, Empleado, FrecuenciaMP
             modelBuilder.Entity<MantenimientoPreventivo>()
                 .HasOne(mp => mp.Area)
                 .WithMany(a => a.MantenimientosPreventivos)
@@ -233,11 +238,6 @@ namespace Piolax_WebApp.Repositories
                 .HasForeignKey(mp => mp.idMaquina);
 
             modelBuilder.Entity<MantenimientoPreventivo>()
-                .HasOne(mp => mp.EstatusPreventivo)
-                .WithMany(ep => ep.MantenimientosPreventivos)
-                .HasForeignKey(mp => mp.idEstatusPreventivo);
-
-            modelBuilder.Entity<MantenimientoPreventivo>()
                 .HasOne(mp => mp.FrecuenciaMP)
                 .WithMany(fmp => fmp.MantenimientosPreventivos)
                 .HasForeignKey(mp => mp.idFrecuenciaPreventivo);
@@ -247,6 +247,33 @@ namespace Piolax_WebApp.Repositories
                .WithMany(e => e.MantenimientosPreventivos)
                .HasForeignKey(mp => mp.idEmpleado);
 
+            // Relación entre HistoricoMP y MantenimientoPreventivo, Empleado, EstatusPreventivo, EstatusAprobacionMPMantenimiento, EstatusAprobacionMPProduccion
+            
+            modelBuilder.Entity<HistoricoMP>()
+                .HasOne(hmp => hmp.MantenimientoPreventivo)
+                .WithMany(mp => mp.HistoricoMP)
+                .HasForeignKey(hmp => hmp.idMP);
+
+            modelBuilder.Entity<HistoricoMP>()
+                .HasOne(hmp => hmp.Empleado)
+                .WithMany(e => e.HistoricoMP)
+                .HasForeignKey(hmp => hmp.idEmpleadoRealizo);
+
+            modelBuilder.Entity<HistoricoMP>()
+                .HasOne(hmp => hmp.EstatusPreventivo)
+                .WithMany(ep => ep.HistoricoMP)
+                .HasForeignKey(hmp => hmp.idEstatusPreventivo);
+
+            modelBuilder.Entity<HistoricoMP>()
+               .HasOne(hmp => hmp.EstatusAprobacionMPMantenimiento)
+               .WithMany(ep => ep.HistoricoMP)
+               .HasForeignKey(hmp => hmp.idEstatusAprobacionMPMantenimiento);
+
+            modelBuilder.Entity<HistoricoMP>()
+             .HasOne(hmp => hmp.EstatusAprobacionMPProduccion)
+             .WithMany(ep => ep.HistoricoMP)
+             .HasForeignKey(hmp => hmp.idEstatusAprobacionMPProduccion);
+
             // Relacion entre MantenimientoPreventivoPDFs y MantenimientoPreventivo
 
             modelBuilder.Entity<MantenimientoPreventivoPDFs>()
@@ -254,31 +281,61 @@ namespace Piolax_WebApp.Repositories
                 .WithMany(mpp => mpp.MantenimientoPreventivoPDFs)
                 .HasForeignKey(mp => mp.idMP);
 
+            // Relacion entre HistoricoPreventivoPDF y HistoricoMP, Empleado
+
+            modelBuilder.Entity<HistoricoPreventivoPDF>()
+                .HasOne(hp => hp.HistoricoMP)
+                .WithMany(hmp => hmp.HistoricoPreventivoPDF)
+                .HasForeignKey(hp => hp.idHistoricoMP);
+
+            modelBuilder.Entity<HistoricoPreventivoPDF>()
+                .HasOne(hp => hp.Empleado)
+                .WithMany(e => e.HistoricoPreventivoPDF)
+                .HasForeignKey(hp => hp.idEmpleadoSubio);
+
             // Relacion entre ObservacionesMP y MantenimientoPreventivo
 
             modelBuilder.Entity<ObservacionesMP>()
-                .HasOne(mp => mp.MantenimientoPreventivos)
+                .HasOne(mp => mp.HistoricoMP)
                 .WithMany(omp => omp.ObservacionesMP)
-                .HasForeignKey(mp => mp.idMP);
+                .HasForeignKey(mp => mp.idHistoricoMP);
 
-            // Relacion entre MantenimientoPreventivo_Refacciones y MantenimientoPreventivo, Inventario
+            // Relacion entre MantenimientoPreventivo_Refacciones y HistoricoMP, Inventario
 
             modelBuilder.Entity<MantenimientoPreventivo_Refacciones>()
-                .HasOne(mp => mp.MantenimientoPreventivos)
+                .HasOne(mp => mp.HistoricoMP)
                 .WithMany(mpr => mpr.MantenimientoPreventivo_Refacciones)
-                .HasForeignKey(mp => mp.idMP);
+                .HasForeignKey(mp => mp.idHistoricoMP);
 
             modelBuilder.Entity<MantenimientoPreventivo_Refacciones>()
                 .HasOne(i => i.Inventario)
                 .WithMany(mpr => mpr.MantenimientoPreventivo_Refacciones)
                 .HasForeignKey(i => i.idRefaccion);
 
-            // Relacion entre MantenimientoPreventivoEjecucion y MantenimientoPreventivo
+            // Relacion entre Firmas y Empleado, TipoFirmas
 
-            modelBuilder.Entity<MantenimientoPreventivoEjecuciones>()
-                .HasOne(mp => mp.MantenimientoPreventivo)
-                .WithMany(mpe => mpe.MantenimientoPreventivoEjecucion)
-                .HasForeignKey(mp => mp.idMP);
+            modelBuilder.Entity<Firmas>()
+                .HasOne(f => f.Empleado)
+                .WithMany(e => e.Firmas)
+                .HasForeignKey(f => f.idEmpleado);
+
+            modelBuilder.Entity<Firmas>()
+                .HasOne(f => f.TipoFirma)
+                .WithMany(tf => tf.Firmas)
+                .HasForeignKey(f => f.idTipoFirma);
+
+            // Relacion entre HistoricoMPFirma y HistoricoMP, Firmas
+
+            modelBuilder.Entity<HistoricoMPFirma>()
+                .HasOne(hmf => hmf.HistoricoMP)
+                .WithMany(hmp => hmp.HistoricoMPFirma)
+                .HasForeignKey(hmf => hmf.idHistoricoMP);
+
+            modelBuilder.Entity<HistoricoMPFirma>()
+                .HasOne(hmf => hmf.Firmas)
+                .WithMany(f => f.HistoricoMPFirma)
+                .HasForeignKey(hmf => hmf.idFirma);
+
 
             // Configurar la relacion entre KpisMantenimiento y Empleados
             modelBuilder.Entity<KpisMantenimiento>()

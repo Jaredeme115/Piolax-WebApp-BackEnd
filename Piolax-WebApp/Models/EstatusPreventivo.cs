@@ -10,6 +10,6 @@ namespace Piolax_WebApp.Models
         public string nombreEstatusPreventivo { get; set; }
         public string color { get; set; }
 
-        public virtual ICollection<MantenimientoPreventivo> MantenimientosPreventivos { get; set; } = new List<MantenimientoPreventivo>(); // Lista de MAntenimientos Preventivos asociados a EstatusPreventivo
+        public virtual ICollection<HistoricoMP> HistoricoMP { get; set; } = new List<HistoricoMP>(); // Lista de HistoricosMPs asociados a EstatusPreventivo
     }
 }

@@ -7,9 +7,9 @@ namespace Piolax_WebApp.Models
         [Key]
         public int idMPRefaccion { get; set; }
 
-        public int idMP { get; set; }
+        public int idHistoricoMP { get; set; }
 
-        public MantenimientoPreventivo MantenimientoPreventivos { get; set; }
+        public HistoricoMP HistoricoMP { get; set; }
 
         public int idRefaccion { get; set; }
 

@@ -9,10 +9,10 @@ namespace Piolax_WebApp.Controllers
     {
         private readonly IMantenimientoPreventivoRefaccionesService _service = service;
 
-        [HttpGet("ConsultarRefaccionesMP/{idMP}")]
-        public async Task<IActionResult> ConsultarRefaccionesMP(int idMP)
+        [HttpGet("ConsultarRefaccionesMP/{idHistoricoMP}")]
+        public async Task<IActionResult> ConsultarRefaccionesMP(int idHistoricoMP)
         {
-            var refacciones = await _service.ConsultarRefaccionesMP(idMP);
+            var refacciones = await _service.ConsultarRefaccionesMP(idHistoricoMP);
             if (refacciones == null || !refacciones.Any())
             {
                 return NotFound("No se encontraron refacciones para el mantenimiento preventivo especificado.");
@@ -75,12 +75,12 @@ namespace Piolax_WebApp.Controllers
             return Ok(refaccion);
         }
 
-        [HttpPost("ConfirmarUsoRefaccion/{idMP}")]
-        public async Task<IActionResult> ConfirmarUsoDeRefacciones(int idMP)
+        [HttpPost("ConfirmarUsoRefaccion/{idHistoricoMP}")]
+        public async Task<IActionResult> ConfirmarUsoDeRefacciones(int idHistoricoMP)
         {
             try
             {
-                var resultado = await _service.ConfirmarUsoDeRefacciones(idMP);
+                var resultado = await _service.ConfirmarUsoDeRefacciones(idHistoricoMP);
                 if (!resultado)
                 {
                     return NotFound("No hay refacciones registradas para este mantenimiento preventivo.");

@@ -6,9 +6,8 @@ namespace Piolax_WebApp.Models
     {
         [Key]
         public int idObservacionMP { get; set; }
-        public int idMP { get; set; }
-
-        public MantenimientoPreventivo MantenimientoPreventivos { get; set; }
+        public int idHistoricoMP { get; set; }
+        public HistoricoMP HistoricoMP { get; set; }
 
         public string observacion { get; set; }
         public DateTime? fechaObservacion { get; set; } = DateTime.UtcNow;

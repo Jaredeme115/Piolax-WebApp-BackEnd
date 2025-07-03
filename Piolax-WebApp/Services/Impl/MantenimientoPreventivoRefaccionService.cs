@@ -14,15 +14,15 @@ namespace Piolax_WebApp.Services.Impl
         private readonly IMantenimientoPreventivoRepository _mantenimientoPreventivoRepository = mantenimientoPreventivoRepository;
         private readonly IInventarioRepository _inventarioRepository = inventarioRepository;
 
-        public async Task<IEnumerable<MantenimientoPreventivo_Refacciones>> ConsultarRefaccionesMP(int idMP)
+        public async Task<IEnumerable<MantenimientoPreventivo_Refacciones>> ConsultarRefaccionesMP(int idHistoricoMP)
         {
-            return await _repository.ConsultarRefaccionesMP(idMP);
+            return await _repository.ConsultarRefaccionesMP(idHistoricoMP);
         }
 
         public async Task<MPRefaccionesResponseDTO> CrearRefaccionMP(MantenimientoPreventivo_Refacciones mantenimientoPreventivoRefacciones)
         {
             // Validar si el mantenimiento preventivo existe
-            if (await _mantenimientoPreventivoRepository.ConsultarMP(mantenimientoPreventivoRefacciones.idMP) == null)
+            if (await _mantenimientoPreventivoRepository.ConsultarMP(mantenimientoPreventivoRefacciones.idHistoricoMP) == null)
             {
                 throw new ArgumentException("El mantenimiento preventivo no existe.");
             }
@@ -37,7 +37,7 @@ namespace Piolax_WebApp.Services.Impl
             // Crear el registro de refacción utilizada en el mantenimiento preventivo
             var refaccionMP = new MantenimientoPreventivo_Refacciones
             {
-                idMP = mantenimientoPreventivoRefacciones.idMP,
+                idHistoricoMP = mantenimientoPreventivoRefacciones.idHistoricoMP,
                 idRefaccion = mantenimientoPreventivoRefacciones.idRefaccion,
                 cantidad = mantenimientoPreventivoRefacciones.cantidad
             };
@@ -49,7 +49,7 @@ namespace Piolax_WebApp.Services.Impl
             return new MPRefaccionesResponseDTO
             {
                 idMPRefaccion = nuevaRefaccion.idMPRefaccion,
-                idMP = nuevaRefaccion.idMP,
+                idHistoricoMP = nuevaRefaccion.idHistoricoMP,
                 idRefaccion = nuevaRefaccion.idRefaccion,
                 cantidad = nuevaRefaccion.cantidad
             };
@@ -85,16 +85,16 @@ namespace Piolax_WebApp.Services.Impl
             return new MantenimientoPreventivoRefaccionesDetalleDTO
             {
                 idMPRefaccion = refaccion.idMPRefaccion,
-                idMP = refaccion.idMP,
+                idHistoricoMP = refaccion.idHistoricoMP,
                 idRefaccion = refaccion.idRefaccion,
                 nombreRefaccion = refaccion.Inventario?.nombreProducto ?? "N/A",
                 cantidad = refaccion.cantidad
             };
         }
 
-        public async Task<bool> ConfirmarUsoDeRefacciones(int idMP)
+        public async Task<bool> ConfirmarUsoDeRefacciones(int idHistoricoMP)
         {
-            var refacciones = await _repository.ConsultarRefaccionesMP(idMP);
+            var refacciones = await _repository.ConsultarRefaccionesMP(idHistoricoMP);
             if (!refacciones.Any()) return false;
 
             foreach (var refaccion in refacciones)

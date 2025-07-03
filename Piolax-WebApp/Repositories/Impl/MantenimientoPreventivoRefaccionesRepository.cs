@@ -7,10 +7,10 @@ namespace Piolax_WebApp.Repositories.Impl
     {
         private readonly AppDbContext _context = context;
 
-        public async Task<IEnumerable<MantenimientoPreventivo_Refacciones>> ConsultarRefaccionesMP(int idMP)
+        public async Task<IEnumerable<MantenimientoPreventivo_Refacciones>> ConsultarRefaccionesMP(int idHistoricoMP)
         {
             return await _context.MantenimientoPreventivo_Refacciones
-            .Where(x => x.idMP == idMP)
+            .Where(x => x.idHistoricoMP == idHistoricoMP)
             .Include(x => x.Inventario) // Cargar datos de la refacción
             .ToListAsync();
         }

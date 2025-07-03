@@ -27,11 +27,9 @@ namespace Piolax_WebApp.Models
         public FrecuenciaMP FrecuenciaMP { get; set; }
 
 
+        public virtual ICollection<HistoricoMP> HistoricoMP { get; set; } = new List<HistoricoMP>(); // Lista de historicoMP asociados a Mantenimiento Preventivo
         public virtual ICollection<MantenimientoPreventivoPDFs> MantenimientoPreventivoPDFs { get; set; } = new List<MantenimientoPreventivoPDFs>(); // Lista de MantenimientoPreventivoPDFs asociados a Mantenimiento Preventivo
 
-        //public virtual ICollection<ObservacionesMP> ObservacionesMP { get; set; } = new List<ObservacionesMP>(); // Lista de ObservacionesMP asociados a Mantenimiento Preventivo
-        
-        //public virtual ICollection<MantenimientoPreventivo_Refacciones> MantenimientoPreventivo_Refacciones { get; set; } = new List<MantenimientoPreventivo_Refacciones>(); // Lista de MantenimientoPreventivo_Refacciones asociados a Mantenimiento Preventivo
 
 
     }

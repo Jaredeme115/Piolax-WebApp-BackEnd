@@ -9,7 +9,7 @@ namespace Piolax_WebApp.Models
         public int idMPPDF { get; set; }
 
         public int idMP { get; set; }
-        public MantenimientoPreventivo MantenimientoPreventivos { get; set; }
+        public MantenimientoPreventivo MantenimientoPreventivo { get; set; }
 
         [StringLength(255)]
         public string nombrePDF { get; set; } = string.Empty;

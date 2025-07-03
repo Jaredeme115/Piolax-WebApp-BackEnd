@@ -7,7 +7,7 @@ namespace Piolax_WebApp.DTOs
     {
         public int idMPRefaccion { get; set; }
 
-        public int idMP { get; set; }
+        public int idHistoricoMP { get; set; }
 
         public int idRefaccion { get; set; }
 

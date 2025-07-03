@@ -14,10 +14,10 @@ namespace Piolax_WebApp.Repositories.Impl
             return observacion;
         }
 
-        public async Task<IEnumerable<ObservacionesMP>> ObtenerObservacionesPorMP(int idMP)
+        public async Task<IEnumerable<ObservacionesMP>> ObtenerObservacionesPorMP(int idHistoricoMP)
         {
             return await _context.ObservacionesMP
-                .Where(obs => obs.idMP == idMP)
+                .Where(obs => obs.idHistoricoMP == idHistoricoMP)
                 .ToListAsync();
         }
 

@@ -38,9 +38,9 @@ namespace Piolax_WebApp.Controllers
         }
 
         [HttpGet("ObtenerObservacionesPorMP/{idMP}")]
-        public async Task<ActionResult<IEnumerable<ObservacionesMPDTO>>> ObtenerObservacionesPorMP(int idMP)
+        public async Task<ActionResult<IEnumerable<ObservacionesMPDTO>>> ObtenerObservacionesPorMP(int idHistoricoMP)
         {
-            var resultado = await _service.ObtenerObservacionesPorMP(idMP);
+            var resultado = await _service.ObtenerObservacionesPorMP(idHistoricoMP);
             return Ok(resultado);
         }
 
@@ -55,4 +55,5 @@ namespace Piolax_WebApp.Controllers
             return Ok(resultado);
         }
     }
+
 }

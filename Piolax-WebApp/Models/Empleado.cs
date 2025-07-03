@@ -51,5 +51,11 @@ namespace Piolax_WebApp.Models
         public virtual ICollection<KpisMantenimiento> KpisMantenimientos { get; set; } = new List<KpisMantenimiento>(); // Lista de KPI´s de Mantenimiento asociados a Empleado
 
         public virtual ICollection<MantenimientoPreventivo> MantenimientosPreventivos { get; set; } = new List<MantenimientoPreventivo>(); // Lista de MAntenimientos Preventivos asociados a Empleado
+
+        public virtual ICollection<HistoricoMP> HistoricoMP { get; set; } = new List<HistoricoMP>(); // Lista de HistoricosMPs asociados a Empleado
+        public virtual ICollection<HistoricoPreventivoPDF> HistoricoPreventivoPDF { get; set; } = new List<HistoricoPreventivoPDF>(); // Lista de HistoricosPreventivosPDFs asociados a Empleado
+
+        public virtual ICollection<Firmas> Firmas { get; set; } = new List<Firmas>(); // Lista de Firmas asociados a Empleado
     }
 }
+

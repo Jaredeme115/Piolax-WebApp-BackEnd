@@ -12,7 +12,7 @@ namespace Piolax_WebApp.Services.Impl
         {
             var nuevaObservacion = new ObservacionesMP
             {
-                idMP = observacionDTO.idMP,
+                idHistoricoMP = observacionDTO.idHistoricoMP,
                 observacion = observacionDTO.observacion,
                 fechaObservacion = observacionDTO.fechaObservacion
             };
@@ -22,20 +22,20 @@ namespace Piolax_WebApp.Services.Impl
             return new ObservacionesMPDTO
             {
                 idObservacionMP = resultado.idObservacionMP,
-                idMP = resultado.idMP,
+                idHistoricoMP = resultado.idHistoricoMP,
                 observacion = resultado.observacion,
                 fechaObservacion = resultado.fechaObservacion
             };
         }
 
-        public async Task<IEnumerable<ObservacionesMPDTO>> ObtenerObservacionesPorMP(int idMP)
+        public async Task<IEnumerable<ObservacionesMPDTO>> ObtenerObservacionesPorMP(int idHistoricoMP)
         {
-            var resultados = await _repository.ObtenerObservacionesPorMP(idMP);
+            var resultados = await _repository.ObtenerObservacionesPorMP(idHistoricoMP);
 
             return resultados.Select(obs => new ObservacionesMPDTO
             {
                 idObservacionMP = obs.idObservacionMP,
-                idMP = obs.idMP,
+                idHistoricoMP = obs.idHistoricoMP,
                 observacion = obs.observacion,
                 fechaObservacion = obs.fechaObservacion
             });
@@ -50,7 +50,7 @@ namespace Piolax_WebApp.Services.Impl
             return new ObservacionesMPDTO
             {
                 idObservacionMP = resultado.idObservacionMP,
-                idMP = resultado.idMP,
+                idHistoricoMP = resultado.idHistoricoMP,
                 observacion = resultado.observacion,
                 fechaObservacion = resultado.fechaObservacion
             };
