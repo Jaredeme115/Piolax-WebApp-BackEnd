@@ -40,7 +40,7 @@ namespace Piolax_WebApp.Models
         public int idStatusEmpleado { get; set; }
         public StatusEmpleado StatusEmpleado { get; set; } // Propiedad de navegación
 
-        public ICollection<EmpleadoAreaRol> EmpleadoAreaRol {get; set; } // Lista de empleadoAreaRol asociados a este empleado
+        public ICollection<EmpleadoAreaRol> EmpleadoAreaRol { get; set; } // Lista de empleadoAreaRol asociados a este empleado
 
         public ICollection<Solicitudes> Solicitudes { get; set; } // Lista de solicitudes asociados a este empleado
 
@@ -51,5 +51,16 @@ namespace Piolax_WebApp.Models
         public virtual ICollection<KpisMantenimiento> KpisMantenimientos { get; set; } = new List<KpisMantenimiento>(); // Lista de KPI´s de Mantenimiento asociados a Empleado
 
         public virtual ICollection<MantenimientoPreventivo> MantenimientosPreventivos { get; set; } = new List<MantenimientoPreventivo>(); // Lista de MAntenimientos Preventivos asociados a Empleado
+
+        // Modulo de Ingenieria
+
+        // Para el KeyPerson de Proyecto:
+        public ICollection<Proyecto> ProyectoKeyPerson { get; set; } = new List<Proyecto>();
+        // Para las marcas de actividad:
+        public ICollection<EtapaActividad> EtapaActividadesMarcas { get; set; } = new List<EtapaActividad>();
+        // Para los comentarios:
+        public ICollection<EtapaComentario> EtapaComentarios { get; set; } = new List<EtapaComentario>();
+        // Para las firmas:
+        public ICollection<ProyectoFirma> ProyectoFirmas { get; set; } = new List<ProyectoFirma>();
     }
 }

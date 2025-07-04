@@ -10,9 +10,13 @@ using Piolax_WebApp.Repositories.Impl;
 using System.Collections.Specialized;
 using Piolax_WebApp.BackgroundServices; 
 using Piolax_WebApp.Hubs;
+using AutoMapper;
 using Piolax_WebApp.Utilities;
 using System.IdentityModel.Tokens.Jwt;
 using System.Security.Claims;
+using Microsoft.Extensions.DependencyInjection;
+
+
 
 
 
@@ -29,7 +33,9 @@ builder.Services.AddDbContext<AppDbContext>(options =>
 
 builder.Services.AddControllers();
 builder.Services.AddSignalR();
-
+builder.Services.AddAutoMapper(cfg => {
+    cfg.AddProfile<MappingProfiles>();
+});
 
 //Empleado
 builder.Services.AddScoped<IEmpleadoService, EmpleadoService>();
@@ -136,6 +142,24 @@ builder.Services.AddScoped<IKPIMantenimientoPreventivoService, KPIMantenimientoP
 //Dashboard
 builder.Services.AddScoped<IKPIRepository, KPIRepository>();
 builder.Services.AddScoped<IKPIDashboardService, KPIDashboardService>();
+
+//Ingenieria
+builder.Services.AddScoped<IProyectoRepository, ProyectoRepository>();
+builder.Services.AddScoped<IProyectoService, ProyectoService>();
+
+builder.Services.AddScoped<IProyectoEtapaRepository, ProyectoEtapaRepository>();
+builder.Services.AddScoped<IProyectoEtapaService, ProyectoEtapaService>();
+
+builder.Services.AddScoped<IEtapaActividadRepository, EtapaActividadRepository>();
+builder.Services.AddScoped<IEtapaActividadService, EtapaActividadService>();
+
+builder.Services.AddScoped<IEtapaComentarioRepository, EtapaComentarioRepository>();
+builder.Services.AddScoped<IEtapaComentarioService, EtapaComentarioService>();
+
+builder.Services.AddScoped<IProyectoFirmaRepository, ProyectoFirmaRepository>();
+builder.Services.AddScoped<IProyectoFirmaService, ProyectoFirmaService>();
+
+
 
 //Notificaciones
 //builder.Services.AddScoped<NewRequestNotificationService>();

@@ -62,6 +62,15 @@ namespace Piolax_WebApp.Repositories
         public DbSet<KpisMP> KpisMP { get; set; } = default!;
         public DbSet<KpisMPDetalle> KpisMPDetalle { get; set; } = default!;
 
+        //Ingenieria 
+
+        public DbSet<Proyecto> Proyecto { get; set; } = default!;
+        public DbSet<ProyectoEtapa> ProyectoEtapa { get; set; } = default!;
+        public DbSet<EtapaActividad> EtapaActividad { get; set; } = default!;
+        public DbSet<EtapaComentario> EtapaComentario { get; set; } = default!;
+        public DbSet<ProyectoFirma> ProyectoFirma { get; set; } = default!;
+
+
 
 
         protected override void OnModelCreating(ModelBuilder modelBuilder)
@@ -313,6 +322,55 @@ namespace Piolax_WebApp.Repositories
                 .WithMany(a => a.KpiObjetivos)
                 .HasForeignKey(ko => ko.idArea);
 
+            // Modulo Ingenieria
+
+            modelBuilder.Entity<Proyecto>()
+           .HasOne(p => p.KeyPerson)
+           .WithMany(e => e.ProyectoKeyPerson)
+           .HasForeignKey(p => p.idKeyPerson)
+           .OnDelete(DeleteBehavior.SetNull);
+
+            modelBuilder.Entity<Proyecto>()
+                .HasMany(p => p.ProyectoEtapas)
+                .WithOne(e => e.Proyecto)
+                .HasForeignKey(e => e.idProyecto)
+                .OnDelete(DeleteBehavior.Cascade);
+
+            modelBuilder.Entity<ProyectoEtapa>()
+                .HasMany(e => e.EtapaActividades)
+                .WithOne(a => a.Etapa)
+                .HasForeignKey(a => a.idEtapa)
+                .OnDelete(DeleteBehavior.Cascade);
+
+            modelBuilder.Entity<ProyectoEtapa>()
+                .HasMany(e => e.EtapaComentarios)
+                .WithOne(c => c.Etapa)
+                .HasForeignKey(c => c.idEtapa)
+                .OnDelete(DeleteBehavior.Cascade);
+
+            modelBuilder.Entity<EtapaActividad>()
+                .HasOne(a => a.EmpleadoMarca)
+                .WithMany(e => e.EtapaActividadesMarcas)
+                .HasForeignKey(a => a.idEmpleadoMarca)
+                .OnDelete(DeleteBehavior.SetNull);
+
+            modelBuilder.Entity<EtapaComentario>()
+                .HasOne(c => c.Empleado)
+                .WithMany(e => e.EtapaComentarios)
+                .HasForeignKey(c => c.idEmpleado)
+                .OnDelete(DeleteBehavior.Cascade);
+
+            modelBuilder.Entity<ProyectoFirma>()
+                .HasOne(f => f.Proyecto)
+                .WithMany(p => p.ProyectoFirmas)
+                .HasForeignKey(f => f.idProyecto)
+                .OnDelete(DeleteBehavior.Cascade);
+
+            modelBuilder.Entity<ProyectoFirma>()
+                .HasOne(f => f.Empleado)
+                .WithMany(e => e.ProyectoFirmas)
+                .HasForeignKey(f => f.idEmpleado)
+                .OnDelete(DeleteBehavior.Cascade);
 
 
 
